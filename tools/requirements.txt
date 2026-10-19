@@ -1,0 +1,2 @@
+# Python 3.10+ (probado con 3.14). Versión fijada: los builders comparan el texto de Capstone.
+capstone==5.0.7

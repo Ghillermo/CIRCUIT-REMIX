@@ -1,0 +1,2 @@
+d5b9ff5dadf2e284f80d69ecb7087486cf0df315a697bed8272af9de0e90df15 circuitrhythm-firmware-5706-STOCK.bin
+11d604a6b6bef0d41378da03718658c7fe9c959ac24e7fef6563796b9932afaf circuitrhythm-firmware-5706-STOCK.syx

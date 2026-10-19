@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+build/
+
+# No Novation firmware in the repository (tools/patch_official.py builds it from yours)
+stock/*.bin
+stock/*.syx
+firmware/*/*.bin
+firmware/*/*.syx
+*.zip
