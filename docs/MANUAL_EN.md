@@ -1,4 +1,4 @@
-# Circuit Remix Alpha 0.0 — manual
+# Circuit Remix Alpha 0.01 — manual
 
 [Español](MANUAL.md)
 
@@ -23,7 +23,7 @@ Stopped, Shift + Play without count-in is the original's (play from where it sto
 |---|---|
 | **Shift + track pad** (row 1) | that track's mute on the next bar (the pad blinks; again = cancel; stopped, at once) |
 | **Shift + knob** (levels page) | right = level 100; left = 0. While recording, it is recorded as automation |
-| **Shift + pads 9-16** | the current scene repeats 1-8 times (with Shift row 2 yellow, the chosen one green; scenes with chain rules peach) |
+| **Shift + pads 9-16** | the current scene repeats 1-8 times (with Shift row 2 yellow, the chosen one green; scenes with chain rules peach). While playing, with Shift, the repeat that is playing shows white; on the last one the green pad blinks |
 
 Pad 9 without Shift is still the original's Mute Recall.
 
@@ -36,6 +36,22 @@ Pad 9 without Shift is still the original's Mute Recall.
 
 With a step held, a sample pad is the original's sample flip. From the Mixer, Clear + track does what the original does.
 
+### The Stock+ knob page (since Alpha 0.01)
+**Press the selected track's button again** (in its views): its 8 knobs go to the Stock+ page; press it again to go back to the stock page. While a track is on the Stock+ page, its button blinks white. The page is per track and stays until power-off.
+
+| Knob | On the Stock+ page |
+|---|---|
+| K1 | ★ pitch envelope amount: centre = none; to the right each hit starts higher, to the left lower (up to ±24 semitones), then returns to its note |
+| K2 | ★ how long it takes to return to the note (5 ms to 4 s) |
+| K3 | ★ pitch LFO rate (0.05 to 30 Hz) |
+| K4 | ★ pitch LFO depth (0 to 24 semitones) |
+| K5-K8 | no function yet (dark) |
+
+- **Shift + knob = fine control**, as on the stock knobs. **Clear + knob** = its default (K1 to the centre, K4 to 0).
+- K1-K4 are white, their brightness following their value (K1: the distance from the centre).
+- Saved with the project; a project without these values plays without modulation. Clear + the track's button resets them and Duplicate + track A, track B copies them.
+- Each voice's pitch is recalculated about 190 times a second and at the start of every hit: a very short return (K2 fully left) or a very fast LFO may sound stepped.
+
 ## 4. Note view
 | Gesture | What it does |
 |---|---|
@@ -47,9 +63,9 @@ When Shift is released, the keyboard plays the scale: **one iteration per row** 
 ## 5. Pattern Settings
 | Gesture | What it does |
 |---|---|
-| **Pad 26** (orange) | Nudge: the pattern is rewritten so that its first step is step 1 (steps and automation rotate; it sounds the same) |
+| **Pad 26** (blue) | Nudge: the pattern is rewritten so that its first step is step 1 (steps and automation rotate; it sounds the same) |
 | **Pad 27 / 28** | **fractal** (1 · 1 2 · 1 2 3 …) and **deconstructed** (1 6 11 16 · 2 7 12 13 · …) play orders; a direction pad goes back to the original |
-| **Pad 25** (peach) | probability view, mode 2: pick a step; **row 3 = dynamics** (velocity and delay within the step), **row 4, pads 25-28 = sample mutation** (sometimes its row neighbour or the sample of the other row of its page plays) |
+| **Pad 25** (grey) | probability view, mode 2: pick a step; **row 3 = dynamics** (velocity and delay within the step; **with Record, each step with dynamics that plays is written** with the velocity and micro step it played with, and loses its dynamics), **row 4, pads 25-28 = sample mutation** (sometimes its row neighbour or the sample of the other row of its page plays) |
 | **Pattern Settings twice** | probability view, mode 1: **row 4 = the step's frequency** (it plays one pass in n) |
 | **Shift + pad 25** | the track and pattern's arpeggiator on / off (green / grey with Shift) |
 | **Shift + pads 27-32** | arpeggio order: fractal, deconstructed, up, down, ping-pong, random |
@@ -83,18 +99,38 @@ With Shift, each knob's brightness shows its parameter's value. The reverb and d
 | Knob | What it moves |
 |---|---|
 | K1-K4 | attack, hold, decay and depth of the selected track's sidechain (the one of the last preset pad touched) |
+| K5 | master compressor threshold (fully right = the stock's; further left it compresses from lower levels) |
 | K6 | master compressor soft clip (right = on) |
 | K7 / K8 | master compressor attack / release |
 
-A preset pad brings the track back to that preset. **Clear + K1-K4** = its preset's values; **Clear + K6-K8** = the factory compressor. The brightness shows the value. Saved with the project. The compressor is only heard when it is on (Advanced Setup).
+A preset pad brings the track back to that preset. **Clear + K1-K4** = its preset's values; **Clear + K6-K8** = the factory compressor; **Clear + K5** = the stock's threshold. Each Clear + knob affects only that knob. The brightness shows the value. Saved with the project. The compressor is only heard when it is on (Advanced Setup).
 
-## 9. Projects view: copy projects (Alpha 0.0 only)
+## 9. Projects view: copy projects (not in Alpha 0.01S)
 With the transport stopped:
 1. **Duplicate + a pad with a project (A)**: it blinks yellow.
 2. **Duplicate + an empty pad (B)**: copies A into B (green for ~1.5 s, then A's colour). B can be in this pack or another: pick A, load another pack and Duplicate + an empty pad.
 3. **Duplicate + a pad with a project**: it blinks white (asking); **Duplicate + the same pad** within ~5 s overwrites it.
 
-It never overwrites the loaded project nor writes to the internal memory pack (red + Save LED red). Alpha 0.0S does not have this feature.
+It never overwrites the loaded project nor writes to the internal memory pack (red + Save LED red). Alpha 0.01S does not have this feature.
+
+**How it differs from Save + pad** (the stock save, which saves to any pad):
+| | Duplicate + A, Duplicate + B | Save + pad |
+|---|---|---|
+| What it copies | project A **as saved** on the card | the **loaded** project **as it is in memory** (unsaved changes included) |
+| A must be loaded | no: what you have loaded (and its unsaved changes) stays | yes: it only saves the loaded project |
+| From another pack | yes: pick A, load another pack and copy it there | — (it saves what is loaded) |
+| If B holds a project | asks first (blinks white) and never touches the loaded project | as the stock |
+| Transport | stopped only | as the stock |
+
+### Packs (Projects twice): delete a pack (not in Alpha 0.01S)
+With the transport stopped: **Clear + a pack's pad** = asks (blinks red for ~5 s); **Clear + the same pad** within ~5 s = deletes the pack from the card (green for ~1.5 s). Never the loaded pack, the internal memory pack or an empty slot.
+
+### Sample Rec: copy a sample (not in Alpha 0.01S)
+With the transport stopped:
+1. **Duplicate + a slot with a sample (A)**: it blinks yellow (Duplicate + A again = forget it).
+2. **Duplicate + slot B** (in this pack or, after loading another pack, in that one): copies A's sample into B, and B plays at once (green for ~1.5 s). If B holds a sample it blinks white, and **Duplicate + B** again within ~5 s overwrites it.
+
+Red = it could not be done (sample memory full, the device busy, or the internal pack).
 
 ## 10. Setup (Shift + Save)
 | Gesture | What it does |

@@ -55,6 +55,10 @@ COL_DEL_ON, COL_DEL_DIM = 0x74, 0x75                  #   duplicate light either
 COL_REV_ON, COL_REV_DIM = 0x29, 0x2A                  #   (the page shown bright, the other dim), Duplicate (the reset) light blue, with Shift
 COL_RESET, COL_SHIFT = 0x18, 0x2F                     #   up / down yellow (Shift + up / down = the resonance); CIRCUIT-HACKS' SC18.2 colours
 LED_DUP = 56
+VIEWSET = False                                       # RH30 (install(viewset=True)): the reset also writes the sends' view stores, which the knob LEDs
+GSET, GSET_OBJ = 0x08038A08, 0x20011998               #   read (the user: «Duplicate. -> works, leds dont update»): the stock's knob calls the generic
+ID_REV0, ID_DEL0 = 0x80, 0x88                         #   0x08038A08(0x20011998, id, value) (reverb 0x80 + t, delay 0x88 + t), which writes only those
+                                                      #   stores (its value is the group setter's, called as before)
 
 
 def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
@@ -187,6 +191,18 @@ def arm_code(base, L, prev):
     E(b, "fb_x")
     a.label("fb_dup")                                                     # Duplicate: the reset
     E(movs_imm, 6, 0)
+    if VIEWSET:                                                           # the view stores of the 16 sends (their values follow below)
+        a.label("fb_gl")
+        for id0 in (ID_REV0, ID_DEL0):
+            imm32(0, GSET_OBJ)
+            E(mov_reg, 1, 6)
+            E(adds_imm8, 1, id0)
+            E(movs_imm, 2, 0)
+            E(bl, GSET)
+        E(adds_imm8, 6, 1)
+        E(cmp_imm, 6, 8)
+        E(b_cond, "fb_gl", "lo")
+        E(movs_imm, 6, 0)
     a.label("fb_dl")
     E(mov_reg, 1, 6)
     E(adds_imm8, 1, GRP_TRACK)
@@ -373,15 +389,15 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr, bright=False, cols=False):
+def install(img, report, base_addr, bright=False, cols=False, viewset=False):
     """Append the code; the head of the button chain, slot 4 of the FX view's vtable, the LED task calls."""
     import rhbuild
     BASE = rhbuild.BASE
     u = lambda a_: struct.unpack_from("<I", img, a_ - BASE)[0]
     lab = lambda sec, n: int(report[sec]["labels"][n], 16)
     L = dict(c_ciok=lab("countin", "c_ciok"), c_cishift=lab("countin", "c_cishift"), c_cinew=lab("countin", "c_cinew"))
-    global BRIGHT, COLS
-    BRIGHT, COLS = bright, cols
+    global BRIGHT, COLS, VIEWSET
+    BRIGHT, COLS, VIEWSET = bright, cols, viewset
     if bright:
         L.update(c_rst=lab("rhstate", "c_rst"), c_skget=lab("sckn", "c_skget"))
     prev = dict(btn=rhbuild.bw_target(img, CI.BTN_ENTRY), knob=u(SLOT_KNOB) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))

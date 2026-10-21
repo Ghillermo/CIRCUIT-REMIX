@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, adds_imm8, adds_reg, b, b_cond, b_w, bics_reg, bl, cmp_imm, cmp_reg, h, ldr_imm, ldrb_imm, ldrb_reg, lsls_imm,  # noqa: E402
-                   lsls_reg, mov_reg, movs_imm, movt, movw, pop_list, push_list, raw, strb_imm, strb_w, tst_reg)
+                   lsls_reg, lsrs_reg, subs_imm8, ldrb_w, mov_reg, movs_imm, movt, movw, pop_list, push_list, raw, strb_imm, strb_w, tst_reg)
 import countin as CI  # noqa: E402
 import fxkeys as F  # noqa: E402
 import sckn as SK  # noqa: E402
@@ -27,6 +27,12 @@ BIT_CLEAR = 23
 SC_STORES, PRESET_TAB = 0x20042354 + 0x10, 0x20003774
 COMP_DEFAULT = (1, 0, 0)                                  # soft clip, attack, release (the dump's, a factory project's)
 INV = SK.INV
+GSET, GSET_OBJ, ID_REV0, ID_DEL0 = 0x08038A08, 0x20011998, 0x80, 0x88   # (RH30, viewset) the stock's knob writes the view stores the knob LEDs read
+                                                                        # with the generic setter by id (the FX sends: 0x80 + t / 0x88 + t)
+SINGLE = False                                            # RH30 (install(single=True)): Clear + a Sidechain knob resets that knob only (the user:
+                                                          # «all knobs rest at once, knobs should clear individually»)
+VIEWSET = False                                           # RH30 (install(viewset=True)): Clear + an FX knob also writes the knob LED's view store with
+                                                          # the generic setter (the user: «works, leds dont update»: the group setter leaves it alone)
 
 
 def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
@@ -78,6 +84,12 @@ def arm_code(base, L, prev):
     imm32(0, SK.SET_OBJ)
     E(b_w, SK.SETTER)
 
+    if VIEWSET:
+        # ---- c_ckgset(r1 = id, r2 = value): the stock's generic setter (the knob's view stores); clobbers r0-r3, r12
+        a.label("c_ckgset")
+        imm32(0, GSET_OBJ)
+        E(b_w, GSET)
+
     # ---- c_ckfx (the FX view's slot 4: view, knob, delta): Clear + knob = the page's send to 0
     a.label("c_ckfx")
     E(cmp_imm, 1, 8)
@@ -87,6 +99,8 @@ def arm_code(base, L, prev):
     E(cmp_imm, 0, 0)
     bc("kf_p", "eq")
     E(bl, L["c_fxpage"])
+    if VIEWSET:
+        E(mov_reg, 4, 0)                                                  # r4 = the page
     E(movs_imm, 2, F.IDX_REV_SEND)
     E(cmp_imm, 0, F.PAGE_DELAY)
     E(b_cond, "kf_s", "ne")
@@ -96,6 +110,16 @@ def arm_code(base, L, prev):
     E(adds_imm8, 1, F.GRP_TRACK)
     E(movs_imm, 3, 0)
     E(bl, "c_ckset")
+    if VIEWSET:                                                           # and the knob LED's view store, as the stock's knob writes it
+        E(movs_imm, 1, ID_REV0)
+        E(cmp_imm, 4, F.PAGE_DELAY)
+        E(b_cond, "kf_g", "ne")
+        E(movs_imm, 1, ID_DEL0)
+        a.label("kf_g")
+        E(raw, h(0x9A01))                                                 # ldr r2, [sp, #4]: the knob = the track
+        E(adds_reg, 1, 1, 2)
+        E(movs_imm, 2, 0)
+        E(bl, "c_ckgset")
     E(pop_list, [0, 1, 2, 4], pc=True)
     a.label("kf_p")
     E(raw, popw([0, 1, 2, 4], lr=True))
@@ -141,6 +165,25 @@ def arm_code(base, L, prev):
     E(lsls_imm, 0, 0, 2)
     imm32(6, PRESET_TAB)
     E(adds_reg, 6, 6, 0)                                                  # r6 = the preset's four values
+    if SINGLE:                                                            # this knob only: its preset value, and RH12's copy of it if the
+        E(ldrb_reg, 6, 6, 5)                                              # track uses RH12's values (its bit kept)
+        E(mov_reg, 3, 6)
+        E(mov_reg, 2, 5)
+        E(adds_imm8, 2, SK.IDX_SC0)
+        E(mov_reg, 1, 4)
+        E(adds_imm8, 1, SK.GRP_TRACK)
+        E(bl, "c_ckset")
+        E(cmp_imm, 7, 0)
+        bc("ks_x", "eq")
+        E(ldrb_imm, 0, 7, SK.B_BITS)
+        E(lsrs_reg, 0, 4)
+        E(lsls_imm, 0, 0, 31)
+        bc("ks_fix", "eq")
+        E(lsls_imm, 0, 4, 2)
+        E(adds_reg, 0, 0, 5)
+        E(adds_reg, 0, 0, 7)
+        E(strb_imm, 6, 0, SK.B_VAL)
+        E(b, "ks_fix")
     E(movs_imm, 5, 0)
     a.label("ks_l")
     E(ldrb_reg, 3, 6, 5)
@@ -161,6 +204,24 @@ def arm_code(base, L, prev):
     E(strb_imm, 0, 7, SK.B_BITS)
     E(b, "ks_fix")
     a.label("ks_c")                                                       # K6-K8: the compressor's factory values
+    if SINGLE:                                                            # this knob only (RH12's copy of it if the compressor is ours)
+        E(subs_imm8, 5, 5)                                                # r5 = 0 soft clip, 1 attack, 2 release
+        imm32(0, t_cdef)
+        E(ldrb_reg, 6, 0, 5)                                              # the value
+        E(adds_reg, 1, 0, 5)
+        E(ldrb_imm, 2, 1, 3)                                              # its index
+        E(mov_reg, 3, 6)
+        E(movs_imm, 1, SK.GRP_MASTER)
+        E(bl, "c_ckset")
+        E(cmp_imm, 7, 0)
+        bc("ks_x", "eq")
+        E(ldrb_w, 0, 7, SK.B_COMP)
+        E(cmp_imm, 0, 0)
+        bc("ks_fix", "eq")
+        E(adds_reg, 0, 7, 5)
+        E(adds_imm8, 0, SK.B_CVAL)
+        E(strb_imm, 6, 0, 0)
+        E(b, "ks_fix")
     E(movs_imm, 5, 0)
     a.label("ks_cl")
     imm32(0, t_cdef)
@@ -188,8 +249,10 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, single=False, viewset=False):
     """Append the code; slot 4 of the FX view's vtable and of the track views' container (in front of fxkeys' / sckn's)."""
+    global SINGLE, VIEWSET
+    SINGLE, VIEWSET = single, viewset
     import rhbuild
     BASE = rhbuild.BASE
     u = lambda a_: struct.unpack_from("<I", img, a_ - BASE)[0]

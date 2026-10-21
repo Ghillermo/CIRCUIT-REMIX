@@ -1,4 +1,4 @@
-# Circuit Remix Alpha 0.0 — manual
+# Circuit Remix Alpha 0.01 — manual
 
 [English](MANUAL_EN.md)
 
@@ -23,7 +23,7 @@ Parado, Shift + Play sin cuenta atrás es el del original (reproducir desde dond
 |---|---|
 | **Shift + pad de pista** (fila 1) | mute de esa pista en el compás siguiente (el pad parpadea; otra vez = cancelar; parado, al momento) |
 | **Shift + knob** (página de niveles) | a la derecha = nivel 100; a la izquierda = 0. Grabando, queda como automatización |
-| **Shift + pads 9-16** | la escena actual se repite 1-8 veces (con Shift la fila 2 en amarillo, el elegido en verde; las escenas con reglas de cadena, melocotón) |
+| **Shift + pads 9-16** | la escena actual se repite 1-8 veces (con Shift la fila 2 en amarillo, el elegido en verde; las escenas con reglas de cadena, melocotón). Sonando, con Shift, la vuelta que suena se ve en blanco; en la última, el pad verde parpadea |
 
 El pad 9 sin Shift sigue siendo el Mute Recall del original.
 
@@ -36,6 +36,22 @@ El pad 9 sin Shift sigue siendo el Mute Recall del original.
 
 Con un paso mantenido, el pad de sample es el sample flip del original. Desde el Mixer, Clear + pista hace lo del original.
 
+### Página Stock+ de los knobs (desde Alpha 0.01)
+**Pulsa otra vez el botón de la pista elegida** (en sus vistas): sus 8 knobs pasan a la página Stock+; otra vez, vuelven a la de stock. Mientras está en Stock+, el botón de la pista parpadea en blanco. La página es por pista y se queda hasta apagar.
+
+| Knob | En la página Stock+ |
+|---|---|
+| K1 | ★ cantidad de la envolvente de tono: centro = nada; a la derecha cada golpe empieza más agudo, a la izquierda más grave (hasta ±24 semitonos), y vuelve a su nota |
+| K2 | ★ lo que tarda en volver a la nota (de 5 ms a 4 s) |
+| K3 | ★ velocidad del LFO de tono (de 0,05 a 30 Hz) |
+| K4 | ★ profundidad del LFO de tono (de 0 a 24 semitonos) |
+| K5-K8 | sin función todavía (apagados) |
+
+- **Shift + knob = ajuste fino**, como en los knobs de stock. **Clear + knob** = su valor por defecto (K1 al centro, K4 a 0).
+- K1-K4 en blanco, con el brillo según su valor (K1: la distancia al centro).
+- Se guarda con el proyecto; un proyecto sin estos valores suena sin modulación. Clear + botón de la pista los deja por defecto y Duplicate + pista A, pista B los copia.
+- El tono de cada voz se recalcula unas 190 veces por segundo y al empezar cada golpe: con una caída muy corta (K2 a la izquierda del todo) o un LFO muy rápido puede notarse escalonado.
+
 ## 4. Vista Note
 | Gesto | Qué hace |
 |---|---|
@@ -47,9 +63,9 @@ Al soltar Shift, el teclado toca la escala: **una iteración por fila** (dos si 
 ## 5. Pattern Settings
 | Gesto | Qué hace |
 |---|---|
-| **Pad 26** (naranja) | Nudge: el patrón se reescribe para que su primer paso sea el 1 (pasos y automatización rotan; suena igual) |
+| **Pad 26** (azul) | Nudge: el patrón se reescribe para que su primer paso sea el 1 (pasos y automatización rotan; suena igual) |
 | **Pad 27 / 28** | órdenes de reproducción **fractal** (1 · 1 2 · 1 2 3 …) y **deconstruido** (1 6 11 16 · 2 7 12 13 · …); un pad de dirección vuelve al original |
-| **Pad 25** (melocotón) | vista de probabilidad, modo 2: elige un paso; **fila 3 = dinámicas** (velocity y retraso dentro del paso), **fila 4, pads 25-28 = mutación del sample** (a veces suena el vecino de su fila o el de la otra fila de su página) |
+| **Pad 25** (gris) | vista de probabilidad, modo 2: elige un paso; **fila 3 = dinámicas** (velocity y retraso dentro del paso; **con Record, cada paso con dinámicas que suena queda escrito** con la velocity y el micropaso con que sonó, y pierde sus dinámicas), **fila 4, pads 25-28 = mutación del sample** (a veces suena el vecino de su fila o el de la otra fila de su página) |
 | **Pattern Settings dos veces** | vista de probabilidad, modo 1: **fila 4 = frecuencia** del paso (suena una de cada n pasadas) |
 | **Shift + pad 25** | arpegiador de la pista y patrón encendido / apagado (verde / gris con Shift) |
 | **Shift + pads 27-32** | orden del arpegio: fractal, deconstruido, arriba, abajo, ping-pong, aleatorio |
@@ -83,18 +99,38 @@ Con Shift, el brillo de cada knob muestra el valor de su parámetro. Los paráme
 | Knob | Qué mueve |
 |---|---|
 | K1-K4 | ataque, hold, decay y profundidad del sidechain de la pista elegida (la del último pad de preset tocado) |
+| K5 | umbral del compresor master (a tope = el del stock; a la izquierda comprime desde más abajo) |
 | K6 | soft clip del compresor master (derecha = encendido) |
 | K7 / K8 | ataque / release del compresor master |
 
-Un pad de preset devuelve la pista a ese preset. **Clear + K1-K4** = los valores de su preset; **Clear + K6-K8** = el compresor de fábrica. El brillo muestra el valor. Se guarda con el proyecto. El compresor solo se oye si está encendido (Advanced Setup).
+Un pad de preset devuelve la pista a ese preset. **Clear + K1-K4** = los valores de su preset; **Clear + K6-K8** = el compresor de fábrica; **Clear + K5** = el umbral del stock. Cada Clear + knob afecta solo a ese knob. El brillo muestra el valor. Se guarda con el proyecto. El compresor solo se oye si está encendido (Advanced Setup).
 
-## 9. Vista Projects: copiar proyectos (solo Alpha 0.0)
+## 9. Vista Projects: copiar proyectos (no en Alpha 0.01S)
 Con el transporte parado:
 1. **Duplicate + pad con proyecto (A)**: parpadea en amarillo.
 2. **Duplicate + pad vacío (B)**: copia A en B (verde ~1,5 s y luego el color de A). B puede estar en este pack o en otro: elige A, carga otro pack y Duplicate + un pad vacío.
 3. **Duplicate + un pad con proyecto**: parpadea en blanco (pregunta); **Duplicate + el mismo pad** antes de ~5 s lo sobrescribe.
 
-Nunca sobrescribe el proyecto cargado ni escribe en el pack de la memoria interna (rojo + LED de Save rojo). Alpha 0.0S no tiene esta función.
+Nunca sobrescribe el proyecto cargado ni escribe en el pack de la memoria interna (rojo + LED de Save rojo). Alpha 0.01S no tiene esta función.
+
+**Diferencias con Save + pad** (el guardado del stock, que guarda en cualquier pad):
+| | Duplicate + A, Duplicate + B | Save + pad |
+|---|---|---|
+| Qué copia | el proyecto A **tal como está guardado** en la tarjeta | el proyecto **cargado, tal como está en memoria** (con los cambios sin guardar) |
+| Hay que cargar A | no: lo que tienes cargado (y sus cambios sin guardar) se queda | sí: solo guarda el proyecto cargado |
+| Desde otro pack | sí: eliges A, cargas otro pack y lo copias ahí | — (lo que guarda es lo cargado) |
+| Si B tiene proyecto | pregunta (parpadeo blanco) y nunca toca el proyecto cargado | como el stock |
+| Transporte | solo parado | como el stock |
+
+### Packs (Projects dos veces): borrar un pack (no en Alpha 0.01S)
+Con el transporte parado: **Clear + el pad de un pack** = pregunta (parpadea en rojo ~5 s); **Clear + el mismo pad** antes de ~5 s = borra el pack de la tarjeta (verde ~1,5 s). Nunca el pack cargado, ni el de la memoria interna, ni un hueco vacío.
+
+### Sample Rec: copiar un sample (no en Alpha 0.01S)
+Con el transporte parado:
+1. **Duplicate + hueco con sample (A)**: parpadea en amarillo (Duplicate + A otra vez = olvidarlo).
+2. **Duplicate + hueco B** (de este pack o, tras cargar otro pack, de ese): copia el sample de A en B y B suena al momento (verde ~1,5 s). Si B tiene sample, parpadea en blanco y **Duplicate + B** otra vez antes de ~5 s lo sobrescribe.
+
+Rojo = no se ha podido (memoria de samples llena, el aparato ocupado o el pack interno).
 
 ## 10. Setup (Shift + Save)
 | Gesto | Qué hace |

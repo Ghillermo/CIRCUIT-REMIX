@@ -27,6 +27,9 @@ OFF = {                                    # module -> (offset, length) in the t
     "drumarp": (232, 68),                  # "AD", sum, the arpeggiator's setting of each track and pattern (8 x 8)
     "cscale": (300, 28),                   # "CS", sum, the custom scale of each track (3 B: bits 1..24 = the intervals)
     "trkcopy": (328, 212),                 # "TS", each track's photo at the load: 25 parameters, the selected sample
+    "mfsess": (540, 4),                    # "MF", the master filter's resonance, its check byte (written when the project is saved)
+    "cthresh": (544, 4),                   # "TH", the compressor's threshold (0..127, 127 = the stock's), its check byte
+    "stockplus": (548, 132),               # (RH32) "SP", a check byte, 0, then 8 tracks x 8 halfwords: the Stock+ knob page's values
 }
 
 

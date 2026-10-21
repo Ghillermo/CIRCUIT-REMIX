@@ -11,7 +11,7 @@ NAME = "RH19"
 
 def build(name=NAME, arp_rec=False, **kw):
     b = build_rh18.build(name, arp_rec, **kw)
-    b.add("clrknob", clrknob)
+    b.add("clrknob", clrknob, **({"single": True, "viewset": True} if kw.get("rh30") else {}))
     return b
 
 

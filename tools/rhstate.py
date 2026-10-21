@@ -40,6 +40,12 @@ OFF = {                                    # module -> (offset, length) inside t
     "sesscopy": (156, 12),                 # the project copy: tag, source, its pack, the question + time, the last copy + pack, colour, status, time
     "kbright": (168, 26),                  # the knob LEDs overlay of the frame: [0] knobs (bit k), [1..8] values, [10..25] colour codes
     "pgmch": (154, 1),                     # the Setup view: 0, 1 the listen channel shown, 2 the output channel shown
+    "pkdel": (194, 8),                     # the pack delete: tag, the pack asked about (0x80 | p) + time, the last delete (0x80 | p), status, time
+    "mfsess": (214, 1),                    # 0xC1 = a project was loaded: the LED task applies its resonance once
+    "mfsess2": (215, 1),
+    "cthresh": (216, 2),                   # (RH30) the compressor threshold applied + 0x80 (0 unknown), 0xB1 = core 0 holds another program                   # (RH30, mfsess track) the resonance the LED task last saw + 0x80 (0 = none yet)
+    "stockplus": (218, 4),                 # (RH32) + 0 the tracks on the Stock+ page (bit t), + 1 the tracks to push to core 1, + 2 the round, + 3 Duplicate's source + 1
+    "smpcopy": (202, 12),                  # the sample copy: tag, source + 1, its pack, the slot asked about + 1, time, the last copy + 1, its pack, status, time
 }
 
 

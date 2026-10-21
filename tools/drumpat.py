@@ -59,6 +59,16 @@ DYN = ((0, 0, 0, 0), (-2, 2, 0, 0), (-2, 2, 0, 32), (0, 0, 0, 32), (-1, 3, 0, 32
 MUT = ((0, 0), (0, 4), (4, 0), (2, 2))
 LED_CALLS = CI.LED_CALLS
 LIS_VT = 0x080696A0                                          # (v2) the class of the steps' listener (slot 0 = 0x08048208)
+ROWFIX = False                                               # RH30 (install(rowfix=True)): slot 8 of the probability view (PROB_LISTEN, its change
+                                                             # callback) repaints row 3 with the stock's probability straight into the LED buffer, at
+                                                             # any time on the device: our rows drawn again after it (the user: «dynamics apply, but
+                                                             # they are not being displayed»; the mutate row, which it does not touch, showed)
+
+
+RECDYN = False                                               # RH31 (install(recdyn=True)): with Record on, a step played with dynamics gets them written
+                                                             # in (its velocity byte, its hit moved to the later micro step, in the pattern and in both
+                                                             # copies of ST1) and its dynamics cleared (the user, 2026-10-21: «with Record on, write each
+                                                             # played step's dynamics (velocity and micro step) into the step, as on the Tracks»)
 
 
 def pushw(regs, lr=False): return h(0xE92D) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
@@ -483,6 +493,22 @@ def arm_code(base, L, prev, v2=False):
     E(adds_imm8, 0, 1)
     E(mov_reg, 3, 0)
     a.label("pl_go")
+    if RECDYN:                                                            # Record on: the dynamics written into the step
+        E(push_list, [3])
+        E(mov_reg, 0, 8)
+        E(movs_imm, 1, 7)
+        E(ands_reg, 0, 1)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "pl_nr", "eq")
+        E(mov_reg, 0, 5)
+        E(ldr_sp, 1, 8 + 4)
+        E(mov_reg, 2, 6)
+        E(ldr_sp, 3, 12 + 4)
+        E(lsls_imm, 3, 3, 4)
+        E(raw, h(0x444B))                                                 # add r3, r9: micro step << 4 | the delay
+        E(bl, "c_dqrec")
+        a.label("pl_nr")
+        E(pop_list, [3])
     E(push_list, [3])
     E(bl, "c_dqstock0")                                                   # the stock's call without the hit
     E(pop_list, [3])
@@ -536,6 +562,77 @@ def arm_code(base, L, prev, v2=False):
     a.label("pl_x")
     E(raw, popw([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], lr=True))
     E(raw, RET)
+
+    if RECDYN:
+        # ---- c_dqrec(r0 = pattern, r1 = step, r2 = velocity, r3 = micro step << 4 | delay; r4 = the player): with Record on, the step takes the
+        #      velocity and its hit the later micro step, in the pattern and in both copies of ST1 when they hold this pattern; its dynamics cleared
+        a.label("c_dqrec")
+        E(raw, pushw([4, 5, 6, 7, 8, 9, 10, 11], lr=True))
+        E(mov_reg, 8, 0)                                                  # r8 = pattern
+        E(mov_reg, 9, 1)                                                  # r9 = step
+        E(mov_reg, 10, 2)                                                 # r10 = velocity
+        E(mov_reg, 11, 3)                                                 # r11 = micro << 4 | delay
+        imm32(0, TRANSPORT)
+        E(movs_imm, 1, 1)
+        E(bl, PARAM_GET)
+        E(ldrb_imm, 0, 0, 0)
+        E(cmp_imm, 0, 0)
+        bc("rc_x", "eq")                                                  # not recording
+        imm32(0, DP0)
+        E(subs_reg, 0, 4, 0)
+        imm32(1, DP_SZ)
+        E(raw, udiv(5, 0, 1))                                             # r5 = the track
+        E(mov_reg, 0, 5)                                                  # the stores first: c_pmfind compares them with the pattern
+        E(bl, L["c_pmfind"])
+        E(mov_reg, 1, 8)
+        E(cmp_reg, 0, 1)
+        E(b_cond, "rc_st", "eq")
+        E(movs_imm, 6, 0)                                                 # r6 = ST1 when it holds this pattern, else 0
+        a.label("rc_st")
+        E(mov_reg, 0, 9)
+        E(lsls_imm, 0, 0, 3)
+        E(mov_reg, 1, 8)
+        E(adds_reg, 0, 0, 1)                                              # r0 = the step
+        E(mov_reg, 1, 10)
+        E(strb_imm, 1, 0, 3)                                              # the velocity
+        E(mov_reg, 1, 11)
+        E(lsrs_imm, 2, 1, 4)                                              # r2 = micro step
+        E(movs_imm, 3, 15)
+        E(ands_reg, 1, 3)                                                 # r1 = the delay
+        E(ldrb_imm, 3, 0, 2)                                              # the micro steps' mask
+        E(cmp_imm, 1, 0)
+        E(b_cond, "rc_m", "eq")
+        E(movs_imm, 7, 1)
+        E(lsls_reg, 7, 2)
+        E(bics_reg, 3, 7)
+        E(adds_reg, 2, 2, 1)
+        E(movs_imm, 7, 1)
+        E(lsls_reg, 7, 2)
+        E(orrs_reg, 3, 7)
+        E(strb_imm, 3, 0, 2)
+        a.label("rc_m")
+        E(mov_reg, 7, 3)                                                  # r7 = the new mask
+        E(mov_reg, 0, 8)                                                  # our byte: the dynamics cleared
+        E(movs_imm, 1, DQ_OFF >> 2)
+        E(lsls_imm, 1, 1, 2)
+        E(adds_reg, 0, 0, 1)
+        E(mov_reg, 1, 9)
+        E(ldrb_reg, 2, 0, 1)
+        E(movs_imm, 3, 7)
+        E(bics_reg, 2, 3)
+        E(strb_reg, 2, 0, 1)
+        E(cmp_imm, 6, 0)
+        bc("rc_x", "eq")                                                  # the stores hold another pattern: the pattern only
+        for o in (0xC, 0x10):
+            E(ldr_imm, 0, 6, o)
+            E(mov_reg, 1, 9)
+            E(mov_reg, 2, 10)
+            E(strb_reg, 2, 0, 1)                                          # the velocity group (words 0-7)
+            E(adds_imm8, 0, 64)
+            E(strb_reg, 7, 0, 1)                                          # the micro steps' group (words 16-23)
+        a.label("rc_x")
+        E(raw, popw([4, 5, 6, 7, 8, 9, 10, 11], lr=True))
+        E(raw, h(0x4770))                                                 # bx lr
 
     # ---- c_dqstock0 (inside c_dqplay: r4 = player, the caller's frame above): the stock's slot 2 with this micro step's bit cleared, then put back
     a.label("c_dqstock0")
@@ -850,6 +947,22 @@ def arm_code(base, L, prev, v2=False):
     E(raw, h(0xF85D) + h(0xEB04))                                         # ldr lr, [sp], #4
     E(b_w, prev["pbuf"])
 
+    if ROWFIX:
+        # c_dqlis (the probability view's slot 8: view, ...): the stock's repaint of row 3, then our rows; the stock's r0 returned
+        a.label("c_dqlis")
+        E(push_list, [0, 1, 4], lr=True)
+        E(bl, prev["plis"])
+        E(str_sp, 0, 4)
+        E(bl, L["c_ciok"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "li_x", "eq")
+        E(ldr_sp, 0, 0)
+        E(bl, "c_dqrows")
+        a.label("li_x")
+        E(ldr_sp, 0, 4)
+        E(raw, h(0xB002))                                                 # add sp, #8
+        E(pop_list, [4], pc=True)
+
     # c_dqledtask (the LED task's calls): the chain; one LED pass less to "on the screen"; stopped: the passes and the kept hits to 0
     a.label("c_dqledtask")
     E(push_list, [3, 4], lr=True)
@@ -930,14 +1043,21 @@ def arm_code(base, L, prev, v2=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, v2=False):
+def install(img, report, base_addr, v2=False, rowfix=False, recdyn=False):
     """Append the code; slot 2 of the track players, slots 0 / 7 of Pattern Settings and of the probability view, the LED task calls."""
     import rhbuild
     BASE = rhbuild.BASE
     u = lambda a_: struct.unpack_from("<I", img, a_ - BASE)[0]
     lab = lambda m, k: int(report[m]["labels"][k], 16)
     L = dict(c_rst=lab("rhstate", "c_rst"), c_rrt=lab("rhrec", "c_rrt"), c_ciok=lab("countin", "c_ciok"), c_cishift=lab("countin", "c_cishift"))
+    global ROWFIX, RECDYN
+    ROWFIX, RECDYN = rowfix, recdyn
+    if recdyn:
+        L["c_pmfind"] = lab("playmode", "c_pmfind")
     old = dict(play=u(DP_VT + 8), pspad=u(PS_VT), psled=u(PS_VT + 28), ppad=u(PROB_VT), pbuf=u(PROB_VT + 28))
+    if rowfix:
+        old["plis"] = u(PROB_VT + 0x20)
+        assert old["plis"] == PROB_LISTEN | 1, hex(old["plis"])
     prev = {k: v & ~1 for k, v in old.items()}
     prev["ledtask"] = rhbuild.bl_target(img, LED_CALLS[0])
     if v2:
@@ -953,6 +1073,8 @@ def install(img, report, base_addr, v2=False):
         rhbuild.patch_word(img, addr, old[k], labels[nm] | 1)
     if v2:
         rhbuild.patch_word(img, LIS_VT, old["lis"], labels["c_dqsweep"] | 1)
+    if rowfix:
+        rhbuild.patch_word(img, PROB_VT + 0x20, old["plis"], labels["c_dqlis"] | 1)
     for c in LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_dqledtask"]))
     report["drumpat"] = dict(prev={k: hex(v) for k, v in prev.items()}, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})

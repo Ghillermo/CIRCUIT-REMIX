@@ -59,6 +59,9 @@ def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 <<
 
 
 V2 = False                                               # RH18 (install(v2=True)): Shift + Play from stopped keeps its Shift through the count-in
+BPM0 = False                                             # RH29 (install(bpm0=True)): the beat from p0 of the tempo store, the project's BPM (the Tempo
+                                                         # view's knob 1 writes p0; p1, which RH02-RH28 read, is not the tempo: «pre count doesnt get
+                                                         # the right beat», the user, 2026-10-20; the same fix as the Tracks' RC2.03 use_bpm0)
 O_SH = rhstate.OFF["countin"][0] + 3                      # (v2) Shift held at the kept press
 WPTR, COMMIT = 0x0803FD26, 0x0803FBEC
 
@@ -246,7 +249,7 @@ def arm_code(base, prev, c_rst):
     E(cmp_imm, 0, 0)
     E(b_cond, "cl_end", "ne")                                             # started otherwise: no count
     imm32(0, TEMPO)
-    E(movs_imm, 1, 1)
+    E(movs_imm, 1, 0 if BPM0 else 1)
     E(bl, "c_cinew")
     E(cmp_imm, 0, 30)
     E(b_cond, "cl_bt", "hs")
@@ -338,10 +341,10 @@ def arm_code(base, prev, c_rst):
     return a.assemble()
 
 
-def install(img, report, base_addr, v2=False):
+def install(img, report, base_addr, v2=False, bpm0=False):
     """Append the code; the head of the button chain, the two LED task calls."""
-    global V2
-    V2 = v2
+    global V2, BPM0
+    V2, BPM0 = v2, bpm0
     import rhbuild
     BASE = rhbuild.BASE
     c_rst = int(report["rhstate"]["labels"]["c_rst"], 16)

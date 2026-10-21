@@ -24,7 +24,9 @@ page, buttons 20 / 19, LEDs 52 / 51; the stock ignores Shift + 19 / 20 there); [
     track = B, the next one = C; Clear + a pattern with a rule = the rule gone, without one = the stock's clear (and its play order, byte 7);
     LEDs: a pattern with a rule white, the one being edited yellow, its B green, its C red;
   * the Mixer (0x2004E090, not in its second page, mode 7): a saved scene whose tracks run a rule peach, the current one brighter; the track pads
-    of the tracks that run one blink; Shift + pads 9-16 = 1-8 repeats of the current scene (Shift held: row 2 yellow, the repeats green).
+    of the tracks that run one blink; Shift + pads 9-16 = 1-8 repeats of the current scene (Shift held: row 2 yellow, the repeats green; with
+    iterled, RH29, the user's request of 2026-10-20: while playing a scene of 2+ repeats, the one now playing white, the last blinking white /
+    green).
 """
 from __future__ import annotations
 
@@ -73,6 +75,7 @@ MAX_N, REP_MAX = 8, 8
 COL_RULE, COL_OFF, COL_A, COL_B, COL_C = 0x01, 0x09, 0x2F, 0x1E, 0x55      # (Tracks 0x01, 0x02, 0x2D, 0x17, 0x53)
 COL_SHIFT, COL_MODE, COL_SEL, COL_SC, COL_SCCUR = 0x2F, 0x1E, 0x1E, 0x75, 0x74   # (Tracks 0x2D, 0x17, 0x17, 0x6B, 0x6A)
 KNOB_ON = 0x01
+COL_ITER = 0x01                                                            # (RH29) white: the repeat now playing
 LED_KNOB0 = 60
 LED_CALLS = CI.LED_CALLS
 INV = dict(eq="ne", ne="eq", lo="hs", hs="lo", hi="ls", ls="hi", ge="lt", lt="ge", gt="le", le="gt", mi="pl", pl="mi")
@@ -88,7 +91,7 @@ def pushw(regs, lr=False): return h(0xE92D) + h(sum(1 << r for r in regs) | (1 <
 POP_LR, BX_LR = h(0xF85D) + h(0xEB04), h(0x4770)
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, iterled=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -1244,6 +1247,29 @@ def arm_code(base, L, prev):
     E(adds_imm8, 4, 1)
     E(cmp_imm, 4, 8)
     E(b_cond, "mr_l", "lo")
+    if iterled:                                                           # the repeat now playing: pad 9 + n white (the last one blinks
+        E(cmp_imm, 7, 0)                                                  # white / green); only playing, with 2 repeats or more
+        bc("lt_x", "eq")
+        imm32(0, PLAY_STORE)
+        E(movs_imm, 1, 0)
+        E(bl, PARAM_GET)
+        E(ldrb_imm, 0, 0, 0)
+        E(cmp_imm, 0, 0)
+        bc("lt_x", "eq")
+        E(ldrb_imm, 4, 6, S_REPC)                                         # r4 = n (0 = the first time)
+        E(cmp_reg, 4, 7)
+        bc("lt_x", "hi")
+        E(b_cond, "mi_w", "ne")
+        imm32(0, HAL_TICK)
+        E(ldr_imm, 0, 0, 0)
+        E(lsls_imm, 0, 0, 23)
+        bc("lt_x", "pl")
+        a.label("mi_w")
+        E(movs_imm, 2, COL_ITER)
+        E(mov_reg, 0, 4)
+        E(adds_imm8, 0, 8)
+        E(lsls_imm, 0, 0, 1)
+        E(strh_reg, 2, 5, 0)
     a.label("lt_x")
     E(raw, popw([4, 5, 6, 7, 8, 9, 10, 11], pc=True))
 
@@ -1324,9 +1350,9 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, iterled=False):
     """Append the code; the sequencer's hooks, the scene save / copy, the end of «apply the record», the Patterns view's pads, the head of the
-    button chain, the Mixer's pads, the two LED task calls."""
+    button chain, the Mixer's pads, the two LED task calls.  iterled (RH29): in the Mixer with Shift, the repeat now playing is shown."""
     import rhbuild
     BASE = rhbuild.BASE
     u = lambda a_: struct.unpack_from("<I", img, a_ - BASE)[0]
@@ -1334,7 +1360,7 @@ def install(img, report, base_addr):
     L = dict(c_rst=lab("rhstate", "c_rst"), c_rrt=lab("rhrec", "c_rrt"), c_ciok=lab("countin", "c_ciok"), c_cishift=lab("countin", "c_cishift"))
     prev = dict(pad=u(PV_VT) & ~1, btn=rhbuild.bw_target(img, CI.BTN_ENTRY), mixpad=u(MIX_VT) & ~1, ledtask=rhbuild.bl_target(img, LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    code, labels = arm_code(base_addr, L, prev, iterled)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])

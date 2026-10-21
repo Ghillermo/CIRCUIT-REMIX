@@ -1,6 +1,8 @@
 # Circuit Remix
 
-> 📢 **Alpha 0.0**: un port de las funciones de [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) al **Novation Circuit Rhythm**, con características exclusivas. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.0/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge ([cómo](#instalar-sin-compilar-toolsrm_uploaderhtml)). Novedades: [`CHANGELOG.md`](CHANGELOG.md).
+> 📢 **Alpha 0.01**: un port de las funciones de [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) al **Novation Circuit Rhythm**, con características exclusivas. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge ([cómo](#instalar-sin-compilar-toolsrm_uploaderhtml)). Novedades: [`CHANGELOG.md`](CHANGELOG.md).
+
+**⬇️ Descarga del parche de firmware (instalador): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)** · [todas las versiones](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
 Nota legal: el firmware proporcionado por Novation es propietario, no está permitido instalarlo en cualquier dispositivo que no sea Circuit Rhythm. Este instalador lo comprueba y no permite instalar en ningún otro dispositivo.
 
@@ -16,14 +18,14 @@ Proyecto desarrollado usando Claude (Anthropic).
 > - Haz una copia completa de la SD (proyectos, packs y samples) antes de enviar cualquier versión del mod.
 > - No trabajes con proyectos importantes guardados en el aparato mientras lo pruebas.
 > - Es una versión **alfa**: las funciones se han comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria) y en parte en el aparato; podría haber problemas que dañen proyectos o samples guardados.
-> - Si prefieres no arriesgar la tarjeta, usa la **versión más segura, Alpha 0.0S**: es Alpha 0.0 sin ninguna función que cree, modifique o borre ficheros en la SD por su cuenta (no tiene la copia de proyectos).
+> - Si prefieres no arriesgar la tarjeta, usa la **versión más segura, Alpha 0.01S**: es Alpha 0.01 sin ninguna función que cree, modifique o borre ficheros en la SD por su cuenta (no tiene la copia de proyectos, el borrado de packs ni la copia de samples).
 > - El mod nunca escribe en el pack de la memoria interna: sus funciones de escritura lo rechazan (LED de Save en rojo). Lo que guarda el firmware original sigue funcionando como siempre.
 > - El bootloader de Novation no se toca: **Sample Rec + Samples + Note** al encender permite volver al firmware oficial.
 
 ## Repositorio público
 
 Este repositorio contiene **solo el trabajo propio del proyecto**:
-- **Herramientas:** los builders de las dos versiones, el ensamblador Thumb, el parcheador y el instalador web.
+- **Herramientas:** los builders de las versiones, el ensamblador Thumb, el parcheador y el instalador web.
 - **Documentación:** el [manual](docs/MANUAL.md) y el [CHANGELOG](CHANGELOG.md).
 - **Manifiestos** de cada versión (`firmware/<versión>/manifest.json`, con los SHA-256 del resultado).
 
@@ -35,8 +37,8 @@ Este repositorio contiene **solo el trabajo propio del proyecto**:
 ### Instalar sin compilar: `tools/rm_uploader.html`
 
 1. **Descarga el firmware oficial** Circuit Rhythm 2.0.1 (build 5706) de Novation: [circuitrhythm-firmware-5706.syx](https://components.novationmusic.com/api/v2/firmwares/169/file). Es el enlace de descarga de Novation Components; la lista completa está en `https://components.novationmusic.com/api/v2/firmwares`, producto `circuit-rhythm`.
-2. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.0/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge (es el mismo [`tools/rm_uploader.html`](tools/rm_uploader.html) del repositorio).
-3. **Elige el `.syx` oficial y la versión**: Alpha 0.0, la versión más segura Alpha 0.0S, u «Oficial» para volver atrás.
+2. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge (es el mismo [`tools/rm_uploader.html`](tools/rm_uploader.html) del repositorio).
+3. **Elige el `.syx` oficial y la versión**: Alpha 0.01, la versión más segura Alpha 0.01S, las anteriores Alpha 0.0 / 0.0S, u «Oficial» para volver atrás.
    - La página comprueba que el fichero es el firmware oficial (SHA-256) y lo parchea en el navegador.
    - Comprueba que el resultado es idéntico, bit a bit, al publicado (SHA-256 de la imagen y del `.syx`).
 4. **Conecta el Circuit Rhythm y pulsa Enviar.** Confirma con **Play** en el aparato.
@@ -49,15 +51,15 @@ La página no contiene código de Novation: solo los bytes del mod y las instruc
 
 ```bash
 python -m pip install -r tools/requirements.txt
-python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version A0.0
+python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version A0.01
 ```
 - El firmware oficial es el **Circuit Rhythm 2.0.1 (build 5706)** de Novation Components, en `.syx` o `.bin`; la herramienta comprueba su SHA-256 (`stock/SHA256SUMS.txt`).
 - Construye la versión en `firmware/<versión>/` y comprueba que el `.syx` es idéntico al publicado (`manifest.json`).
-- `--version A0.0S` = la versión más segura; `--list` enseña las dos; `--all` las construye las dos.
-- `python tools/verify_builds.py` vuelve a construir las dos y las compara con sus manifiestos.
+- `--version A0.01S` = la versión más segura; `--list` enseña las versiones; `--all` las construye todas.
+- `python tools/verify_builds.py` vuelve a construir las versiones y las compara con sus manifiestos.
 - Para enviarlo, lo más sencillo es `tools/rm_uploader.html` con el `.syx` oficial: hace lo mismo en el navegador y comprueba el mismo SHA-256.
 
-## Características (Alpha 0.0)
+## Características (Alpha 0.01)
 
 Manual completo, vista por vista: [`docs/MANUAL.md`](docs/MANUAL.md).
 
@@ -74,15 +76,20 @@ Manual completo, vista por vista: [`docs/MANUAL.md`](docs/MANUAL.md).
 - **Clear + knob = valor por defecto** en las vistas FX y Sidechain.
 - **Arpegiador** (Shift + pads 17-32 de Pattern Settings): orden, resolución, y se graba con Record.
 - **Escala propia** con periodo libre (hasta 24 semitonos).
-- **Copiar proyectos** a otro hueco o a otro pack (vista Projects, Duplicate + A, Duplicate + B; solo Alpha 0.0).
+- **Copiar proyectos** a otro hueco o a otro pack (vista Projects, Duplicate + A, Duplicate + B; no en Alpha 0.01S).
 - **Setup:** MIDI Thru con Merge y Filter; canales propios de Program Change (escucha y salida).
 - Los knobs de Sidechain y de FX con Shift muestran su valor como brillo.
+- **Umbral del compresor master** en K5 de la vista Sidechain (desde Alpha 0.01).
+- **Repetición de escena:** en el Mixer con Shift, la vuelta que suena en blanco (desde Alpha 0.01).
+- **Las dinámicas se graban** en el paso con Record (desde Alpha 0.01).
 
 **Exclusivas de Circuit Remix:**
 - **Copiar una pista a otra:** Duplicate + pista A, luego pista B = B recibe los parámetros y el sample elegido de A.
 - **Restablecer una pista:** Clear + botón de pista = además de los knobs, el resto de parámetros y el sample vuelven a como estaban al cargar el proyecto.
 - **Arpegiador de samples y de notas:** varios pads de sample mantenidos arpegian los samples (cada golpe es un sample flip); en la vista Note, las teclas mantenidas arpegian el sample de la pista; con Record, el arpegio se graba en el patrón.
 - **Escala propia por pista**, con una iteración por fila de pads (dos si caben).
+- **Página Stock+ de los knobs de pista** (desde Alpha 0.01): pulsa otra vez el botón de la pista elegida; K1 / K2 = envolvente de tono (cantidad y caída), K3 / K4 = LFO de tono (velocidad y profundidad), con Shift = ajuste fino; se guarda con el proyecto. Es la primera función con código propio en el DSP de las voces.
+- **Borrar un pack** desde el aparato (Packs: Clear + pack dos veces) y **copiar un sample** a otro hueco, también desde otro pack (Sample Rec: Duplicate + A, Duplicate + B) (desde Alpha 0.01; no en Alpha 0.01S).
 
 Circuit Rhythm, Components y Novation son marcas de Focusrite Audio Engineering Ltd. Este proyecto no está afiliado a ellos.
 
@@ -91,7 +98,9 @@ Circuit Rhythm, Components y Novation son marcas de Focusrite Audio Engineering 
 <a id="english"></a>
 # English
 
-> 📢 **Alpha 0.0**: a port of the [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) features to the **Novation Circuit Rhythm**, with exclusive features. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.0/rm_uploader.zip)** (`rm_uploader.zip`), unzip it and open `rm_uploader.html` in Chrome or Edge. What's new: [`CHANGELOG.md`](CHANGELOG.md).
+> 📢 **Alpha 0.01**: a port of the [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) features to the **Novation Circuit Rhythm**, with exclusive features. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)** (`rm_uploader.zip`), unzip it and open `rm_uploader.html` in Chrome or Edge. What's new: [`CHANGELOG.md`](CHANGELOG.md).
+
+**⬇️ Firmware patch download (installer): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)** · [all versions](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
 Legal note: the firmware provided by Novation is proprietary; installing it on any device other than a Circuit Rhythm is not allowed. This installer checks it and does not allow installing it on any other device.
 
@@ -103,21 +112,21 @@ Developed using Claude (Anthropic).
 > - Make a full copy of the SD card (projects, packs and samples) before sending any version of the mod.
 > - Do not work on important projects stored on the device while you test it.
 > - This is an **alpha**: the features were checked in emulation (the device's code run on a dump of its memory) and partly on the device; there could be problems that damage stored projects or samples.
-> - If you would rather not risk the card, use the **safer build, Alpha 0.0S**: Alpha 0.0 without any feature that creates, changes or deletes files on the SD card by itself (it has no project copy).
+> - If you would rather not risk the card, use the **safer build, Alpha 0.01S**: Alpha 0.01 without any feature that creates, changes or deletes files on the SD card by itself (no project copy, pack delete or sample copy).
 > - The mod never writes to the internal memory pack: its write features refuse it (Save LED red). Saving from the original firmware works as always.
 > - Novation's bootloader is not touched: **Sample Rec + Samples + Note** at power-on lets you go back to the official firmware.
 
 ## Public repository
 
-This repository holds **only the project's own work**: the builders of the two versions, the Thumb assembler, the patcher, the web installer, the [manual](docs/MANUAL_EN.md), the [CHANGELOG](CHANGELOG.md) and each version's manifest (with the SHA-256 of the result).
+This repository holds **only the project's own work**: the builders of the versions, the Thumb assembler, the patcher, the web installer, the [manual](docs/MANUAL_EN.md), the [CHANGELOG](CHANGELOG.md) and each version's manifest (with the SHA-256 of the result).
 
 **It does not include** Novation code or binaries (neither the official firmware nor the patched `.syx` / `.bin`, which contain Novation's firmware: you provide the official firmware, and the installer and the patcher check its SHA-256), device dumps (memory, bootloader; the emulation tests that need them stay in the development repository), or third-party samples or manuals.
 
 ### Install without building: `tools/rm_uploader.html`
 
 1. **Download the official firmware** Circuit Rhythm 2.0.1 (build 5706) from Novation: [circuitrhythm-firmware-5706.syx](https://components.novationmusic.com/api/v2/firmwares/169/file) (Novation Components' download link; the full list is at `https://components.novationmusic.com/api/v2/firmwares`, product `circuit-rhythm`).
-2. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.0/rm_uploader.zip)**, unzip it and open `rm_uploader.html` in Chrome or Edge (the same [`tools/rm_uploader.html`](tools/rm_uploader.html) as in the repository).
-3. **Pick the official `.syx` and the version**: Alpha 0.0, the safer Alpha 0.0S, or “Official” to go back. The page checks that the file is the official firmware (SHA-256), patches it in the browser and checks that the result is bit for bit the published one (SHA-256 of the image and of the `.syx`).
+2. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)**, unzip it and open `rm_uploader.html` in Chrome or Edge (the same [`tools/rm_uploader.html`](tools/rm_uploader.html) as in the repository).
+3. **Pick the official `.syx` and the version**: Alpha 0.01, the safer Alpha 0.01S, the earlier Alpha 0.0 / 0.0S, or “Official” to go back. The page checks that the file is the official firmware (SHA-256), patches it in the browser and checks that the result is bit for bit the published one (SHA-256 of the image and of the `.syx`).
 4. **Connect the Circuit Rhythm and press Send.** Confirm with **Play** on the device.
 
 The page contains no Novation code: only the mod's bytes and the instructions to copy the rest of the official firmware you provide (no run of our own bytes repeats 8 consecutive bytes of the official firmware). **Back up the SD card first.**
@@ -128,16 +137,16 @@ The page contains no Novation code: only the mod's bytes and the instructions to
 
 ```bash
 python -m pip install -r tools/requirements.txt
-python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version A0.0
+python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version A0.01
 ```
-The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.0S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds both and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
+The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.01S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds the versions and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
 
-## Features (Alpha 0.0)
+## Features (Alpha 0.01)
 
 Full manual, view by view: [`docs/MANUAL_EN.md`](docs/MANUAL_EN.md).
 
-**Ported from CIRCUIT-HACKS:** metronome with count-in (Shift + Clear); quantize (Shift + Play while playing); Mixer: mute on the next bar (Shift + track pad), Shift + knob = level 100 / 0, scene repeats (Shift + pads 9-16); Clear + track button = its knobs to default and its automation cleared; Pattern Settings: Nudge (pad 26), fractal and deconstructed orders (pads 27 / 28); per step: frequency, dynamics and sample mutation; pattern chains with rules; Sidechain view knobs (sidechain of the track, soft clip, master compressor attack / release); FX view keys and reverb / delay parameters, master filter resonance, reset; Clear + knob = default in the FX and Sidechain views; arpeggiator (order, rate, recorded with Record); custom scale with a free period; project copy to another slot or pack (Alpha 0.0 only); MIDI Thru Merge / Filter; Program Change channels; knob brightness = value.
+**Ported from CIRCUIT-HACKS:** metronome with count-in (Shift + Clear); quantize (Shift + Play while playing); Mixer: mute on the next bar (Shift + track pad), Shift + knob = level 100 / 0, scene repeats (Shift + pads 9-16); Clear + track button = its knobs to default and its automation cleared; Pattern Settings: Nudge (pad 26), fractal and deconstructed orders (pads 27 / 28); per step: frequency, dynamics and sample mutation; pattern chains with rules; Sidechain view knobs (sidechain of the track, soft clip, master compressor attack / release); FX view keys and reverb / delay parameters, master filter resonance, reset; Clear + knob = default in the FX and Sidechain views; arpeggiator (order, rate, recorded with Record); custom scale with a free period; project copy to another slot or pack (not in Alpha 0.01S); master compressor threshold on K5 of the Sidechain view, the playing scene repeat shown white in the Mixer with Shift, dynamics recorded into the step with Record (since Alpha 0.01); MIDI Thru Merge / Filter; Program Change channels; knob brightness = value.
 
-**Exclusive to Circuit Remix:** copy a track to another (Duplicate + track A, then track B: parameters and selected sample); reset a track (Clear + track button: the other parameters and the sample back to how the project was loaded); sample and note arpeggiator on the sample tracks (each hit a sample flip; in the Note view, the held keys arpeggiate the track's sample; recorded with Record); a custom scale per track, one iteration per pad row.
+**Exclusive to Circuit Remix:** copy a track to another (Duplicate + track A, then track B: parameters and selected sample); reset a track (Clear + track button: the other parameters and the sample back to how the project was loaded); sample and note arpeggiator on the sample tracks (each hit a sample flip; in the Note view, the held keys arpeggiate the track's sample; recorded with Record); a custom scale per track, one iteration per pad row; **the Stock+ track knob page** (since Alpha 0.01: press the selected track's button again; K1 / K2 = pitch envelope amount and decay, K3 / K4 = pitch LFO rate and depth, Shift = fine control; saved with the project; the first feature with its own code in the voices' DSP); **delete a pack** on the device (Packs: Clear + pack twice) and **copy a sample** to another slot, also from another pack (Sample Rec: Duplicate + A, Duplicate + B) (since Alpha 0.01; not in Alpha 0.01S).
 
 Circuit Rhythm, Components and Novation are trademarks of Focusrite Audio Engineering Ltd. This project is not affiliated with them.

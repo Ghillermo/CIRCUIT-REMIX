@@ -11,8 +11,10 @@ NAME = "RH21"
 
 
 def build(name=NAME, **kw):
+    nosd = kw.pop("nosd", False)                       # (Alpha 0.01S) without the functions that write to the card by themselves
     b = build_rh20.build(name, **kw)
-    b.add("sesscopy", sesscopy)
+    if not nosd:
+        b.add("sesscopy", sesscopy)
     return b
 
 

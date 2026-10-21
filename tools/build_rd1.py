@@ -13,9 +13,9 @@ import rdiag  # noqa: E402
 NAME = "RD1"
 
 
-def build(name=NAME):
+def build(name=NAME, dsp=False):
     b = rhbuild.Build(name)
-    b.add("rdiag", rdiag)
+    b.add("rdiag", rdiag, **({"dsp": dsp} if dsp else {}))
     return b
 
 

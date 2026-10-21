@@ -1,7 +1,7 @@
 """Build a Circuit Remix firmware from the OFFICIAL Novation firmware that you provide (the repository does not ship any Novation code; MIT, from
 CIRCUIT-HACKS' patch_official.py).
 
-    python tools/patch_official.py OFFICIAL.syx|OFFICIAL.bin [--version A0.0] [--all] [--list]
+    python tools/patch_official.py OFFICIAL.syx|OFFICIAL.bin [--version A0.01] [--all] [--list]
   1. The official file: the Circuit Rhythm 2.0.1 (build 5706) update as Components serves it (.syx,
      https://components.novationmusic.com/api/v2/firmwares/169/file), or its application image (.bin).
      It is checked against the SHA-256 in stock/SHA256SUMS.txt; another version is refused.
@@ -78,7 +78,7 @@ def build_one(name, module):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("official", type=Path, nargs="?")
-    ap.add_argument("--version", default="A0.0")
+    ap.add_argument("--version", default="A0.01")
     ap.add_argument("--all", action="store_true", help="every version of tools/verify_builds.py")
     ap.add_argument("--list", action="store_true")
     a = ap.parse_args()

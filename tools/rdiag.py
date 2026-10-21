@@ -13,6 +13,17 @@ to PAD bytes and the reply is built in the request buffer.  Commands (status 0 =
   4 info  kind idx pack                   -> exists (op 0), size (op 1)          (the storage task's content API: 0x08045FB4 / 0x08045FCE /
   5 read  kind idx pack off32 len         -> status, done, the bytes (op 6)       0x08046054 / 0x0804607A, the Tracks functions moved)
   6 write kind idx pack off32 len data    -> status (op 7)                        -- writes to the SD card: only with the user's go-ahead
+  3 dspr  core addr32 n (<= NR)           -> status (1 = no such core), n DSP words (6 nibbles each)    (dsp=True only: RD3, the DSP tests)
+  9 dspw  core addr32 value32             -> status                                                       (dsp=True only)
+    The DSP address is the Rhythm's host address: X:a = a, Y:a = a | 0x8000, bits 16-17 = the other spaces (0x30000 + 4 n = the sample
+    table, 0x371D2 = the sample memory's free pointer); read with 0x080314D6(core, addr) -> word << 8, written with 0x08031228(core,
+    value << 8, addr): the stock's own accessors, which take the DSP service's lock (0x08029C8C on 0x20003688).  A write changes the DSP's
+    RAM only (gone at the next power-up or program upload).
+    dsp=2 (RD4): below 0x10000 the stock's 16-bit accessors instead, 0x08031268(core, addr) (command 0x80, under the same lock) and
+    0x08031200(core, value << 8, addr) (command 0x00, the master sender's): the DSP's host handler (core 0 P:$158) takes bit 15 of a
+    16-bit command as the space (Y) and the address as addr & 0x7FFF, while the wide commands 0x88 / 0x08 keep bit 15 in the address
+    (0x810A = Y:$810A, not Y:$10A: seen on the device with RD3, 2026-10-19) and 0x08 leaves the space of the previous command.  The host
+    port has no P space.
 The Tracks-only commands (DSP memory, the DWT watchpoint) are not built here: they stay in CIRCUIT-HACKS.
 """
 from __future__ import annotations
@@ -21,7 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, b, b_cond, b_w, bl, cmp_imm, cmp_reg, ldr_imm, ldrb_imm, ldrb_reg, lsls_imm, lsrs_imm, mov_reg, movs_imm, movt, movw,  # noqa: E402
                    adds_imm8, subs_imm8, pop_list, push_list, raw, h, ands_reg, adds_reg, subs_reg, str_imm, strb_imm, strb_reg, add_sp_imm, sub_sp_imm,
-                   orrs_reg, tst_reg)
+                   orrs_reg, tst_reg, str_sp)
 
 HOOK = 0x08026DE8
 HOOK_CONT = HOOK + 4
@@ -37,6 +48,10 @@ VERSION = 0x5201
 NMAX = 64
 RAW = 160                                        # offset of the raw byte area in the request buffer (read / write)
 PAD = 232                                        # every request is padded to this length (>= RAW + NMAX + some slack)
+DSP_READ, DSP_WRITE = 0x080314D6, 0x08031228
+DSP_RD16, DSP_WR16 = 0x08031268, 0x08031200     # (dsp=2) 16-bit host commands 0x80 / 0x00
+DSP_LOCK, DSP_UNLOCK, DSP_WADDR = 0x08029C8C, 0x08030EB8, 0x20003684   # the service's lock (byte at DSP_WADDR + 4), the cached write address
+NR = 24                                          # DSP words per dspr
 FLASH = (0x08000000, 0x08080000)
 RAM = (0x20000000, 0x20050000)
 INV = {"eq": "ne", "ne": "eq", "lo": "hs", "hs": "lo", "hi": "ls", "ls": "hi"}
@@ -45,7 +60,7 @@ INV = {"eq": "ne", "ne": "eq", "lo": "hs", "hs": "lo", "hi": "ls", "ls": "hi"}
 def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
 
 
-def arm_code(base, router_ptr):
+def arm_code(base, router_ptr, dsp=False):
     a = Asm(base)
     zc = [0]
 
@@ -119,12 +134,12 @@ def arm_code(base, router_ptr):
     for o in range(0, 40, 4): a.emit(str_imm, 0, 7, o)
     a.emit(ldrb_imm, 0, 4, 4); a.emit(movs_imm, 1, 0x40); a.emit(orrs_reg, 1, 0); a.emit(strb_imm, 1, 4, 4)   # cmd | 0x40 (r0 = cmd)
     a.emit(push_list, [0]); a.emit(mov_reg, 0, 4); a.emit(adds_imm8, 0, 6); a.emit(mov_reg, 1, 0); a.emit(pop_list, [0])  # r1 = payload pointer
-    for cmd, lab in ((1, "rc_ping"), (2, "rc_mem"), (4, "rc_info"), (5, "rc_read"), (6, "rc_write")) + (((7, "rc_del"),) if DELETE else ()):
+    for cmd, lab in ((1, "rc_ping"), (2, "rc_mem"), (4, "rc_info"), (5, "rc_read"), (6, "rc_write")) + (((7, "rc_del"),) if DELETE else ())             + (((3, "rc_dspr"), (9, "rc_dspw")) if dsp else ()):
         a.emit(cmp_imm, 0, cmd); bc(lab, "eq")
     a.emit(mov_reg, 0, 1); imm32(1, 0xFFFFFFFF); a.emit(bl, "c_p32"); a.emit(b, "rc_send")   # unknown command: status -1
 
     a.label("rc_ping")
-    a.emit(mov_reg, 0, 1); imm32(1, VERSION + (1 if DELETE else 0) + (0x20 if DEL_PACK else 0)); a.emit(bl, "c_p32")
+    a.emit(mov_reg, 0, 1); imm32(1, VERSION + (1 if DELETE else 0) + (0x10 if dsp else 0) + (0x02 if dsp == 2 else 0) + (0x20 if DEL_PACK else 0)); a.emit(bl, "c_p32")
     a.emit(mov_reg, 1, 6); a.emit(bl, "c_p32"); a.emit(b, "rc_send")
 
     def item_from(off):                          # the item {kind, idx, pack} from buf[off..off+2] into the frame; pack 0x7F -> 0xFF
@@ -197,6 +212,60 @@ def arm_code(base, router_ptr):
         a.label("rd_bad")
         a.emit(mov_reg, 0, 4); a.emit(adds_imm8, 0, 6); imm32(1, 0xFFFFFFFE); a.emit(bl, "c_p32"); a.emit(b, "rc_send")
 
+    if dsp:
+        def core_addr():                         # [28] = core (buf[6]), [16] = addr (g32(buf + 7)); a core above 1 -> status 1
+            a.emit(ldrb_imm, 0, 4, 6); a.emit(str_imm, 0, 7, 28); a.emit(cmp_imm, 0, 1); bc("ds_bad", "hi")
+            a.emit(mov_reg, 0, 4); a.emit(adds_imm8, 0, 7); a.emit(bl, "c_g32"); a.emit(str_imm, 0, 7, 16)
+
+        # dspr: core, addr, n = buf[15] (<= NR) -> status 0, n words as 6 nibbles
+        a.label("rc_dspr")
+        core_addr()
+        a.emit(ldrb_imm, 0, 4, 15); a.emit(cmp_imm, 0, NR); a.emit(b_cond, "dr_nr", "ls"); a.emit(movs_imm, 0, NR)
+        a.label("dr_nr"); a.emit(str_imm, 0, 7, 20)
+        a.emit(mov_reg, 0, 4); a.emit(adds_imm8, 0, 6); a.emit(movs_imm, 1, 0); a.emit(bl, "c_p32"); a.emit(str_imm, 0, 7, 24)
+        a.label("dr_l")
+        a.emit(ldr_imm, 0, 7, 20); a.emit(cmp_imm, 0, 0); bc("dr_x", "eq"); a.emit(subs_imm8, 0, 1); a.emit(str_imm, 0, 7, 20)
+        a.emit(ldr_imm, 0, 7, 28); a.emit(ldr_imm, 1, 7, 16)
+        if dsp == 2:
+            a.emit(movs_imm, 2, 1); a.emit(lsls_imm, 2, 2, 16); a.emit(cmp_reg, 1, 2); a.emit(b_cond, "dr_w", "hs")
+            a.emit(bl, "c_d16r"); a.emit(b, "dr_got")
+            a.label("dr_w")
+        a.emit(bl, DSP_READ)
+        a.label("dr_got"); a.emit(lsrs_imm, 1, 0, 8)
+        a.emit(ldr_imm, 0, 7, 16); a.emit(adds_imm8, 0, 1); a.emit(str_imm, 0, 7, 16)
+        a.emit(ldr_imm, 0, 7, 24); a.emit(lsls_imm, 1, 1, 8); a.emit(bl, "c_p32"); a.emit(subs_imm8, 0, 2); a.emit(str_imm, 0, 7, 24)   # 6 nibbles
+        a.emit(b, "dr_l")
+        a.label("dr_x")
+        a.emit(ldr_imm, 0, 7, 24); a.emit(b, "rc_send")
+
+        # dspw: core, addr, value = g32(buf + 15) -> status 0
+        a.label("rc_dspw")
+        core_addr()
+        a.emit(mov_reg, 0, 4); a.emit(adds_imm8, 0, 15); a.emit(bl, "c_g32"); a.emit(lsls_imm, 1, 0, 8)
+        a.emit(ldr_imm, 0, 7, 28); a.emit(ldr_imm, 2, 7, 16)
+        if dsp == 2:
+            a.emit(movs_imm, 3, 1); a.emit(lsls_imm, 3, 3, 16); a.emit(cmp_reg, 2, 3); a.emit(b_cond, "dw_w", "hs")
+            a.emit(bl, DSP_WR16); a.emit(b, "dw_x")                              # (takes the lock itself)
+            a.label("dw_w")
+        a.emit(bl, DSP_WRITE)
+        a.label("dw_x")
+        a.emit(mov_reg, 0, 4); a.emit(adds_imm8, 0, 6); a.emit(movs_imm, 1, 0); a.emit(bl, "c_p32"); a.emit(b, "rc_send")
+        a.label("ds_bad")
+        a.emit(mov_reg, 0, 4); a.emit(adds_imm8, 0, 6); a.emit(movs_imm, 1, 1); a.emit(bl, "c_p32"); a.emit(b, "rc_send")
+
+    if dsp == 2:
+        # ---- c_d16r (r0 = core, r1 = addr < 0x10000) -> r0 = word << 8: 0x08031268 under the lock, as 0x080314D6 runs its own body;
+        #      the cached write address is dropped (the DSP's pointer moved)
+        a.label("c_d16r")
+        a.emit(push_list, [4, 5, 6], lr=True); a.emit(sub_sp_imm, 8)
+        a.emit(mov_reg, 4, 0); a.emit(mov_reg, 5, 1)
+        imm32(6, DSP_WADDR); a.emit(mov_reg, 0, 6); a.emit(adds_imm8, 0, 4); a.emit(str_sp, 0, 0); a.emit(mov_reg, 1, 0)
+        a.emit(bl, DSP_LOCK)
+        a.emit(mov_reg, 0, 4); a.emit(mov_reg, 1, 5); a.emit(bl, DSP_RD16); a.emit(mov_reg, 5, 0)
+        a.emit(movw, 0, 0xFFFF); a.emit(str_imm, 0, 6, 0)
+        a.emit(mov_reg, 0, 13); a.emit(bl, DSP_UNLOCK)
+        a.emit(mov_reg, 0, 5); a.emit(add_sp_imm, 8); a.emit(pop_list, [4, 5, 6], pc=True)
+
     # r0 = end of the payload: F7, then send {buf, end + 1 - buf} to the port it came from
     a.label("rc_send")
     a.emit(movs_imm, 1, 0xF7); a.emit(strb_imm, 1, 0, 0); a.emit(adds_imm8, 0, 1); a.emit(subs_reg, 0, 0, 4)
@@ -210,18 +279,27 @@ def arm_code(base, router_ptr):
     return a.assemble()
 
 
-def install(img, report, base_addr):
-    """Append the code; the first 4 bytes of the incoming SysEx dispatcher -> b.w c_rdin."""
+def install(img, report, base_addr, dsp=False):
+    """Append the code; the first 4 bytes of the incoming SysEx dispatcher -> b.w c_rdin.  dsp=True: the DSP commands 3 / 9 (RD3)."""
     import struct
     import rh_fw
     BASE = rh_fw.APP_BASE
     assert not DEL_PACK
     assert bytes(img[HOOK - BASE:HOOK - BASE + 4]) == PROLOGUE, img[HOOK - BASE:HOOK - BASE + 4].hex()
     router_ptr = struct.unpack_from("<I", img, ROUTER_LIT - BASE)[0]
-    code, labels = arm_code(base_addr, router_ptr)
+    if dsp:
+        heads = [(DSP_READ, "push {r2, r3, r4, r5, r6, lr}|mov r5, r1"), (DSP_WRITE, "push {r3, r4, r5, r6, r7, lr}|mov r5, r1")]
+        if dsp == 2:
+            heads += [(DSP_RD16, "push {r3, r4, r5, lr}|mov r4, r0"), (DSP_WR16, "push {r2, r3, r4, r5, r6, lr}|mov r4, r0"),
+                      (DSP_LOCK, "push {r4, lr}|mov r4, r0"), (DSP_UNLOCK, "ldr r2, [r0]|ldrexb r1, [r2]|ldrb r3, [r2, #1]")]
+        for fn, head in heads:
+            import rhbuild
+            n = 8 if fn == DSP_UNLOCK else 4
+            assert "|".join(rhbuild.disasm(bytes(img[fn - BASE:fn - BASE + n]), fn)) == head, hex(fn)
+    code, labels = arm_code(base_addr, router_ptr, dsp)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
     img[HOOK - BASE:HOOK - BASE + 4] = b_w(HOOK, labels["c_rdin"])
-    report["rdiag"] = dict(hook=hex(HOOK), router_ptr=hex(router_ptr), version=hex(VERSION), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["rdiag"] = dict(hook=hex(HOOK), router_ptr=hex(router_ptr), version=hex(VERSION + (0x10 if dsp else 0) + (0x02 if dsp == 2 else 0)), dsp=dsp, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

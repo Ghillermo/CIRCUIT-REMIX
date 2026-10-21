@@ -15,8 +15,8 @@ import rodisk  # noqa: E402
 NAME = "RH01"
 
 
-def build(name=NAME, diag=True):
-    b = build_rd1.build(name) if diag else rhbuild.Build(name)   # diag=False: without rdiag (the public builds)
+def build(name=NAME, diag=True, dsp=False):
+    b = build_rd1.build(name, dsp=dsp) if diag else rhbuild.Build(name)   # diag=False: without rdiag (the public builds)
     b.add("rhstate", rhstate)
     b.add("rodisk", rodisk)
     return b

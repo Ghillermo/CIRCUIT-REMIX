@@ -26,9 +26,9 @@ import trkcopy  # noqa: E402
 NAME = "RH18"
 
 
-def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True):
-    b = build_rh01.build(name, diag=diag)
-    b.add("countin", countin, v2=True)
+def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True, dsp=False, scniter=False, bpm0=False, rh30=False, rh31=False):
+    b = build_rh01.build(name, diag=diag, dsp=dsp)
+    b.add("countin", countin, v2=True, **({"bpm0": True} if bpm0 else {}))
     b.add("quant", quant, v2=True)
     b.add("qmute", qmute)
     b.add("mixshift", mixshift)
@@ -36,11 +36,11 @@ def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag
     b.add("playmode", playmode, v2=True)
     b.add("porder", porder)
     b.add("rhrec", rhrec)
-    b.add("drumpat", drumpat, v2=True)
-    b.add("patchain", patchain)
+    b.add("drumpat", drumpat, v2=True, **({"rowfix": True} if rh30 else {}), **({"recdyn": True} if rh31 else {}))
+    b.add("patchain", patchain, **({"iterled": True} if scniter else {}))
     b.add("sckn", sckn, **({"bright": True} if bright else {}))
-    b.add("fxkeys", fxkeys, **({"bright": True} if bright else {}), **({"cols": True} if fxcols else {}))
-    b.add("drumarp", drumarp, notes=True, **({"rec": True} if arp_rec else {}), **({"single": True} if arp1 else {}))
+    b.add("fxkeys", fxkeys, **({"bright": True} if bright else {}), **({"cols": True} if fxcols else {}), **({"viewset": True} if rh30 else {}))
+    b.add("drumarp", drumarp, notes=True, **({"rec": True} if arp_rec else {}), **({"single": True} if arp1 else {}), **({"bpm0": True} if bpm0 else {}))
     b.add("cscale", cscale)
     b.add("trkcopy", trkcopy)
     b.add("dqfix", dqfix)

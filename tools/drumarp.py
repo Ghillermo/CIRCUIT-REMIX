@@ -70,6 +70,7 @@ NV0, NV_SZ, NV_VT = 0x2004A604, 0x1B4, 0x08067248        # the tracks' Note view
 NV_IDX, O_NMAP, O_NSTEP = 0x0805DFEA, 0x4C, 0x78        # (view, pad) -> the keyboard index; [view + 0x4C] + 8 = index -> note; the step held
 S_LAST = 29                                              # (NOTES) the note last played
 F_NOTES = 2                                              # (NOTES) S_FL bit 1: the held values are notes (the Note view), not samples
+BPM0 = False                                             # RH29 (install(bpm0=True)): the stopped arpeggio's step from p0 of the tempo store
 SINGLE = False                                           # RH22 (install(single=True)): one held sample / note arpeggiates too (the user, 2026-10-19:
 F_FRESH = 4                                              #   «one note only doesn't trigger it»); S_FL bit 2: the stock just played the first hit
 INV = dict(eq="ne", ne="eq", lo="hs", hs="lo", hi="ls", ls="hi", ge="lt", lt="ge", gt="le", le="gt", mi="pl", pl="mi")
@@ -469,7 +470,7 @@ def arm_code(base, L, prev):
         E(bl, "c_dati")
         E(mov_reg, 4, 0)
         imm32(0, TEMPO)
-        E(movs_imm, 1, 1)
+        E(movs_imm, 1, 0 if BPM0 else 1)
         E(bl, PARAM_GET)
         E(ldrb_imm, 1, 0, 0)
         E(cmp_imm, 1, 30)
@@ -989,7 +990,7 @@ def arm_code(base, L, prev):
     E(bl, "c_dati")
     E(mov_reg, 6, 0)                                                      # the next time: + 2500 ticks / BPM ms
     imm32(0, TEMPO)
-    E(movs_imm, 1, 1)
+    E(movs_imm, 1, 0 if BPM0 else 1)
     E(bl, PARAM_GET)
     E(ldrb_imm, 1, 0, 0)
     E(cmp_imm, 1, 30)
@@ -1422,7 +1423,7 @@ def emit_notes(a, E, L, prev, imm32, bc):
     E(pop_list, [4, 5], pc=True)
 
 
-def install(img, report, base_addr, notes=False, rec=False, single=False):
+def install(img, report, base_addr, notes=False, rec=False, single=False, bpm0=False):
     """Append the code; the sample views' slots 0 / 1 / 7, Pattern Settings' slots 0 / 7, the players' slot 2, the LED task calls."""
     import rhbuild
     BASE = rhbuild.BASE
@@ -1432,8 +1433,8 @@ def install(img, report, base_addr, notes=False, rec=False, single=False):
              c_cinew=lab("countin", "c_cinew"), c_pmtrk=lab("playmode", "c_pmtrk"))
     if rec:
         L.update(c_pmfind=lab("playmode", "c_pmfind"), c_qzst=lab("quant", "c_qzst"))
-    global NOTES, REC, SINGLE
-    NOTES, REC, SINGLE = notes, rec, single
+    global NOTES, REC, SINGLE, BPM0
+    NOTES, REC, SINGLE, BPM0 = notes, rec, single, bpm0
     slots = dict(pad=(SV_VT, 0), rel=(SV_VT, 1), leds=(SV_VT, 7), pspad=(PS_VT, 0), psled=(PS_VT, 7), play=(DP_VT, 2))
     if notes:
         slots.update(npad=(NV_VT, 0), nrel=(NV_VT, 1), nleds=(NV_VT, 7))
