@@ -4,6 +4,8 @@
 
 Nota legal: el firmware proporcionado por Novation es propietario, no está permitido instalarlo en cualquier dispositivo que no sea Circuit Rhythm. Este instalador lo comprueba y no permite instalar en ningún otro dispositivo.
 
+Trabajo humano: Hay una persona detrás todo este trabajo. Este proyecto tiene una gran dedicación y esfuerzo en mantenimiento, depuración y conocimientos de desarrollo y de uso del dispositivo. Este proyecto escucha a la Comunidad y se comparte en formato copyleft de forma altruista, gratuita y abierta. Por favor, respeta este trabajo y el de los desarrolldores oficiales y no oficiales.
+
 > **English:** the English version of this README is [further below](#english).
 
 Parches de firmware para el **Novation Circuit Rhythm** (firmware de referencia 2.0.1, build 5706).
