@@ -1,5 +1,7 @@
 # Circuit Remix
 
+Help me pay for tools and mantain the project: https://PayPal.me/ghillermo
+
 > 📢 **Alpha 0.01**: un port de las funciones de [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) al **Novation Circuit Rhythm**, con características exclusivas. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge ([cómo](#instalar-sin-compilar-toolsrm_uploaderhtml)). Novedades: [`CHANGELOG.md`](CHANGELOG.md).
 
 **⬇️ Descarga del parche de firmware (instalador): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.01/rm_uploader.zip)** · [todas las versiones](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
