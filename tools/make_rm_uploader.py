@@ -1,7 +1,7 @@
 """tools/rm_uploader.html: the Circuit Remix installer, a web page that takes the OFFICIAL Circuit Rhythm firmware from the user, patches it in
 the browser and sends it (no Novation code inside; MIT, from CIRCUIT-HACKS' make_rc_uploader.py).
 
-    python tools/make_rm_uploader.py [VERSION ...]          (default: A0.01 A0.01S A0.0 A0.0S; needs firmware/<dir>/*.bin and the stock image of a full checkout)
+    python tools/make_rm_uploader.py [VERSION ...]          (default: A0.02 A0.02S A0.01 A0.01S A0.0 A0.0S; needs firmware/<dir>/*.bin and the stock image of a full checkout)
 Each version becomes a patch against the official image: COPY (offset, length) from the user's official image, or ADD (our bytes).  The matching is greedy
 on 8-byte keys, so an ADD run never holds 8 or more consecutive bytes that also occur in the official image: the page carries only our own work
 (checked again below).  The page:
@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -92,7 +92,11 @@ def main(versions):
     print("tools/rm_uploader.html", len(page), "bytes")
 
 
-DESC = {"A0.01": ("Alpha 0.01 — la versión completa: todas las funciones de Circuit Remix, con la página Stock+ de los knobs de pista (envolvente y LFO de tono); la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
+DESC = {"A0.02": ("Alpha 0.02 — la versión completa: todas las funciones de Circuit Remix, con la página Stock+ completa (envolvente y LFO de tono, ring mod, tipos de filtro y pitch follow, stretch sin cambiar el tono, bitcrush, scan) y Fixed Recording al tempo del reloj externo; la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
+                  "Alpha 0.02 — full build: every Circuit Remix feature, with the full Stock+ page (pitch envelope and LFO, ring mod, filter types and pitch follow, stretch without changing pitch, bitcrush, scan) and Fixed Recording at the external clock's tempo; the project and sample copy and the pack delete write to the card"),
+        "A0.02S": ("Alpha 0.02S — versión más segura: Alpha 0.02 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "Alpha 0.02S — safer build: Alpha 0.02 without the project copy, the pack delete and the sample copy; nothing of Circuit Remix writes or deletes files on the SD card or in the internal memory"),
+        "A0.01": ("Alpha 0.01 — la versión completa: todas las funciones de Circuit Remix, con la página Stock+ de los knobs de pista (envolvente y LFO de tono); la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
                   "Alpha 0.01 — full build: every Circuit Remix feature, with the Stock+ track knob page (pitch envelope and LFO); the project and sample copy and the pack delete write to the card"),
         "A0.01S": ("Alpha 0.01S — versión más segura: Alpha 0.01 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "Alpha 0.01S — safer build: Alpha 0.01 without the project copy, the pack delete and the sample copy; nothing of Circuit Remix writes or deletes files on the SD card or in the internal memory"),

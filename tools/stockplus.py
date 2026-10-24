@@ -57,6 +57,7 @@ BLK, BLK_LEN = rhrec.OFF["stockplus"]
 O_ST, ST_LEN = rhstate.OFF["stockplus"]               # + 0 the tracks on the Stock+ page, + 1 the tracks to push, + 2 the round, + 3 Duplicate's source + 1
 O_KB, O_TH = rhstate.OFF["kbright"][0], rhstate.OFF["cthresh"][0] + 1
 K_MASK, K_VAL, K_CODE = 0, 1, 10
+YB = PM.Y_BASE                                        # (install(shift=$300), RD10 on) pitchmod's words moved up, out of voice 7's sample ring
 MARK0, MARK1, CHECK = ord("S"), ord("P"), 0xA5
 NPAR, NTRK = 8, 8
 FULL, STEP, FINE = 16383, 128, 4
@@ -67,6 +68,72 @@ T_MIN, T_MAX = 0.005, 4.0
 HZ_MIN, HZ_MAX = 0.05, 30.0
 INV = SK.INV
 assert BLK_LEN == 4 + 2 * NPAR * NTRK and ST_LEN == 4 and 0 < O_ST - O_TH < 256 and 0 < O_ST - O_KB < 256
+
+
+# ---- v2 (RH33): K5-K8 on the Stock+ page, each with a Shift layer (the user, 2026-10-24: «k5: rmod amount, shift: frequency. k6: filter
+# type (affects default filters) … stock filter (sound is unaffected) shift: pitch follow to lpf. k7: stretch (changes speed without changing
+# pitch). shift: bitcrush. k8: scan lfo speed (changes start point) shift: …» depth; K1-K4 keep Shift = fine control).  Knob indices 0..7 =
+# K1-K8 (the "SP" block, as RH32), 8..11 = Shift + K5..K8 (the "SQ" block, rhrec "stockplus2").  K7 is stored XOR 8192: RH32 projects hold 0
+# in that slot, which reads as 8192 = no stretch.
+BLK2, BLK2_LEN = rhrec.OFF["stockplus2"]
+MARK2 = ord("Q")
+NK = 12
+DEF2 = (8192, 0, 0, 0)                                # Shift + K5 ring frequency in the middle (~316 Hz), no follow, no bitcrush, no scan depth
+DEFU = DEF[:6] + (8192, DEF[7]) + DEF2                # the knobs' defaults as values (K7's stored 0 = 8192)
+K7, X7 = 6, 8192
+RING_LO, RING_HI = 20.0, 5000.0
+SCAN_LO, SCAN_HI = 0.05, 20.0
+DEAD = 128                                            # K7 within one click of the middle: no stretch (the stock's resampler)
+GRAIN = 2048                                          # the stretch's grain (RD12 on the device: drum loops best at 2048)
+# k6swap (RH34; the user, 2026-10-25, after RH33 on the device: «switch k6 and s+k6, give each filter type different colors»): K6 = pitch
+# follow, Shift + K6 = the filter type (the stored indices stay: 5 type, 9 follow); K6's LED always in its filter type's colour (stock white,
+# 24 dB the FX view's delay colour, comb its reverb colour), as bright as the follow (at least K6_MIN) or fully with Shift held; and Clear +
+# K5-K8 = both of the knob's layers back to their defaults («make clear +knob affect shift functions too»)
+K6, I_TYPE, I_FOLLOW = 5, 5, 9
+COL_TYPES = (0x151, 0x139, 0x141)
+K6_MIN = 24
+assert BLK2_LEN == 4 + 2 * 4 * NTRK
+
+
+def ring_table():
+    return [round(RING_LO * (RING_HI / RING_LO) ** (i / 128) / 48000 * (1 << 24)) for i in range(129)]
+
+
+def speed_table():
+    return [min(0x7FFFFF, round(4 ** ((i - 64) / 64) / 4 * (1 << 23))) for i in range(129)]
+
+
+def scan_table():
+    return [round(SCAN_LO * (SCAN_HI / SCAN_LO) ** (i / 128) / UPD * (1 << 24)) for i in range(129)]
+
+
+def words2(v, t):
+    """{core 1 Y address: word} that c_spdsp (v2) writes for track t with the 12 values v (K7 as its value, not stored): for the tests"""
+    import stretch as STR
+    import voicefilt as F
+    import voicefx as V
+
+    def interp(tab, x):
+        i, f = x >> 7, x & 127
+        return tab[i] + ((tab[i + 1] - tab[i]) * f >> 7)
+    vy, yb = V.Y_BASE + 0x300, PM.Y_BASE + 0x300                       # (v2 always with the shift)
+    out = dict(zip((yb + PM.OFF_A + t, yb + PM.OFF_D + t, yb + PM.OFF_R + t, yb + PM.OFF_L + t), words(v[:4])))
+    out[vy + V.RAM + t] = v[4] << 9
+    out[vy + V.RST + t] = interp(ring_table(), v[8])
+    kt = v[5] * 3 >> 14
+    out[F.KTYPE + t] = kt
+    if kt != 2:
+        out[vy + V.FMODE + t] = 0
+    out[F.FOLLOW + t] = v[9] << 9
+    out[STR.STRETCH + t] = 0 if abs(v[6] - X7) < DEAD else interp(speed_table(), v[6])
+    if v[10]:
+        bits = 16 - (v[10] * 14 >> 14)
+        out[vy + V.DG + t], out[vy + V.DMASK + t], out[vy + V.DTYPE + t] = 0x080000, (0xFFFFFF << (24 - bits)) & 0xFFFFFF, 4
+    else:
+        out[vy + V.DTYPE + t] = 0
+    out[F.SCANR + t] = interp(scan_table(), v[7])
+    out[F.SCAND + t] = v[11] << 9
+    return out
 
 
 def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
@@ -92,7 +159,7 @@ def words(v):
     return [((v[0] - 8192) * A_SCALE) & 0xFFFFFF, interp(decay_table(), v[1]), interp(rate_table(), v[2]), v[3] * L_SCALE]
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, v2=False, k6swap=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -114,6 +181,21 @@ def arm_code(base, L, prev):
     E(raw, b"".join(w.to_bytes(4, "little") for w in rate_table()))
     t_def = base + 8 * 129
     E(raw, b"".join(v.to_bytes(2, "little") for v in DEF))
+    VAL, PUT = ("c_spval_a", "c_spput_a") if v2 else ("c_spval", "c_spput")
+    if v2:
+        t_ring = base + 8 * 129 + 2 * NPAR
+        E(raw, b"".join(w.to_bytes(4, "little") for w in ring_table()))
+        t_spd = t_ring + 4 * 129
+        E(raw, b"".join(w.to_bytes(4, "little") for w in speed_table()))
+        t_scan = t_spd + 4 * 129
+        E(raw, b"".join(w.to_bytes(4, "little") for w in scan_table()))
+        t_defu = t_scan + 4 * 129
+        E(raw, b"".join(v.to_bytes(2, "little") for v in DEFU))
+        t_def2 = t_defu + 2 * NK
+        E(raw, b"".join(v.to_bytes(2, "little") for v in DEF2))
+        if k6swap:
+            t_cols = t_def2 + 2 * len(DEF2)
+            E(raw, b"".join(v.to_bytes(2, "little") for v in COL_TYPES))
 
     # ---- c_spst() -> r0 = our state (rhstate), 0 without our RAM; clobbers r1-r3
     a.label("c_spst")
@@ -170,8 +252,8 @@ def arm_code(base, L, prev):
     E(movs_imm, 0, 0)
     E(pop_list, [4], pc=True)
 
-    # ---- c_spval(r0 = track, r1 = knob) -> r0 = its value (the default without our block); clobbers r1-r3
-    a.label("c_spval")
+    # ---- c_spval(r0 = track, r1 = knob) -> r0 = its value (the default without our block); clobbers r1-r3  (v2: c_spval_a, block "SP")
+    a.label(VAL)
     E(push_list, [4, 5, 6], lr=True)
     E(lsls_imm, 4, 0, 3)
     E(adds_reg, 4, 4, 1)
@@ -194,7 +276,7 @@ def arm_code(base, L, prev):
     E(pop_list, [4, 5, 6], pc=True)
 
     # ---- c_spput(r0 = track, r1 = knob, r2 = value): into our block (made with the defaults if missing), its check byte; clobbers r0-r3
-    a.label("c_spput")
+    a.label(PUT)
     E(push_list, [3, 4, 5, 6, 7], lr=True)
     E(lsls_imm, 4, 0, 3)
     E(adds_reg, 4, 4, 1)
@@ -253,12 +335,13 @@ def arm_code(base, L, prev):
     a.label("c_spreset")
     E(push_list, [3, 4, 5], lr=True)
     E(mov_reg, 4, 0)
-    E(bl, "c_spvalid")
-    E(cmp_imm, 0, 0)
-    E(b_cond, "sr_x", "eq")                                               # no block: already the defaults (nothing written)
+    if not v2:                                                            # (v2: the "SQ" block may exist without "SP": always written)
+        E(bl, "c_spvalid")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "sr_x", "eq")                                           # no block: already the defaults (nothing written)
     E(movs_imm, 5, 0)
     a.label("sr_l")
-    imm32(2, t_def)
+    imm32(2, t_defu if v2 else t_def)
     E(lsls_imm, 1, 5, 1)
     E(adds_reg, 2, 2, 1)
     E(ldrh_imm, 2, 2, 0)
@@ -266,7 +349,7 @@ def arm_code(base, L, prev):
     E(mov_reg, 1, 5)
     E(bl, "c_spput")
     E(adds_imm8, 5, 1)
-    E(cmp_imm, 5, NPAR)
+    E(cmp_imm, 5, NK if v2 else NPAR)
     E(b_cond, "sr_l", "lo")
     E(mov_reg, 0, 4)
     E(bl, "c_spdirty")
@@ -348,9 +431,10 @@ def arm_code(base, L, prev):
     E(subs_imm8, 7, 1)
     E(cmp_reg, 7, 4)
     bc("bt_p", "eq")
-    E(bl, "c_spvalid")
-    E(cmp_imm, 0, 0)
-    bc("bt_p", "eq")                                                      # no block: every track has the defaults
+    if not v2:
+        E(bl, "c_spvalid")
+        E(cmp_imm, 0, 0)
+        bc("bt_p", "eq")                                                  # no block: every track has the defaults
     E(movs_imm, 6, 0)                                                     # r6 = the knob
     a.label("bt_cl")
     E(mov_reg, 0, 7)
@@ -361,7 +445,7 @@ def arm_code(base, L, prev):
     E(mov_reg, 1, 6)
     E(bl, "c_spput")
     E(adds_imm8, 6, 1)
-    E(cmp_imm, 6, NPAR)
+    E(cmp_imm, 6, NK if v2 else NPAR)
     E(b_cond, "bt_cl", "lo")
     E(mov_reg, 0, 4)
     E(bl, "c_spdirty")
@@ -414,8 +498,63 @@ def arm_code(base, L, prev):
     E(cmp_imm, 0, 0)
     bc("kn_p", "eq")                                                      # no knobs in this mode
     E(ldr_sp, 5, 4)                                                       # r5 = the knob
-    E(cmp_imm, 5, 4)
-    bc("kn_x", "hs")                                                      # K5-K8: nothing yet
+    if v2:
+        E(movs_imm, 7, STEP)                                              # r7 = the step
+        E(bl, "c_spshift")
+        E(cmp_imm, 5, 4)
+        E(b_cond, "kn_hi", "hs")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "kn_c", "eq")
+        E(movs_imm, 7, FINE)                                              # K1-K4: Shift = fine control
+        E(b, "kn_c")
+        a.label("kn_hi")
+        if k6swap:                                                        # K6: follow; Shift + K6: the type
+            E(cmp_imm, 5, K6)
+            E(b_cond, "kn_n6", "ne")
+            E(cmp_imm, 0, 0)
+            E(b_cond, "kn_c", "ne")
+            E(movs_imm, 5, I_FOLLOW)
+            E(b, "kn_c")
+            a.label("kn_n6")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "kn_c", "eq")
+        E(adds_imm8, 5, 4)                                                # Shift + K5-K8: the second layer (8..11)
+        a.label("kn_c")
+        E(bl, "c_spheld")
+        E(lsls_imm, 0, 0, 31 - BIT_CLEAR)
+        E(b_cond, "kn_t2", "pl")
+        if k6swap:                                                        # (RH34) Clear + K5-K8: both layers back to their defaults
+            E(cmp_imm, 5, 4)                                              # (the user, 2026-10-25: «make clear +knob affect shift functions too»)
+            E(b_cond, "kn_cd", "lo")
+            E(mov_reg, 1, 5)
+            E(cmp_imm, 5, NPAR)
+            E(b_cond, "kn_ol", "hs")
+            E(adds_imm8, 1, 4)
+            E(b, "kn_o")
+            a.label("kn_ol")
+            E(subs_imm8, 1, 4)
+            a.label("kn_o")                                               # r1 = the knob's other layer
+            imm32(0, t_defu)
+            E(lsls_imm, 2, 1, 1)
+            E(adds_reg, 0, 0, 2)
+            E(ldrh_imm, 2, 0, 0)
+            E(mov_reg, 0, 4)
+            E(bl, "c_spput")
+            a.label("kn_cd")
+        imm32(0, t_defu)                                                  # Clear + the knob: its default (of the layer)
+        E(lsls_imm, 1, 5, 1)
+        E(adds_reg, 0, 0, 1)
+        E(ldrh_imm, 6, 0, 0)
+        E(b, "kn_w")
+        a.label("kn_t2")
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, "c_spval")
+        E(mov_reg, 6, 0)
+        E(b, "kn_s")
+    else:
+        E(cmp_imm, 5, 4)
+        bc("kn_x", "hs")                                                  # K5-K8: nothing yet
     E(bl, "c_spheld")
     E(lsls_imm, 0, 0, 31 - BIT_CLEAR)
     E(b_cond, "kn_t", "pl")
@@ -459,6 +598,140 @@ def arm_code(base, L, prev):
     E(raw, popw([0, 1, 2, 4, 5, 6, 7], lr=True))
     E(b_w, prev["knob"])
 
+    if v2:
+        # ---- the "SQ" block (Shift + K5-K8): c_sqblk, c_sqsum, c_sqok, c_sqval(t, k'), c_sqput(t, k', v) as block "SP"'s
+        a.label("c_sqblk")
+        E(push_list, [4], lr=True)
+        E(bl, L["c_rrt"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "qb_x", "eq")
+        E(movw, 1, BLK2)
+        E(adds_reg, 0, 0, 1)
+        a.label("qb_x")
+        E(pop_list, [4], pc=True)
+        a.label("c_sqsum")
+        E(adds_imm8, 0, 4)
+        E(movs_imm, 1, 2 * 4 * NTRK)
+        E(movs_imm, 2, CHECK)
+        a.label("qs_l")
+        E(ldrb_imm, 3, 0, 0)
+        E(eors_reg, 2, 3)
+        E(adds_imm8, 0, 1)
+        E(subs_imm8, 1, 1)
+        E(b_cond, "qs_l", "ne")
+        E(mov_reg, 0, 2)
+        E(raw, h(0x4770))
+        a.label("c_sqok")
+        E(push_list, [4], lr=True)
+        E(mov_reg, 4, 0)
+        E(ldrb_imm, 1, 4, 0)
+        E(cmp_imm, 1, MARK0)
+        E(b_cond, "qo_0", "ne")
+        E(ldrb_imm, 1, 4, 1)
+        E(cmp_imm, 1, MARK2)
+        E(b_cond, "qo_0", "ne")
+        E(bl, "c_sqsum")
+        E(ldrb_imm, 1, 4, 2)
+        E(cmp_reg, 0, 1)
+        E(b_cond, "qo_0", "ne")
+        E(movs_imm, 0, 1)
+        E(pop_list, [4], pc=True)
+        a.label("qo_0")
+        E(movs_imm, 0, 0)
+        E(pop_list, [4], pc=True)
+        a.label("c_sqval")                                                # (r0 = track, r1 = k' 0..3) -> the value
+        E(push_list, [4, 5, 6], lr=True)
+        E(lsls_imm, 4, 0, 2)
+        E(adds_reg, 4, 4, 1)
+        E(lsls_imm, 4, 4, 1)                                              # r4 = 2 (4 t + k')
+        E(lsls_imm, 6, 1, 1)
+        E(bl, "c_sqblk")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "qv_d", "eq")
+        E(mov_reg, 5, 0)
+        E(bl, "c_sqok")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "qv_d", "eq")
+        E(adds_reg, 5, 5, 4)
+        E(ldrh_imm, 0, 5, 4)
+        E(pop_list, [4, 5, 6], pc=True)
+        a.label("qv_d")
+        imm32(0, t_def2)
+        E(adds_reg, 0, 0, 6)
+        E(ldrh_imm, 0, 0, 0)
+        E(pop_list, [4, 5, 6], pc=True)
+        a.label("c_sqput")                                                # (r0 = track, r1 = k', r2 = value)
+        E(push_list, [3, 4, 5, 6, 7], lr=True)
+        E(lsls_imm, 4, 0, 2)
+        E(adds_reg, 4, 4, 1)
+        E(lsls_imm, 4, 4, 1)
+        E(mov_reg, 6, 2)
+        E(bl, "c_sqblk")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "qp_x", "eq")
+        E(mov_reg, 5, 0)
+        E(bl, "c_sqok")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "qp_w", "ne")
+        E(movs_imm, 0, MARK0)
+        E(strb_imm, 0, 5, 0)
+        E(movs_imm, 0, MARK2)
+        E(strb_imm, 0, 5, 1)
+        E(movs_imm, 0, 0)
+        E(strb_imm, 0, 5, 3)
+        E(movs_imm, 7, 0)
+        a.label("qp_i")
+        imm32(0, t_def2)
+        E(movs_imm, 1, 2 * 4 - 1)
+        E(raw, h(0x4039))                                                 # ands r1, r7: (2 i) mod 8 = 2 k'
+        E(adds_reg, 0, 0, 1)
+        E(ldrh_imm, 0, 0, 0)
+        E(adds_reg, 1, 5, 7)
+        E(strh_imm, 0, 1, 4)
+        E(adds_imm8, 7, 2)
+        E(cmp_imm, 7, 2 * 4 * NTRK)
+        E(b_cond, "qp_i", "lo")
+        a.label("qp_w")
+        E(adds_reg, 1, 5, 4)
+        E(strh_imm, 6, 1, 4)
+        E(mov_reg, 0, 5)
+        E(bl, "c_sqsum")
+        E(strb_imm, 0, 5, 2)
+        a.label("qp_x")
+        E(pop_list, [3, 4, 5, 6, 7], pc=True)
+        # ---- c_spval(r0 = track, r1 = 0..11) -> the value (K7 unXORed); c_spput(r0, r1, r2 = value); clobber r1-r3 / r0-r3
+        a.label("c_spval")
+        E(push_list, [4], lr=True)
+        E(mov_reg, 4, 1)
+        E(cmp_imm, 1, NPAR)
+        E(b_cond, "xv_b", "hs")
+        E(bl, VAL)
+        E(cmp_imm, 4, K7)
+        E(b_cond, "xv_r", "ne")
+        E(movw, 1, X7)
+        E(eors_reg, 0, 1)
+        a.label("xv_r")
+        E(pop_list, [4], pc=True)
+        a.label("xv_b")
+        E(subs_imm8, 1, NPAR)
+        E(bl, "c_sqval")
+        E(pop_list, [4], pc=True)
+        a.label("c_spput")
+        E(push_list, [4], lr=True)
+        E(cmp_imm, 1, NPAR)
+        E(b_cond, "xp_b", "hs")
+        E(cmp_imm, 1, K7)
+        E(b_cond, "xp_a", "ne")
+        E(movw, 3, X7)
+        E(eors_reg, 2, 3)
+        a.label("xp_a")
+        E(bl, PUT)
+        E(pop_list, [4], pc=True)
+        a.label("xp_b")
+        E(subs_imm8, 1, NPAR)
+        E(bl, "c_sqput")
+        E(pop_list, [4], pc=True)
+
     # ---- c_spint(r0 = table, r1 = value) -> r0 = the table at value / 128, interpolated; clobbers r1-r3
     a.label("c_spint")
     E(lsrs_imm, 2, 1, 7)
@@ -496,7 +769,7 @@ def arm_code(base, L, prev):
     E(subs_reg, 0, 0, 1)
     E(movs_imm, 1, A_SCALE)
     E(muls, 0, 1)
-    E(movw, 1, PM.Y_BASE + PM.OFF_A)
+    E(movw, 1, YB + PM.OFF_A)
     E(adds_reg, 1, 1, 4)
     E(bl, "c_spw")
     for k, tab, off in ((1, t_dec, PM.OFF_D), (2, t_rate, PM.OFF_R)):
@@ -506,7 +779,7 @@ def arm_code(base, L, prev):
         E(mov_reg, 1, 0)
         imm32(0, tab)
         E(bl, "c_spint")
-        E(movw, 1, PM.Y_BASE + off)
+        E(movw, 1, YB + off)
         E(adds_reg, 1, 1, 4)
         E(bl, "c_spw")
     E(mov_reg, 0, 4)
@@ -514,10 +787,103 @@ def arm_code(base, L, prev):
     E(bl, "c_spval")
     E(movs_imm, 1, L_SCALE)
     E(muls, 0, 1)
-    E(movw, 1, PM.Y_BASE + PM.OFF_L)
+    E(movw, 1, YB + PM.OFF_L)
     E(adds_reg, 1, 1, 4)
     E(bl, "c_spw")
+    if v2:
+        import stretch as STR
+        import voicefilt as F
+        import voicefx as V
+        vy = V.Y_BASE + (YB - PM.Y_BASE)
+
+        def val(k):
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, k)
+            E(bl, "c_spval")
+
+        def put(addr):                                                    # r0 = the word -> Y:addr + t
+            E(movw, 1, addr)
+            E(adds_reg, 1, 1, 4)
+            E(bl, "c_spw")
+
+        def tab(k, t, addr):
+            val(k)
+            E(mov_reg, 1, 0)
+            imm32(0, t)
+            E(bl, "c_spint")
+            put(addr)
+        val(4)                                                            # K5: the ring's amount
+        E(lsls_imm, 0, 0, 9)
+        put(vy + V.RAM)
+        tab(8, t_ring, vy + V.RST)                                        # Shift + K5: its frequency
+        val(5)                                                            # K6: the filter type, 3 zones: stock / 24 dB / comb
+        E(movs_imm, 1, 3)
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 14)
+        E(mov_reg, 5, 0)
+        put(F.KTYPE)
+        E(cmp_imm, 5, 2)
+        E(b_cond, "sd_nc", "eq")
+        E(movs_imm, 0, 0)                                                 # not the comb: voicefx's mode off (voicefilt's POST sets 5 for the comb)
+        put(vy + V.FMODE)
+        a.label("sd_nc")
+        val(9)                                                            # Shift + K6: pitch follow
+        E(lsls_imm, 0, 0, 9)
+        put(F.FOLLOW)
+        val(K7)                                                           # K7: the stretch, 0.25x .. 4x, the middle (+- a click) = off
+        E(mov_reg, 5, 0)
+        E(movw, 1, X7)
+        E(subs_reg, 0, 0, 1)
+        E(b_cond, "sd_pos", "ge")
+        E(raw, h(0x4240))                                                 # rsbs r0, r0, #0
+        a.label("sd_pos")
+        E(movs_imm, 1, 0)
+        E(cmp_imm, 0, DEAD)
+        E(b_cond, "sd_sw", "lt")
+        E(mov_reg, 1, 5)
+        imm32(0, t_spd)
+        E(bl, "c_spint")
+        E(mov_reg, 1, 0)
+        a.label("sd_sw")
+        E(mov_reg, 0, 1)
+        put(STR.STRETCH)
+        val(10)                                                           # Shift + K7: the bitcrush (0 = off)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "sd_cr", "ne")
+        put(vy + V.DTYPE)
+        E(b, "sd_k8")
+        a.label("sd_cr")
+        E(movs_imm, 1, 14)
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 14)
+        E(movs_imm, 1, 8)                                                 # 24 - bits = 24 - (16 - x) = 8 + x
+        E(adds_reg, 5, 0, 1)
+        imm32(0, 0x080000)                                                # the gain: 0 dB (voicefx's 1/16)
+        put(vy + V.DG)
+        imm32(0, 0xFFFFFF)
+        E(lsls_reg, 0, 5)
+        imm32(1, 0xFFFFFF)
+        E(raw, h(0x4008))                                                 # ands r0, r1
+        put(vy + V.DMASK)
+        E(movs_imm, 0, 4)
+        put(vy + V.DTYPE)
+        a.label("sd_k8")
+        tab(7, t_scan, F.SCANR)                                           # K8: the scan's speed
+        val(11)                                                           # Shift + K8: its depth
+        E(lsls_imm, 0, 0, 9)
+        put(F.SCAND)
     E(pop_list, [3, 4, 5], pc=True)
+
+    if v2:
+        # ---- c_spgrain(): the stretch's grain words (one size for every track: 2048)
+        import stretch as STR
+        a.label("c_spgrain")
+        E(push_list, [4], lr=True)
+        for addr, w in STR.grain_words(GRAIN, ghm=True).items():
+            imm32(0, w)
+            E(movw, 1, addr)
+            E(bl, "c_spw")
+        E(pop_list, [4], pc=True)
 
     # ---- c_spled (the LED task's calls: ctrl, frame): the chain, then the DSP's round and the Stock+ page's LEDs
     a.label("c_spled")
@@ -547,6 +913,12 @@ def arm_code(base, L, prev):
     E(movs_imm, 0, NTRK - 1)
     E(raw, h(0x4007))                                                     # ands r7, r0
     E(strb_imm, 7, 6, 2)                                                  # the round's track
+    if v2:
+        E(cmp_imm, 7, 0)
+        E(b_cond, "ld_ng", "ne")
+        E(bl, "c_spgrain")                                                # once a round: the grain words (core 1 clears them at its start)
+        E(ldrb_imm, 7, 6, 2)
+        a.label("ld_ng")
     E(movs_imm, 0, 1)
     E(lsls_reg, 0, 7)
     E(ldrb_imm, 7, 6, 1)
@@ -576,13 +948,72 @@ def arm_code(base, L, prev):
     bc("ld_x", "eq")                                                      # the stock page
     E(mov_reg, 7, 6)
     E(subs_imm8, 7, O_ST - O_KB)                                          # r7 = kbright's overlay
-    E(movs_imm, 0, 0x0F)
+    E(movs_imm, 0, 0xFF if v2 else 0x0F)
     E(strb_imm, 0, 7, K_MASK)
-    for k in range(4):
-        E(mov_reg, 0, 4)
-        E(movs_imm, 1, k)
+    for k in range(8 if v2 else 4):
+        if k6swap and k == K6:                                            # K6: the type's colour, the follow's brightness (Shift: full)
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, I_TYPE)
+            E(bl, "c_spval")
+            E(movs_imm, 1, 3)
+            E(muls, 0, 1)
+            E(lsrs_imm, 0, 0, 14)                                         # 0 / 1 / 2
+            E(lsls_imm, 0, 0, 1)
+            imm32(1, t_cols)
+            E(adds_reg, 1, 1, 0)
+            E(ldrh_imm, 0, 1, 0)
+            E(strh_imm, 0, 7, K_CODE + 2 * k)
+            E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
+            E(bl, "c_spshift")
+            E(cmp_imm, 0, 0)
+            E(b_cond, "lk_f6", "eq")
+            E(movs_imm, 0, 127)
+            E(b, "lk_w6")
+            a.label("lk_f6")
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, I_FOLLOW)
+            E(bl, "c_spval")
+            E(lsrs_imm, 0, 0, 7)
+            E(cmp_imm, 0, K6_MIN)
+            E(b_cond, "lk_w6", "ge")
+            E(movs_imm, 0, K6_MIN)
+            a.label("lk_w6")
+            E(strb_imm, 0, 7, K_VAL + k)
+            continue
+        if k >= 4:                                                        # (v2) K5-K8: the Shift layer while Shift is held
+            E(bl, "c_spshift")
+            E(movs_imm, 1, k)
+            E(cmp_imm, 0, 0)
+            E(b_cond, f"lk_m{k}", "eq")
+            E(movs_imm, 1, k + 4)
+            a.label(f"lk_m{k}")
+            E(mov_reg, 0, 4)
+        else:
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, k)
+        if k == K7:                                                       # K7 (the stretch): from the middle; with Shift (the bitcrush) plain
+            E(mov_reg, 6, 1)
+            E(push_list, [6])
         E(bl, "c_spval")
+        if k == K7:
+            E(pop_list, [1])
+            E(cmp_imm, 1, K7)
+            E(b_cond, f"lk_q{k}", "ne")
+            E(movw, 1, X7)
+            E(subs_reg, 0, 0, 1)
+            E(b_cond, f"lk_n{k}", "ge")
+            E(raw, h(0x4240))
+            a.label(f"lk_n{k}")
+            E(lsls_imm, 0, 0, 1)
+            a.label(f"lk_q{k}")
+            E(mov_reg, 6, 7)
+            E(adds_imm8, 6, O_ST - O_KB)                                  # (r6 back: our state = the overlay + (O_ST - O_KB))
         E(lsrs_imm, 0, 0, 7)                                              # 0..127
+        if k == K7:
+            E(cmp_imm, 0, 127)
+            E(b_cond, f"lk_c{k}", "le")
+            E(movs_imm, 0, 127)
+            a.label(f"lk_c{k}")
         if k == 0:
             E(subs_imm8, 0, 64)
             E(b_cond, f"lk_p{k}", "ge")
@@ -597,9 +1028,10 @@ def arm_code(base, L, prev):
         imm32(0, COL_KNOB)
         E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
-    E(movs_imm, 0, 0)
-    for k in range(4, 8):
-        E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
+    if not v2:
+        E(movs_imm, 0, 0)
+        for k in range(4, 8):
+            E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
     imm32(0, HAL_TICK)
     E(ldr_imm, 0, 0, 0)
     E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
@@ -614,9 +1046,12 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, shift=0, v2=False, k6swap=False):
     """Append the code; the head of the button chain, the head of the container's knob slot, the LED task calls (outermost).  pitchmod's
-    core 1 code (tools/pitchmod.py, without dspload) must be in the build too."""
+    core 1 code (tools/pitchmod.py, without dspload) must be in the build too, with the same shift."""
+    global YB
+    YB = PM.Y_BASE + shift
+    assert report["pitchmod"]["y_base"] == hex(YB), "stockplus and pitchmod with different shifts"
     import struct
     import rhbuild
     BASE = rhbuild.BASE
@@ -627,7 +1062,8 @@ def install(img, report, base_addr):
     L = dict(c_rst=lab("rhstate", "c_rst"), c_rrt=lab("rhrec", "c_rrt"), c_ciok=lab("countin", "c_ciok"))
     prev = dict(btn=rhbuild.bw_target(img, CI.BTN_ENTRY), knob=u(SLOT_KNOB) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    assert v2 or not k6swap
+    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -635,6 +1071,6 @@ def install(img, report, base_addr):
     rhbuild.patch_word(img, SLOT_KNOB, prev["knob"] | 1, labels["c_spknob"] | 1)
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_spled"]))
-    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr),
+    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), v2=v2, k6swap=k6swap,
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

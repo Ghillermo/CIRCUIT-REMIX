@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## Alpha 0.02 (2026-10-25)
+
+**Español.** Dos versiones nuevas (las anteriores siguen en el instalador):
+- **Alpha 0.02** (marca `A0.02`): todas las funciones del [manual](docs/MANUAL.md).
+- **Alpha 0.02S** (marca `A0.02S`): Alpha 0.02 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada del mod crea, modifica ni borra ficheros en la tarjeta.
+
+Novedades:
+- **La página Stock+ completa** (el botón de la pista elegida otra vez):
+  - K5 ring mod (Shift: su frecuencia);
+  - K6 pitch follow (Shift: tipo de filtro stock / 24 dB / comb sobre los knobs de filtro del stock; el LED, del color del tipo);
+  - K7 **stretch** 0,25×-4× sin cambiar el tono (Shift: bitcrush);
+  - K8 scan del punto de inicio (Shift: su profundidad).
+
+  Clear + K5-K8 devuelve las dos capas al valor por defecto. Se guarda con el proyecto; los proyectos de Alpha 0.01 cargan como estaban.
+- **Fixed Recording al tempo del reloj MIDI externo** (el arreglo de mefisme, antes en A0.01F / A01FS).
+- **Arreglo:** las palabras de la página Stock+ ya no comparten memoria del DSP con el sample de la pista 8 (en Alpha 0.01 podía notarse en la pista 8 con la envolvente o el LFO de tono).
+- **Probado en el aparato** con builds de desarrollo: el DSP con todo encendido en las 8 pistas, más reverb y delay, 2 minutos sin cortes; la página, sus knobs y el guardado. **Haz una copia de la tarjeta SD.**
+
+**English.** Two new builds (the earlier ones stay in the installer):
+- **Alpha 0.02** (marker `A0.02`): every feature in the [manual](docs/MANUAL_EN.md).
+- **Alpha 0.02S** (marker `A0.02S`): Alpha 0.02 without project copy, pack delete or sample copy; nothing of the mod creates, changes or deletes files on the card.
+
+What's new:
+- **The full Stock+ page** (press the selected track's button again):
+  - K5 ring mod (Shift: its frequency);
+  - K6 pitch follow (Shift: filter type stock / 24 dB / comb on the stock filter knobs; its LED in the type's colour);
+  - K7 **stretch** 0.25×-4× without changing pitch (Shift: bitcrush);
+  - K8 start-point scan (Shift: its depth).
+
+  Clear + K5-K8 resets both layers. Saved with the project; Alpha 0.01 projects load as they were.
+- **Fixed Recording at the external MIDI clock's tempo** (mefisme's fix, previously in A0.01F / A01FS).
+- **Fix:** the Stock+ page's words no longer share DSP memory with track 8's sample (in Alpha 0.01 it could be heard on track 8 with the pitch envelope or LFO).
+- **Tested on the device** with development builds: the DSP with everything on all 8 tracks plus reverb and delay, 2 minutes without dropouts; the page, its knobs and saving. **Back up the SD card.**
+
 ## Alpha 0.01F / A01FS (2026-10-24)
 
 **Español.** Dos versiones con un arreglo de Fixed Recording ([detalles](docs/FIXEDREC.md)):

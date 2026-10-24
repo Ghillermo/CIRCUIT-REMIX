@@ -30,6 +30,7 @@ OFF = {                                    # module -> (offset, length) in the t
     "mfsess": (540, 4),                    # "MF", the master filter's resonance, its check byte (written when the project is saved)
     "cthresh": (544, 4),                   # "TH", the compressor's threshold (0..127, 127 = the stock's), its check byte
     "stockplus": (548, 132),               # (RH32) "SP", a check byte, 0, then 8 tracks x 8 halfwords: the Stock+ knob page's values
+    "stockplus2": (680, 68),               # (RH33) "SQ", a check byte, 0, then 8 tracks x 4 halfwords: K5-K8's Shift layer on the Stock+ page
 }
 
 

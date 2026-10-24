@@ -10,6 +10,9 @@ Ours (tools/rhdsp1.py puts the code at P:$D34):
     the ARM sets Y:$1301 (rhremote dspw 1 Y:1301 N) to load the core by a known amount;
   * counters in a1 only (24 bits, they wrap); Y:$1300-$1302 are zero in every dump of the device (probe/dsp1_y*.bin).
 tools/rhdspload.py reads them on the device: turns of the wait per block with and without the burn = the free cycles per block.
+probe (RD12, in place of the burn: the core's P memory above $1000, where nothing of ours can go yet): each block, Y:PCMD (shifted) not 0 ->
+r1 = Y:PA; a negative PCMD first writes Y:PV to P:(r1) (movem); then P:(r1) -> Y:PRB and PCMD = 0 (tools/rhpmem.py: the host reads the old
+word, writes a pattern, reads it back, looks at X:/Y: of the same address for an alias, writes the old word back).
 """
 from __future__ import annotations
 
@@ -21,17 +24,36 @@ import rhdsp1  # noqa: E402
 import rhdsppatch as DP  # noqa: E402
 
 Y_IDLE, Y_BURN, Y_BLOCKS = 0x1300, 0x1301, 0x1302
+Y_PCMD, Y_PA, Y_PV, Y_PRB = 0x13DC, 0x13DD, 0x13DE, 0x13DF        # (probe; + the shift: $16DC..)
 P_WAIT, P_ACK = 0x111, 0x128
 OLD_WAIT, OLD_ACK = 0x0D07F8, 0x09C510                 # jsr $7F8; movep x1,y:<<$ffffd0
 JSR_SHORT = 0x0D0000
 
 
-def code():
-    """-> (words for P:$D34.., the address of BLOCK)"""
-    idle = DP.asm([f"move y:>${Y_IDLE:x},a1", "add #>1,a", f"move a1,y:>${Y_IDLE:x}"]) + DP.jmp(0x7F8)
+def code(shift=0, probe=False, hook=None):
+    """-> (words for P:$D34.., the address of BLOCK); shift: our Y words moved up (RD8 on: $300, out of voice 7's sample ring)"""
+    yi, yb, yk = Y_IDLE + shift, Y_BURN + shift, Y_BLOCKS + shift
+    idle = DP.asm([f"move y:>${yi:x},a1", "add #>1,a", f"move a1,y:>${yi:x}"]) + DP.jmp(0x7F8)
     blk_at = rhdsp1.START + len(idle)
-    head = DP.asm(["movep x1,y:<<$ffffd0", f"move y:>${Y_BLOCKS:x},a1", "add #>1,a", f"move a1,y:>${Y_BLOCKS:x}",
-                   f"move y:>${Y_BURN:x},a", "tst a"])
+    if hook is not None:                                   # (RD16) the block's acknowledgement, the counter, then jmp hook (WSOLA's WSB)
+        block = DP.asm(["movep x1,y:<<$ffffd0", f"move y:>${yk:x},a1", "add #>1,a", f"move a1,y:>${yk:x}"]) + DP.jmp(hook)
+        return idle + block, blk_at
+    if probe:
+        assert shift
+        pc, pa, pv, pr = (y + shift for y in (Y_PCMD, Y_PA, Y_PV, Y_PRB))
+        head = DP.asm(["movep x1,y:<<$ffffd0", f"move y:>${yk:x},a1", "add #>1,a", f"move a1,y:>${yk:x}",
+                       f"move y:>${pc:x},a", "tst a"])
+        mid = DP.asm([f"move y:>${pa:x},r1", f"move y:>${pv:x},x0"])
+        wr = DP.asm(["move x0,p:(r1)"])
+        rd = DP.asm(["move p:(r1),x0", f"move x0,y:>${pr:x}", "clr a", f"move a,y:>${pc:x}"])
+        ret = DP.asm(["rts"])
+        rd_at = blk_at + len(head) + 2 + len(mid) + 2 + len(wr)
+        x_at = rd_at + len(rd)
+        block = head + DP.jcc("eq", x_at) + mid + DP.jcc("pl", rd_at) + wr + rd + ret
+        assert len(block) == x_at + 1 - blk_at
+        return idle + block, blk_at
+    head = DP.asm(["movep x1,y:<<$ffffd0", f"move y:>${yk:x},a1", "add #>1,a", f"move a1,y:>${yk:x}",
+                   f"move y:>${yb:x},a", "tst a"])
     tail = DP.asm(["rep a1", "nop"])
     ret = DP.asm(["rts"])
     x_at = blk_at + len(head) + 2 + len(tail)

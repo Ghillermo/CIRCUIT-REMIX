@@ -69,8 +69,11 @@ def patch_p(img, paddr, old, new):
     img[o:o + 3] = new.to_bytes(3, "big")
 
 
-def install(img, report, base_addr, code, key):
-    """code = our P words for P:START..; -> labels.  The terminator / padding patched in place, the wrapper and blocks A / B appended."""
+def install(img, report, base_addr, code, key, low=None):
+    """code = our P words for P:START..; -> labels.  The terminator / padding patched in place, the wrapper and blocks A / B appended.
+    low (RD13 on) = (address, words, index of the count word): a second P segment in the unused vectors (tools/wsola.py), sent between A and
+    B as three blocks, the sender's own rule (a block = its two header words + the low 16 bits of its first word of words):
+    [0, k] (the segment's type and count), [address, w0 .. w_address], [w_cw, w_cw+1, the rest] with w_cw = k - address - 3."""
     import rhbuild
     n, ws = words(img)
     assert struct.unpack_from("<I", img, rhdsp.TABLE + 8 - BASE)[0] == BLK1, "core 1's mode 0 block moved"
@@ -84,7 +87,15 @@ def install(img, report, base_addr, code, key):
     k = len(code)
     blk_a = b"".join(w.to_bytes(3, "big") for w in [k, START] + list(code))
     blk_b = b"".join(w.to_bytes(3, "big") for w in (TERM_B, TERM))
-    def gen(at_a, at_b):
+    pack = lambda ws: b"".join(w.to_bytes(3, "big") for w in ws)                # noqa: E731
+    blks = [blk_a]
+    if low:
+        la, lw, ci = low
+        assert ci == la + 1 and lw[ci] == len(lw) - la - 3 and la > 0x44, "the count word"
+        blks += [pack([0, len(lw)]), pack([la] + lw[:ci]), pack(lw[ci:])]
+    blks.append(blk_b)
+
+    def gen(ats):
         a = Asm(base_addr)
         E = a.emit
 
@@ -98,26 +109,31 @@ def install(img, report, base_addr, code, key):
         imm32(0, BLK1)
         E(cmp_reg, 4, 0)
         E(b_cond, "up_x", "ne")
-        for at in (at_a, at_b):
+        for at in ats:
             imm32(0, at)
             E(movs_imm, 1, 1)
             E(bl, SEND)
         a.label("up_x")
         E(pop_list, [4], pc=True)
         return a.assemble()
-    size = len(gen(0, 0)[0])                                              # (fixed size: imm32 is always movw + movt)
-    at_a = (base_addr + size + 3) & ~3
-    at_b = (at_a + len(blk_a) + 3) & ~3
-    code_arm, labels = gen(at_a, at_b)
-    assert (base_addr + len(code_arm) + 3) & ~3 == at_a
+    size = len(gen([0] * len(blks))[0])                                   # (fixed size: imm32 is always movw + movt)
+    ats, at = [], (base_addr + size + 3) & ~3
+    for blk in blks:
+        ats.append(at)
+        at = (at + len(blk) + 3) & ~3
+    code_arm, labels = gen(ats)
+    assert (base_addr + len(code_arm) + 3) & ~3 == ats[0]
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_arm
-    img += bytes([0xFF]) * (at_a - BASE - len(img)) + blk_a
-    img += bytes([0xFF]) * (at_b - BASE - len(img)) + blk_b
+    for at, blk in zip(ats, blks):
+        img += bytes([0xFF]) * (at - BASE - len(img)) + blk
+    at_a, at_b = ats[0], ats[-1]
     while len(img) % 4:
         img += bytes([0xFF])
     rhbuild.patch(img, UPLOAD_BL, f"bl #{SEND:#x}", bl(UPLOAD_BL, labels["c_d1up"]))
     report[key] = dict(labels={k_: hex(v) for k_, v in labels.items() if k_.startswith("c_")}, blk_a=hex(at_a), blk_b=hex(at_b),
                        core1_words=k, start=hex(START))
+    if low:
+        report[key].update(blocks=[hex(a) for a in ats], low=hex(low[0]), low_words=len(low[1]))
     return labels
 
 
@@ -125,8 +141,8 @@ def sent(img, report, key):
     """-> the word stream core 1 receives on a mode 0 upload of this image (stock block, then A, then B): for the tests"""
     n, ws = words(img)
     out = [n, 0] + ws
-    for k in ("blk_a", "blk_b"):
-        o = int(report[key][k], 16) - BASE
+    for at in report[key].get("blocks") or [report[key][k] for k in ("blk_a", "blk_b")]:
+        o = int(at, 16) - BASE
         cnt = int.from_bytes(img[o + 1:o + 3], "big")
         out += [int.from_bytes(img[o + 3 * i:o + 3 * i + 3], "big") for i in range(cnt + 2)]
     return out
