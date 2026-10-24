@@ -1,0 +1,47 @@
+"""firmware/a0.01f/a001f_uploader.html: the installer of A0.01F and A01FS, made with tools/make_rm_uploader.py's code and page (MIT).
+tools/rm_uploader.html stays as it is.
+
+    python tools/make_a001f_uploader.py          (needs firmware/a0.01f/*.bin, firmware/a01fs/*.bin and the stock image)
+"""
+import base64
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import make_rm_uploader as m  # noqa: E402
+import rh_fw  # noqa: E402
+
+VERSIONS = ("A0.01F", "A01FS")
+DESC = {"A0.01F": ("Alpha 0.01 + Fixed Recording al tempo del reloj MIDI externo", "Alpha 0.01 + Fixed Recording at the external MIDI clock's tempo"),
+        "A01FS": ("Alpha 0.01S (más segura) + Fixed Recording al tempo del reloj MIDI externo",
+                  "Alpha 0.01S (safer) + Fixed Recording at the external MIDI clock's tempo")}
+OUT = m.ROOT / "firmware/a0.01f/a001f_uploader.html"
+
+
+def main():
+    stock = m.STOCK_BIN.read_bytes()
+    assert hashlib.sha256(stock).hexdigest() == rh_fw.STOCK_5706["image_sha256"]
+    patches = {}
+    for v in VERSIONS:
+        d = m.ROOT / "firmware" / v.lower(); man = json.loads((d / "manifest.json").read_text())
+        img = next(d.glob("*.bin")).read_bytes()
+        assert hashlib.sha256(img).hexdigest() == man["image_sha256"]
+        ops = m.make_patch(stock, img)
+        assert m.apply(stock, ops) == img
+        m.check_add(stock, ops)
+        assert hashlib.sha256(rh_fw.encode(img)).hexdigest() == man["syx_sha256"]
+        patches[v] = dict(dir=v.lower(), image_sha256=man["image_sha256"], syx_sha256=man["syx_sha256"], size=len(img), ops=ops)
+        print(v, len(ops), "ops,", sum(len(base64.b64decode(o[1])) for o in ops if o[0] == 1), "bytes of our own")
+    desc = {**m.DESC, **DESC}
+    tpl = m.TEMPLATE.replace("const DESC = " + json.dumps(m.DESC, ensure_ascii=False), "const DESC = " + json.dumps(desc, ensure_ascii=False))
+    assert tpl != m.TEMPLATE
+    page = tpl.replace("__PATCHES__", json.dumps(patches, separators=(",", ":"))).replace("__STOCK_SYX__", rh_fw.STOCK_5706["syx_sha256"]) \
+        .replace("__STOCK_IMG__", rh_fw.STOCK_5706["image_sha256"]).replace("__VERSIONS__", ", ".join(VERSIONS)).replace("__SAFER__", VERSIONS[1])
+    OUT.write_text(page, encoding="utf-8", newline="")
+    print(OUT, len(page), "bytes")
+
+
+if __name__ == "__main__":
+    main()

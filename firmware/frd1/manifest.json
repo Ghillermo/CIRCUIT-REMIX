@@ -1,0 +1,39 @@
+{
+  "base": "circuitrhythm-firmware-5706 (DR1.1.5143.5706)",
+  "marker": "FRD1",
+  "image_size": "0x5a858",
+  "free_to_0x70000": "0x157a8",
+  "grown_by": 744,
+  "stock_bytes_changed": 15,
+  "image_sha256": "657a2de22cf666af38b082009110c8b01aa7ab60f89572add94495fb699d9526",
+  "syx_sha256": "e90387eae06fc0154abf180304e2c9a4fa6c2caae018cb6debb9e0cd8e2ab643",
+  "crc32": "0x3ffdac58",
+  "provenance": "not checked (no Tracks image here)",
+  "report": {
+    "fixedrec": {
+      "calls": [
+        "0x803cea0",
+        "0x8058fe0"
+      ],
+      "labels": {
+        "c_frbpm": "0x806a570"
+      },
+      "base": "0x806a570"
+    },
+    "rdiag": {
+      "hook": "0x8026de8",
+      "router_ptr": "0x20006f04",
+      "version": "0x5201",
+      "dsp": false,
+      "labels": {
+        "c_rdin": "0x806a5c0",
+        "c_g32": "0x806a600",
+        "c_p32": "0x806a618",
+        "c_pbytes": "0x806a628",
+        "c_gbytes": "0x806a646",
+        "c_rdcmd": "0x806a668"
+      },
+      "base": "0x806a5c0"
+    }
+  }
+}
