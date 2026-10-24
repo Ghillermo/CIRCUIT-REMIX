@@ -36,20 +36,25 @@ El pad 9 sin Shift sigue siendo el Mute Recall del original.
 
 Con un paso mantenido, el pad de sample es el sample flip del original. Desde el Mixer, Clear + pista hace lo del original.
 
-### Página Stock+ de los knobs (desde Alpha 0.01)
+### Página Stock+ de los knobs (desde Alpha 0.01; K5-K8 desde Alpha 0.02)
 **Pulsa otra vez el botón de la pista elegida** (en sus vistas): sus 8 knobs pasan a la página Stock+; otra vez, vuelven a la de stock. Mientras está en Stock+, el botón de la pista parpadea en blanco. La página es por pista y se queda hasta apagar.
 
-| Knob | En la página Stock+ |
-|---|---|
-| K1 | ★ cantidad de la envolvente de tono: centro = nada; a la derecha cada golpe empieza más agudo, a la izquierda más grave (hasta ±24 semitonos), y vuelve a su nota |
-| K2 | ★ lo que tarda en volver a la nota (de 5 ms a 4 s) |
-| K3 | ★ velocidad del LFO de tono (de 0,05 a 30 Hz) |
-| K4 | ★ profundidad del LFO de tono (de 0 a 24 semitonos) |
-| K5-K8 | sin función todavía (apagados) |
+| Knob | En la página Stock+ | Con Shift |
+|---|---|---|
+| K1 | ★ cantidad de la envolvente de tono: centro = nada; a la derecha cada golpe empieza más agudo, a la izquierda más grave (hasta ±24 semitonos), y vuelve a su nota | ajuste fino |
+| K2 | ★ lo que tarda en volver a la nota (de 5 ms a 4 s) | ajuste fino |
+| K3 | ★ velocidad del LFO de tono (de 0,05 a 30 Hz) | ajuste fino |
+| K4 | ★ profundidad del LFO de tono (de 0 a 24 semitonos) | ajuste fino |
+| K5 | ★ cantidad del ring mod | ★ su frecuencia (20 Hz-5 kHz) |
+| K6 | ★ pitch follow: el corte del paso bajo del stock sube y baja con la nota | ★ tipo de filtro, sobre los knobs de filtro del stock: **stock** (sin cambios), **24 dB** (el paso bajo y el paso alto del stock, más pronunciados) o **comb** (el corte da su tono y la resonancia su realimentación) |
+| K7 | ★ **stretch**: la pista suena más lenta (izquierda, hasta 0,25×) o más rápida (derecha, hasta 4×) sin cambiar de tono; el centro = como el stock | ★ bitcrush |
+| K8 | ★ velocidad del scan: un LFO que mueve el punto de inicio de cada nota | ★ su profundidad |
 
-- **Shift + knob = ajuste fino**, como en los knobs de stock. **Clear + knob** = su valor por defecto (K1 al centro, K4 a 0).
-- K1-K4 en blanco, con el brillo según su valor (K1: la distancia al centro).
-- Se guarda con el proyecto; un proyecto sin estos valores suena sin modulación. Clear + botón de la pista los deja por defecto y Duplicate + pista A, pista B los copia.
+- **Shift:** en K1-K4 es el ajuste fino, como en los knobs de stock; en K5-K8 es la segunda función, y mientras lo mantienes sus LEDs enseñan esa segunda capa.
+- **Clear + knob:** su valor por defecto. En K5-K8 vuelven las dos capas (con y sin Shift).
+- **LEDs:** los knobs en blanco con el brillo según su valor (K1 y K7: la distancia al centro). K6 va del color de su tipo de filtro: stock blanco, 24 dB el color del delay de la vista FX, comb el de la reverb.
+- **Proyecto:** se guarda con él; un proyecto sin estos valores suena sin modulación (los de Alpha 0.01 cargan como estaban). Clear + botón de la pista los deja por defecto y Duplicate + pista A, pista B los copia.
+- **El stretch** reparte el sample en granos de unos 43 ms que se solapan y se mantienen en fase (WSOLA). A 0,5× suena muy bien; a 0,25× la batería puede sonar con clics, porque cada golpe se repite. Probado con todo encendido en las 8 pistas a la vez, más reverb y delay.
 - El tono de cada voz se recalcula unas 190 veces por segundo y al empezar cada golpe: con una caída muy corta (K2 a la izquierda del todo) o un LFO muy rápido puede notarse escalonado.
 
 ## 4. Vista Note

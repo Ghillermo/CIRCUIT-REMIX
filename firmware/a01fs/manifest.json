@@ -8,7 +8,7 @@
   "image_sha256": "84a4729ef9699a08befb554fef5e08f12831c4290887ff3203f4f7069cdd0ce3",
   "syx_sha256": "e69124d8807967ec9236b9b1e572afcbba7760ea5f34eb4a2fd68741847bdf11",
   "crc32": "0x5250c1e8",
-  "provenance": "not checked (no Tracks image here)",
+  "provenance": "ok (27084 B, no 16-byte run of the Tracks image)",
   "report": {
     "rhstate": {
       "block": "0x2004f660",

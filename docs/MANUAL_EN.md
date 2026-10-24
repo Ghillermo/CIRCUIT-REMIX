@@ -36,20 +36,25 @@ Pad 9 without Shift is still the original's Mute Recall.
 
 With a step held, a sample pad is the original's sample flip. From the Mixer, Clear + track does what the original does.
 
-### The Stock+ knob page (since Alpha 0.01)
+### The Stock+ knob page (since Alpha 0.01; K5-K8 since Alpha 0.02)
 **Press the selected track's button again** (in its views): its 8 knobs go to the Stock+ page; press it again to go back to the stock page. While a track is on the Stock+ page, its button blinks white. The page is per track and stays until power-off.
 
-| Knob | On the Stock+ page |
-|---|---|
-| K1 | ★ pitch envelope amount: centre = none; to the right each hit starts higher, to the left lower (up to ±24 semitones), then returns to its note |
-| K2 | ★ how long it takes to return to the note (5 ms to 4 s) |
-| K3 | ★ pitch LFO rate (0.05 to 30 Hz) |
-| K4 | ★ pitch LFO depth (0 to 24 semitones) |
-| K5-K8 | no function yet (dark) |
+| Knob | On the Stock+ page | With Shift |
+|---|---|---|
+| K1 | ★ pitch envelope amount: centre = none; to the right each hit starts higher, to the left lower (up to ±24 semitones), then returns to its note | fine control |
+| K2 | ★ how long it takes to return to the note (5 ms to 4 s) | fine control |
+| K3 | ★ pitch LFO rate (0.05 to 30 Hz) | fine control |
+| K4 | ★ pitch LFO depth (0 to 24 semitones) | fine control |
+| K5 | ★ ring mod amount | ★ its frequency (20 Hz-5 kHz) |
+| K6 | ★ pitch follow: the stock low-pass cutoff follows the note | ★ filter type, on the stock filter knobs: **stock** (unchanged), **24 dB** (the stock low-pass and high-pass, steeper) or **comb** (the cutoff sets its pitch, the resonance its feedback) |
+| K7 | ★ **stretch**: the track plays slower (left, down to 0.25×) or faster (right, up to 4×) without changing pitch; centre = as stock | ★ bitcrush |
+| K8 | ★ scan speed: an LFO that moves each note's start point | ★ its depth |
 
-- **Shift + knob = fine control**, as on the stock knobs. **Clear + knob** = its default (K1 to the centre, K4 to 0).
-- K1-K4 are white, their brightness following their value (K1: the distance from the centre).
-- Saved with the project; a project without these values plays without modulation. Clear + the track's button resets them and Duplicate + track A, track B copies them.
+- **Shift:** on K1-K4 it is fine control, as on the stock knobs; on K5-K8 it is the second function, and while you hold it their LEDs show that second layer.
+- **Clear + knob:** its default. On K5-K8 both layers go back (with and without Shift).
+- **LEDs:** the knobs are white, their brightness following their value (K1 and K7: the distance from the centre). K6 takes its filter type's colour: stock white, 24 dB the FX view's delay colour, comb its reverb colour.
+- **Project:** saved with it; a project without these values plays without modulation (Alpha 0.01 projects load as they were). Clear + the track's button resets them and Duplicate + track A, track B copies them.
+- **The stretch** splits the sample into overlapping grains of about 43 ms that are kept in phase (WSOLA). 0.5× sounds very good; at 0.25× drums may click, because each hit repeats. Tested with everything on all 8 tracks at once, plus reverb and delay.
 - Each voice's pitch is recalculated about 190 times a second and at the start of every hit: a very short return (K2 fully left) or a very fast LFO may sound stepped.
 
 ## 4. Note view
