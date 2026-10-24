@@ -33,6 +33,24 @@ Example: external clock at 110 BPM, 1 bar = 104727 samples = 2.18 s.
 
 The saved sample can be up to 255 samples (about 5 ms) shorter than the table. The original firmware trims the recording in blocks of 256 samples.
 
+## Limits
+
+**Whole BPM only.** The firmware keeps every tempo as a whole number, one byte. The clock tick measures the external clock and rounds it to the nearest whole BPM (`0x08032430`: `round(period × 0x9C4 / 2^32)`), and the Fixed Recording length is computed from that number. The stock firmware has the same limit: its own tempo can only be set in whole BPM.
+
+- A master with a whole-number tempo gives the exact length. The Circuit Tracks only has whole-number tempos.
+- A master with a decimal tempo (for example a DAW at 97.5 BPM) gives a length for the rounded tempo (98 BPM). The error is up to 0.5 BPM:
+
+| Master tempo | Used | 1 bar | 4 bars |
+|---|---|---|---|
+| 97.5 | 98 | 12.6 ms short | 50 ms short |
+| 120.4 | 120 | 6.6 ms long | 27 ms long |
+| 120.5 | 121 | 8.2 ms short | 33 ms short |
+| 40.5 | 41 | 72 ms short | 289 ms short |
+
+The error is larger for slow tempos and long recordings. A fix for decimal tempos would compute the length from the measured clock period instead of the rounded BPM; this is not done.
+
+**Tempo changes.** The measured BPM is updated about once a beat. A recording that starts right after a tempo change can use the tempo of the previous beat.
+
 ## Install
 
 1. Back up the SD card. A0.01F has the Alpha 0.01 features that write to the card. A01FS has none of them.

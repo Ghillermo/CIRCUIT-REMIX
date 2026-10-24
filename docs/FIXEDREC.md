@@ -33,6 +33,24 @@ Ejemplo: reloj externo a 110 BPM, 1 compás = 104727 muestras = 2,18 s.
 
 El sample guardado puede ser hasta 255 muestras (unos 5 ms) más corto que la tabla. El firmware original recorta la grabación en bloques de 256 muestras.
 
+## Límites
+
+**Solo BPM enteros.** El firmware guarda todos los tempos como un número entero, de un byte. El tick del reloj mide el reloj externo y lo redondea al BPM entero más cercano (`0x08032430`: `round(periodo × 0x9C4 / 2^32)`), y la duración de Fixed Recording se calcula con ese número. El firmware original tiene el mismo límite: su propio tempo solo se puede poner en BPM enteros.
+
+- Un maestro con un tempo entero da la duración exacta. El Circuit Tracks solo tiene tempos enteros.
+- Un maestro con un tempo decimal (por ejemplo un DAW a 97,5 BPM) da la duración del tempo redondeado (98 BPM). El error es de hasta 0,5 BPM:
+
+| Tempo del maestro | Usado | 1 compás | 4 compases |
+|---|---|---|---|
+| 97,5 | 98 | 12,6 ms menos | 50 ms menos |
+| 120,4 | 120 | 6,6 ms más | 27 ms más |
+| 120,5 | 121 | 8,2 ms menos | 33 ms menos |
+| 40,5 | 41 | 72 ms menos | 289 ms menos |
+
+El error es mayor con tempos lentos y grabaciones largas. Un arreglo para tempos decimales calcularía la duración con el periodo medido del reloj en lugar del BPM redondeado; no está hecho.
+
+**Cambios de tempo.** El BPM medido se actualiza más o menos una vez por pulso. Una grabación que empieza justo después de un cambio de tempo puede usar el tempo del pulso anterior.
+
 ## Instalar
 
 1. Haz una copia de la tarjeta SD. A0.01F tiene las funciones de Alpha 0.01 que escriben en la tarjeta. A01FS no tiene ninguna.
