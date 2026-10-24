@@ -61,6 +61,10 @@ python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version
 - `python tools/verify_builds.py` vuelve a construir las versiones y las compara con sus manifiestos.
 - Para enviarlo, lo más sencillo es `tools/rm_uploader.html` con el `.syx` oficial: hace lo mismo en el navegador y comprueba el mismo SHA-256.
 
+### Fixed Recording al tempo del reloj externo: A0.01F / A01FS
+
+**A0.01F** (Alpha 0.01 + el arreglo) y **A01FS** (Alpha 0.01S + el arreglo): con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Instalador: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Detalles y pruebas (en inglés): [`docs/FIXEDREC_EN.md`](docs/FIXEDREC_EN.md).
+
 ## Características (Alpha 0.01)
 
 Manual completo, vista por vista: [`docs/MANUAL.md`](docs/MANUAL.md).
