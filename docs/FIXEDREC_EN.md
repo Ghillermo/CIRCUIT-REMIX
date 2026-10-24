@@ -105,12 +105,10 @@ A01FS has the same changes against Alpha 0.01S, with the marker `A01FS`. The 6-b
 | `tools/fixedrec.py` | the fix module |
 | `tools/build_a001f.py` | builds A0.01F |
 | `tools/build_a01fs.py` | builds A01FS |
-| `tools/build_frd1.py` | builds FRD1: stock + the fix + the read-only USB diagnostics (`tools/rdiag.py`), the test build used on the device |
 | `tools/emu_fixedrec.py` | emulation test of the fix |
 | `tools/make_a001f_uploader.py` | makes `firmware/a0.01f/a001f_uploader.html` |
 | `tools/verify_builds.py` | rebuilds every version, A0.01F and A01FS included, and compares them with their manifests |
-| `firmware/a0.01f/manifest.json`, `firmware/a01fs/manifest.json`, `firmware/frd1/manifest.json` | SHA-256 and build reports |
-| `firmware/frd1/frd1_uploader.html` | installer of FRD1 |
+| `firmware/a0.01f/manifest.json`, `firmware/a01fs/manifest.json` | SHA-256 and build reports |
 
 `tools/rm_uploader.html` does not include A0.01F or A01FS.
 
@@ -126,6 +124,8 @@ python tools/emu_fixedrec.py stock/circuitrhythm-firmware-5706-STOCK.bin firmwar
 The test runs `0x0803CE98` and `0x08058F9C` from the original image and from the built image in Unicorn, with test stores and a test clock object. 17 cases: project tempo without an external clock, external clock, BPM outside 40–240 and at the limits, both store buffers, another store, wrong vtable, the four lengths, Fixed Recording off, and registers kept as the calling convention requires. Result: 17/17 pass on A0.01F, A01FS and FRD1.
 
 ### On the device (FRD1)
+
+FRD1 was a private test build (stock + the fix + the remote USB diagnostics). It is not published: the public builds carry no remote diagnostics.
 
 Circuit Tracks as clock master, Circuit Rhythm as slave, project tempo 90 BPM:
 

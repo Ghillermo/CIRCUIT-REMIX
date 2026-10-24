@@ -2,7 +2,7 @@
 
 Runs the stock functions 0x0803CE98 (samples + stop timer) and 0x08058F9C (length in ms) in Unicorn,
 on the stock image and on the patched image, against hand-built stores and a fake clock object.
-Usage: emu_fixedrec.py STOCK.bin [BUILT.bin]   (with BUILT.bin, "fixed" is that image, e.g. firmware/frd1/*.bin)
+Usage: emu_fixedrec.py STOCK.bin [BUILT.bin]   (with BUILT.bin, "fixed" is that image, e.g. firmware/a0.01f/*.bin)
 """
 import struct
 import sys

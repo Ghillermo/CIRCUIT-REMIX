@@ -105,12 +105,10 @@ A01FS tiene los mismos cambios frente a Alpha 0.01S, con la marca `A01FS`. La ma
 | `tools/fixedrec.py` | el módulo del arreglo |
 | `tools/build_a001f.py` | construye A0.01F |
 | `tools/build_a01fs.py` | construye A01FS |
-| `tools/build_frd1.py` | construye FRD1: original + el arreglo + el diagnóstico USB de solo lectura (`tools/rdiag.py`), la build de prueba usada en el aparato |
 | `tools/emu_fixedrec.py` | prueba en emulación del arreglo |
 | `tools/make_a001f_uploader.py` | crea `firmware/a0.01f/a001f_uploader.html` |
 | `tools/verify_builds.py` | vuelve a construir todas las versiones, también A0.01F y A01FS, y las compara con sus manifiestos |
-| `firmware/a0.01f/manifest.json`, `firmware/a01fs/manifest.json`, `firmware/frd1/manifest.json` | SHA-256 e informes de build |
-| `firmware/frd1/frd1_uploader.html` | instalador de FRD1 |
+| `firmware/a0.01f/manifest.json`, `firmware/a01fs/manifest.json` | SHA-256 e informes de build |
 
 `tools/rm_uploader.html` no incluye A0.01F ni A01FS.
 
@@ -126,6 +124,8 @@ python tools/emu_fixedrec.py stock/circuitrhythm-firmware-5706-STOCK.bin firmwar
 La prueba ejecuta `0x0803CE98` y `0x08058F9C` de la imagen original y de la imagen construida en Unicorn, con almacenes de prueba y un objeto reloj de prueba. 17 casos: tempo del proyecto sin reloj externo, reloj externo, BPM fuera de 40–240 y en los límites, los dos búferes del almacén, otro almacén, vtable incorrecta, las cuatro duraciones, Fixed Recording desactivado, y registros conservados según la convención de llamada. Resultado: 17/17 correctos en A0.01F, A01FS y FRD1.
 
 ### En el aparato (FRD1)
+
+FRD1 fue una build de prueba privada (original + el arreglo + el diagnóstico remoto por USB). No se publica: las versiones públicas no llevan diagnóstico remoto.
 
 Circuit Tracks como maestro del reloj, Circuit Rhythm como esclavo, tempo del proyecto 90 BPM:
 
