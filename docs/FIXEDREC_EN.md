@@ -2,6 +2,8 @@
 
 Circuit Rhythm 2.0.1 (build 5706). Builds: **A0.01F** (Alpha 0.01 + this fix) and **A01FS** (Alpha 0.01S + this fix).
 
+> **Español:** [`FIXEDREC.md`](FIXEDREC.md).
+
 ## What it does
 
 With an external MIDI clock (for example a Circuit Tracks as master and the Rhythm as slave), **Fixed Recording** in the Sample Rec view uses the tempo of the incoming clock. Without an external clock, it uses the project tempo, as the original firmware does.
@@ -114,4 +116,6 @@ Circuit Tracks as clock master, Circuit Rhythm as slave, project tempo 90 BPM:
 - The fix code in flash was identical to the build.
 - Eight recordings (pads 9–16) at 110 and 120 BPM, with tempo changes between them: every length matched the clock tempo, not the project tempo. Each WAV was the target length or up to 93 samples (1.9 ms) shorter (the 256-sample trim of the original firmware).
 
-A0.01F and A01FS hold the same fix code as FRD1. Not yet recorded on the device with A0.01F or A01FS.
+### On the device (release build)
+
+A0.01F and A01FS hold the same fix code as FRD1. With the release build (no diagnostics): external clock 100 BPM, project tempo 90 BPM, 1 bar on pad 9 → 115200 samples = 2.400 s, the clock tempo's length.

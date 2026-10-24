@@ -63,7 +63,7 @@ python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version
 
 ### Fixed Recording al tempo del reloj externo: A0.01F / A01FS
 
-**A0.01F** (Alpha 0.01 + el arreglo) y **A01FS** (Alpha 0.01S + el arreglo): con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Instalador: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Detalles y pruebas (en inglés): [`docs/FIXEDREC_EN.md`](docs/FIXEDREC_EN.md).
+**A0.01F** (Alpha 0.01 + el arreglo) y **A01FS** (Alpha 0.01S + el arreglo): con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Instalador: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Detalles y pruebas: [`docs/FIXEDREC.md`](docs/FIXEDREC.md).
 
 ## Características (Alpha 0.01)
 

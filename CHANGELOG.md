@@ -2,7 +2,7 @@
 
 ## Alpha 0.01F / A01FS (2026-10-24)
 
-**Español.** Dos versiones con un arreglo de Fixed Recording ([detalles, en inglés](docs/FIXEDREC_EN.md)):
+**Español.** Dos versiones con un arreglo de Fixed Recording ([detalles](docs/FIXEDREC.md)):
 - **Alpha 0.01F** (marca `A0.01F`): Alpha 0.01 + el arreglo.
 - **A01FS** (marca `A01FS`): Alpha 0.01S + el arreglo.
 
