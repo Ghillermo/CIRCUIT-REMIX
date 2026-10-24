@@ -20,6 +20,7 @@ Proyecto desarrollado usando Claude (Anthropic).
 > - Haz una copia completa de la SD (proyectos, packs y samples) antes de enviar cualquier versión del mod.
 > - No trabajes con proyectos importantes guardados en el aparato mientras lo pruebas.
 > - Es una versión **alfa**: las funciones se han comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria) y en parte en el aparato; podría haber problemas que dañen proyectos o samples guardados.
+> - ⚠️ **Fallo conocido de Alpha 0.01, 0.01S, A0.01F y A01FS: pista 8.** Los valores de la página Stock+ (envolvente y LFO de tono) estaban en la memoria del DSP donde la pista 8 lee su sample mientras suena, y se escriben siempre, aunque no uses la página. Con algo sonando en la pista 8 puede oírse chirridos, clics o siseo, y el tono puede irse. **Arreglado en Alpha 0.02: actualiza.** Alpha 0.0 / 0.0S no lo tienen.
 > - Si prefieres no arriesgar la tarjeta, usa la **versión más segura, Alpha 0.02S**: es Alpha 0.02 sin ninguna función que cree, modifique o borre ficheros en la SD por su cuenta (no tiene la copia de proyectos, el borrado de packs ni la copia de samples).
 > - El mod nunca escribe en el pack de la memoria interna: sus funciones de escritura lo rechazan (LED de Save en rojo). Lo que guarda el firmware original sigue funcionando como siempre.
 > - El bootloader de Novation no se toca: **Sample Rec + Samples + Note** al encender permite volver al firmware oficial.
@@ -62,6 +63,8 @@ python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version
 - Para enviarlo, lo más sencillo es `tools/rm_uploader.html` con el `.syx` oficial: hace lo mismo en el navegador y comprueba el mismo SHA-256.
 
 ### Fixed Recording al tempo del reloj externo: A0.01F / A01FS
+
+> ⚠️ **Fallo conocido de Alpha 0.01, 0.01S, A0.01F y A01FS: pista 8.** Los valores de la página Stock+ (envolvente y LFO de tono) estaban en la memoria del DSP donde la pista 8 lee su sample mientras suena, y se escriben siempre, aunque no uses la página. Con algo sonando en la pista 8 puede oírse chirridos, clics o siseo, y el tono puede irse. **Arreglado en Alpha 0.02: actualiza.** Alpha 0.0 / 0.0S no lo tienen.
 
 **Incluido en Alpha 0.02.** **A0.01F** (Alpha 0.01 + el arreglo) y **A01FS** (Alpha 0.01S + el arreglo): con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Instalador: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Detalles y pruebas: [`docs/FIXEDREC.md`](docs/FIXEDREC.md).
 
@@ -119,6 +122,7 @@ Developed using Claude (Anthropic).
 > - Make a full copy of the SD card (projects, packs and samples) before sending any version of the mod.
 > - Do not work on important projects stored on the device while you test it.
 > - This is an **alpha**: the features were checked in emulation (the device's code run on a dump of its memory) and partly on the device; there could be problems that damage stored projects or samples.
+> - ⚠️ **Known bug in Alpha 0.01, 0.01S, A0.01F and A01FS: track 8.** The Stock+ page's values (pitch envelope and LFO) sat in the DSP memory where track 8 reads its sample while it plays, and they are written all the time, even if you never use the page. With something playing on track 8 you may hear chirps, clicks or hiss, and its pitch may drift. **Fixed in Alpha 0.02: please update.** Alpha 0.0 / 0.0S are not affected.
 > - If you would rather not risk the card, use the **safer build, Alpha 0.02S**: Alpha 0.02 without any feature that creates, changes or deletes files on the SD card by itself (no project copy, pack delete or sample copy).
 > - The mod never writes to the internal memory pack: its write features refuse it (Save LED red). Saving from the original firmware works as always.
 > - Novation's bootloader is not touched: **Sample Rec + Samples + Note** at power-on lets you go back to the official firmware.
@@ -149,6 +153,8 @@ python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version
 The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.02S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds the versions and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
 
 ### Fixed Recording at the external clock's tempo: A0.01F / A01FS
+
+> ⚠️ **Known bug in Alpha 0.01, 0.01S, A0.01F and A01FS: track 8.** The Stock+ page's values (pitch envelope and LFO) sat in the DSP memory where track 8 reads its sample while it plays, and they are written all the time, even if you never use the page. With something playing on track 8 you may hear chirps, clicks or hiss, and its pitch may drift. **Fixed in Alpha 0.02: please update.** Alpha 0.0 / 0.0S are not affected.
 
 **Included in Alpha 0.02.** **A0.01F** (Alpha 0.01 + the fix) and **A01FS** (Alpha 0.01S + the fix): with an external MIDI clock, Fixed Recording uses the clock's tempo, not the project tempo. Installer: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Details and tests: [`docs/FIXEDREC_EN.md`](docs/FIXEDREC_EN.md).
 

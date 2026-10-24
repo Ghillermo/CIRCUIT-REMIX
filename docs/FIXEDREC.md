@@ -4,6 +4,8 @@ Circuit Rhythm 2.0.1 (build 5706). Versiones: **A0.01F** (Alpha 0.01 + este arre
 
 > **English:** [`FIXEDREC_EN.md`](FIXEDREC_EN.md).
 
+> ⚠️ **Fallo conocido de Alpha 0.01, 0.01S, A0.01F y A01FS: pista 8.** Los valores de la página Stock+ (envolvente y LFO de tono) estaban en la memoria del DSP donde la pista 8 lee su sample mientras suena, y se escriben siempre, aunque no uses la página. Con algo sonando en la pista 8 puede oírse chirridos, clics o siseo, y el tono puede irse. **Arreglado en Alpha 0.02: actualiza.** Alpha 0.0 / 0.0S no lo tienen. Este arreglo de Fixed Recording va también en Alpha 0.02.
+
 ## Qué hace
 
 Con un reloj MIDI externo (por ejemplo, un Circuit Tracks como maestro y el Rhythm como esclavo), **Fixed Recording** en la vista Sample Rec usa el tempo del reloj que llega. Sin reloj externo, usa el tempo del proyecto, como el firmware original.

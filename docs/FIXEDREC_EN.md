@@ -4,6 +4,8 @@ Circuit Rhythm 2.0.1 (build 5706). Builds: **A0.01F** (Alpha 0.01 + this fix) an
 
 > **Español:** [`FIXEDREC.md`](FIXEDREC.md).
 
+> ⚠️ **Known bug in Alpha 0.01, 0.01S, A0.01F and A01FS: track 8.** The Stock+ page's values (pitch envelope and LFO) sat in the DSP memory where track 8 reads its sample while it plays, and they are written all the time, even if you never use the page. With something playing on track 8 you may hear chirps, clicks or hiss, and its pitch may drift. **Fixed in Alpha 0.02: please update.** Alpha 0.0 / 0.0S are not affected. This Fixed Recording fix is in Alpha 0.02 too.
+
 ## What it does
 
 With an external MIDI clock (for example a Circuit Tracks as master and the Rhythm as slave), **Fixed Recording** in the Sample Rec view uses the tempo of the incoming clock. Without an external clock, it uses the project tempo, as the original firmware does.
