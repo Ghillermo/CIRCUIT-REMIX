@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## Alpha 0.01F / A01FS (2026-10-24)
+
+**Español.** Dos versiones con un arreglo de Fixed Recording ([detalles, en inglés](docs/FIXEDREC_EN.md)):
+- **Alpha 0.01F** (marca `A0.01F`): Alpha 0.01 + el arreglo.
+- **A01FS** (marca `A01FS`): Alpha 0.01S + el arreglo.
+
+Con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Sin reloj externo, usa el tempo del proyecto, como el original. Instalador: `firmware/a0.01f/a001f_uploader.html`.
+
+Comprobado en emulación (17 casos) y en el aparato con la build de prueba FRD1 (el arreglo + el diagnóstico remoto de solo lectura). **Haz una copia de la tarjeta SD.**
+
+**English.** Two builds with a Fixed Recording fix ([details](docs/FIXEDREC_EN.md)):
+- **Alpha 0.01F** (marker `A0.01F`): Alpha 0.01 + the fix.
+- **A01FS** (marker `A01FS`): Alpha 0.01S + the fix.
+
+With an external MIDI clock, Fixed Recording uses the clock's tempo, not the project tempo. Without an external clock, it uses the project tempo, as the original. Installer: `firmware/a0.01f/a001f_uploader.html`.
+
+Checked in emulation (17 cases) and on the device with the FRD1 test build (the fix + read-only remote diagnostics). **Back up the SD card.**
+
 ## Alpha 0.01 (2026-10-21)
 
 **Español.** Dos versiones nuevas (las anteriores siguen en el instalador):

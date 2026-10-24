@@ -143,6 +143,10 @@ python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version
 ```
 The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.01S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds the versions and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
 
+### Fixed Recording at the external clock's tempo: A0.01F / A01FS
+
+**A0.01F** (Alpha 0.01 + the fix) and **A01FS** (Alpha 0.01S + the fix): with an external MIDI clock, Fixed Recording uses the clock's tempo, not the project tempo. Installer: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Details and tests: [`docs/FIXEDREC_EN.md`](docs/FIXEDREC_EN.md).
+
 ## Features (Alpha 0.01)
 
 Full manual, view by view: [`docs/MANUAL_EN.md`](docs/MANUAL_EN.md).
