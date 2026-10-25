@@ -44,6 +44,7 @@ OFF = {                                    # module -> (offset, length) inside t
     "mfsess": (214, 1),                    # 0xC1 = a project was loaded: the LED task applies its resonance once
     "mfsess2": (215, 1),
     "cthresh": (216, 2),                   # (RH30) the compressor threshold applied + 0x80 (0 unknown), 0xB1 = core 0 holds another program                   # (RH30, mfsess track) the resonance the LED task last saw + 0x80 (0 = none yet)
+    "spwait": (222, 1),                    # (RH35) frames since core 1's program was seen uploaded (stockplus writes to core 1 only after SP_WAIT)
     "stockplus": (218, 4),                 # (RH32) + 0 the tracks on the Stock+ page (bit t), + 1 the tracks to push to core 1, + 2 the round, + 3 Duplicate's source + 1
     "smpcopy": (202, 12),                  # the sample copy: tag, source + 1, its pack, the slot asked about + 1, time, the last copy + 1, its pack, status, time
 }

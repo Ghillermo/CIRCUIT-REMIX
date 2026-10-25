@@ -30,13 +30,14 @@ OLD_WAIT, OLD_ACK = 0x0D07F8, 0x09C510                 # jsr $7F8; movep x1,y:<<
 JSR_SHORT = 0x0D0000
 
 
-def code(shift=0, probe=False, hook=None):
+def code(shift=0, probe=False, hook=None, call=None):
     """-> (words for P:$D34.., the address of BLOCK); shift: our Y words moved up (RD8 on: $300, out of voice 7's sample ring)"""
     yi, yb, yk = Y_IDLE + shift, Y_BURN + shift, Y_BLOCKS + shift
     idle = DP.asm([f"move y:>${yi:x},a1", "add #>1,a", f"move a1,y:>${yi:x}"]) + DP.jmp(0x7F8)
     blk_at = rhdsp1.START + len(idle)
     if hook is not None:                                   # (RD16) the block's acknowledgement, the counter, then jmp hook (WSOLA's WSB)
-        block = DP.asm(["movep x1,y:<<$ffffd0", f"move y:>${yk:x},a1", "add #>1,a", f"move a1,y:>${yk:x}"]) + DP.jmp(hook)
+        block = (DP.asm(["movep x1,y:<<$ffffd0", f"move y:>${yk:x},a1", "add #>1,a", f"move a1,y:>${yk:x}"])
+                 + ([JSR_SHORT | call] if call is not None else []) + DP.jmp(hook))      # (RD17: call = a routine in the landing area)
         return idle + block, blk_at
     if probe:
         assert shift

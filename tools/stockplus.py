@@ -90,6 +90,12 @@ GRAIN = 2048                                          # the stretch's grain (RD1
 # 24 dB the FX view's delay colour, comb its reverb colour), as bright as the follow (at least K6_MIN) or fully with Shift held; and Clear +
 # K5-K8 = both of the knob's layers back to their defaults («make clear +knob affect shift functions too»)
 K6, I_TYPE, I_FOLLOW = 5, 5, 9
+# wait (RH35; the user, 2026-10-25, on RH34: «stock+ does nothing after reboot, only works when flashed»; on the device after a power-up
+# core 1's host port answered out of step and none of our words had arrived): the first write to core 1 only SP_WAIT LED frames after its
+# program was seen uploaded (cthresh READY), not at once: core 1 is still starting then, its host handler (which takes the words in address /
+# data pairs) not yet running, and a word lost there leaves every later pair one word out of step
+O_W = rhstate.OFF["spwait"][0]
+SP_WAIT = 200
 COL_TYPES = (0x151, 0x139, 0x141)
 K6_MIN = 24
 assert BLK2_LEN == 4 + 2 * 4 * NTRK
@@ -159,7 +165,7 @@ def words(v):
     return [((v[0] - 8192) * A_SCALE) & 0xFFFFFF, interp(decay_table(), v[1]), interp(rate_table(), v[2]), v[3] * L_SCALE]
 
 
-def arm_code(base, L, prev, v2=False, k6swap=False):
+def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -907,7 +913,21 @@ def arm_code(base, L, prev, v2=False, k6swap=False):
     E(subs_imm8, 0, O_ST - O_TH)
     E(ldrb_imm, 0, 0, 0)
     E(cmp_imm, 0, TH.READY)
-    E(b_cond, "ld_v", "ne")                                               # not the mode 0 program: no DSP writes
+    if wait:
+        E(b_cond, "ld_rdy", "eq")
+        E(movs_imm, 0, 0)                                                 # not the mode 0 program: no DSP writes, the wait from 0
+        E(strb_imm, 0, 6, O_W - O_ST)
+        E(b, "ld_v")
+        a.label("ld_rdy")
+        E(ldrb_imm, 0, 6, O_W - O_ST)
+        E(cmp_imm, 0, SP_WAIT)
+        E(b_cond, "ld_go", "hs")
+        E(adds_imm8, 0, 1)                                                # core 1 still starting: wait
+        E(strb_imm, 0, 6, O_W - O_ST)
+        E(b, "ld_v")
+        a.label("ld_go")
+    else:
+        E(b_cond, "ld_v", "ne")                                           # not the mode 0 program: no DSP writes
     E(ldrb_imm, 7, 6, 2)
     E(adds_imm8, 7, 1)
     E(movs_imm, 0, NTRK - 1)
@@ -1046,7 +1066,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, shift=0, v2=False, k6swap=False):
+def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False):
     """Append the code; the head of the button chain, the head of the container's knob slot, the LED task calls (outermost).  pitchmod's
     core 1 code (tools/pitchmod.py, without dspload) must be in the build too, with the same shift."""
     global YB
@@ -1063,7 +1083,7 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False):
     prev = dict(btn=rhbuild.bw_target(img, CI.BTN_ENTRY), knob=u(SLOT_KNOB) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
     assert v2 or not k6swap
-    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap)
+    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap, wait=wait)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1071,6 +1091,6 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False):
     rhbuild.patch_word(img, SLOT_KNOB, prev["knob"] | 1, labels["c_spknob"] | 1)
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_spled"]))
-    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), v2=v2, k6swap=k6swap,
+    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), v2=v2, k6swap=k6swap, wait=wait,
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

@@ -44,6 +44,14 @@ OFF_PITCH, OFF_SCANR, OFF_SCANPH = 0xA0, 0xA8, 0xB8       # (RD8 on, from Y_BASE
 
 STRETCH_ST, STRETCH_N = 0x1780, 15                         # (stretch) the voice's stretch state cleared at each note: Y:$1780 + 16 v
 
+# (shiboot) core 1's host port setup: P:$10B jsr $72D (the SHI as a 24-bit SPI slave); the main loop (P:$119 bclr #21,x:$8 / jscs $72A)
+# sets it up again whenever bit 21 of X:$8 (the host's config word, P:$6DD) is set, 16-bit words if its bit 8 is set (P:$735, HCSR $10A4).
+# No segment loads X:$6..$8, so after a power-up they hold whatever the RAM came up with: with bits 21 and 8 the first block turns the
+# port to 16-bit words while the ARM sends 24 (RH34 / RH35 on the device: out of step after a cold start, every write lost).
+P_SHI_SETUP, OLD_SHI_SETUP = 0x10B, 0x0D072D               # jsr $72d (short)
+SHI_BOOT = [0x0A0815,                                      # bclr #$15,x:$8   (as P:$119)
+            0x0C072D]                                      # jmp $72d (short)
+
 
 def code(at, shift=0, store_pitch=False, scan=False, stretch=False):
     """-> (words for P:at.., RR's address, TRIG's address).  shift: our Y words moved up (RD8 on: $300, out of voice 7's sample ring
@@ -73,7 +81,18 @@ def code(at, shift=0, store_pitch=False, scan=False, stretch=False):
     return rr + trig, at, trig_at
 
 
-def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, clear=False, lite=False, stretch=False, probe=False):
+P_DUCK, OLD_DUCK = 0x25D, (0x56E400, 0x5FDC00, 0x205C00, 0x4FE400)        # move x:(r4),a / move y:(r4)+,b / move (r4)+ / move y:(r4),y1
+NEW_DUCK = (0x4ADC00, 0x0204F7, 0x0BC761, 0x0E8268)                         # move l:(r4)+,ab / move y:(r4+$1),y1 / btst #$1,y1 / jcs $268
+LAND_CNT = 0x16DD                                                           # (RD17) the landing routine's counter
+
+
+def landing_code():
+    """(RD17) the test routine at P:$C (the landing area): Y:LAND_CNT + 1, called from the block hook (it proves code runs there)"""
+    return 0xC, DP.asm([f"move y:>${LAND_CNT:x},a", "add #>1,a", f"move a1,y:>${LAND_CNT:x}", "rts"])
+
+
+def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, clear=False, lite=False, stretch=False, probe=False,
+            duck=False, landing=False, shiboot=False):
     """our words through rhdsp1 (after dspload's counters when load: RD6); core 1's two stock words checked and redirected.
     fx (RD7): tools/voicefx.py's words after ours (ring mod, filter modes, drive), P:$240 redirected to them.
     shift (RD8 on: $300): every Y word of ours moved up, out of voice 7's sample ring Y:$1200..$13FF; filt (RD8, needs fx and shift):
@@ -87,7 +106,13 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
     stretch=6 (RD14): WSOLA v2 (cheaper, one search every 4 blocks: RD13 hung core 1 with 7-8 tracks stretched);
     stretch=7 (RD15): WSOLA v3 (v2, off unless the host sets the gap: RD14 hung core 1 too);
     stretch=8 (RD16): WSOLA v4 from the main loop (dspload's block hook jumps to WSB; RD15 showed the cause: the hardware stack).
-    probe (RD12, with load): dspload's burn replaced by its probe of the P memory (tools/rhpmem.py)."""
+    probe (RD12, with load): dspload's burn replaced by its probe of the P memory (tools/rhpmem.py).
+    duck (RD17): the stock's end-of-sample fade (P:$25C) skipped for looped voices (P:$25D..$260 in place): it ducked a looped voice once
+    every pass, -35 dB some 10-15 ms before the loop point, and silenced loops under ~260 words (the user's «click» of short looped grains).
+    landing (RD17, with stretch >= 8): the last P segment P:$2..$45 (tools/rhdsp1.py landing_words), with landing_code() at P:$C called from
+    the block hook.
+    shiboot (RH36): P:$10B jsr $72D -> jsr SHI_BOOT, which clears bit 21 of X:$8 first: the host port stays at 24-bit words after a
+    power-up whatever X:$8 came up with."""
     assert not filt or (fx and shift == 0x300)
     if clear:
         assert shift
@@ -100,7 +125,11 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
             import wsola as WS0
             low_w, low_labels, low_ci = WS0.code(STR0.low_consts(), WS0.V4)
             hook = low_labels["wsb"]
-        pre, blk_at = dspload.code(shift, probe=probe, hook=hook)
+        land_at = None
+        if landing:
+            assert stretch >= 8
+            land_at, land_w = landing_code()
+        pre, blk_at = dspload.code(shift, probe=probe, hook=hook, call=land_at)
         rhdsp1.patch_p(img, dspload.P_WAIT, dspload.OLD_WAIT, JSR_SHORT | rhdsp1.START)
         rhdsp1.patch_p(img, dspload.P_ACK, dspload.OLD_ACK, JSR_SHORT | blk_at)
     ours, rr_at, trig_at = code(rhdsp1.START + len(pre), shift, store_pitch=filt, scan=filt, stretch=stretch)
@@ -136,11 +165,22 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
         voicefx.check(sw, slabels["str"])
         words += sw
         rhdsp1.patch_p(img, STR.P_HOOK, STR.OLD_HOOK, JSR_SHORT | slabels["str"])
+    shi_at = None
+    if shiboot:
+        shi_at = rhdsp1.START + len(words)
+        words += SHI_BOOT
+        rhdsp1.patch_p(img, P_SHI_SETUP, OLD_SHI_SETUP, JSR_SHORT | shi_at)
     assert rhdsp1.START + len(words) <= 0x1000, "out of reach of a short jsr"
     rhdsp1.patch_p(img, P_RR_CALL, OLD_RR_CALL, JSR_SHORT | rr_at)
     rhdsp1.patch_p(img, P_TRIG_ADDR, P_START, trig_at)
-    labels = rhdsp1.install(img, report, base_addr, words, "pitchmod", low=low)
+    if duck:
+        for k, (old, new) in enumerate(zip(OLD_DUCK, NEW_DUCK)):
+            rhdsp1.patch_p(img, P_DUCK + k, old, new)
+    land = {land_at + i: w for i, w in enumerate(land_w)} if landing else None
+    labels = rhdsp1.install(img, report, base_addr, words, "pitchmod", low=low, landing=land)
     report["pitchmod"].update(rr=hex(rr_at), trig=hex(trig_at), y_base=hex(Y_BASE + shift), load=load)
+    if shiboot:
+        report["pitchmod"].update(shiboot=hex(shi_at))
     if fx:
         report["pitchmod"].update(fx=hex(fx_at), fx_y_base=hex(voicefx.Y_BASE + shift), words=len(words))
     if flabels:
@@ -150,6 +190,6 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
         if low:
             report["pitchmod"]["wsola"] = {k: hex(v) for k, v in low_labels.items() if k in ("trp", "ws", "copy", "corr", "wsb")}
     if load:
-        report["pitchmod"].update(probe=probe, block=hex(blk_at), y_idle=hex(dspload.Y_IDLE + shift), y_burn=hex(dspload.Y_BURN + shift),
+        report["pitchmod"].update(probe=probe, duck=duck, landing=landing, block=hex(blk_at), y_idle=hex(dspload.Y_IDLE + shift), y_burn=hex(dspload.Y_BURN + shift),
                                   y_blocks=hex(dspload.Y_BLOCKS + shift))
     return labels, b""
