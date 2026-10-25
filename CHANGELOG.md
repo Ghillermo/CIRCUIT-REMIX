@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## Alpha 0.03 (2026-10-25)
+
+**Español.** Dos versiones nuevas (las anteriores siguen en el instalador):
+- **Alpha 0.03** (marca `A0.03`): Alpha 0.02 con el arreglo de abajo; las mismas funciones del [manual](docs/MANUAL.md).
+- **Alpha 0.03S** (marca `A0.03S`): Alpha 0.03 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada del mod crea, modifica ni borra ficheros en la tarjeta.
+
+Arreglo:
+- **La página Stock+ funciona desde el encendido.** En Alpha 0.01 / 0.02, recién encendido el aparato (no tras instalar), Stock+ podía no hacer nada durante unos minutos. La causa está en el firmware original: el DSP de las voces no inicializa al arrancar su palabra de configuración del puerto con el procesador principal, y con algunos valores de la memoria al encender ese puerto pasa a palabras de 16 bits mientras el procesador manda de 24; todo lo que Stock+ escribía se perdía hasta que el puerto se recolocaba por casualidad. Ahora el arranque del DSP la borra antes de configurar el puerto (2 palabras de código propio).
+- **Probado en el aparato** con la build de desarrollo equivalente (RH36): Stock+ funciona en los primeros segundos tras encender en frío. **Haz una copia de la tarjeta SD.**
+
+**English.** Two new builds (the earlier ones stay in the installer):
+- **Alpha 0.03** (marker `A0.03`): Alpha 0.02 with the fix below; the same features as in the [manual](docs/MANUAL_EN.md).
+- **Alpha 0.03S** (marker `A0.03S`): Alpha 0.03 without project copy, pack delete or sample copy; nothing of the mod creates, changes or deletes files on the card.
+
+Fix:
+- **The Stock+ page works from power-on.** In Alpha 0.01 / 0.02, right after switching the device on (not after installing), Stock+ could do nothing for a few minutes. The cause is in the original firmware: the voices' DSP does not initialise, at start-up, the configuration word of its link to the main processor, and with some power-on memory contents that link switches to 16-bit words while the processor sends 24; everything Stock+ wrote was lost until the link happened to fall back into step. Now the DSP's start-up clears that word before it sets up the link (2 words of our own code).
+- **Tested on the device** with the equivalent development build (RH36): Stock+ works in the first seconds after a cold start. **Back up the SD card.**
+
 ## Alpha 0.02 (2026-10-25)
 
 **Español.** Dos versiones nuevas (las anteriores siguen en el instalador):
