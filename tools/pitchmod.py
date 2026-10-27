@@ -53,14 +53,16 @@ SHI_BOOT = [0x0A0815,                                      # bclr #$15,x:$8   (a
             0x0C072D]                                      # jmp $72d (short)
 
 
-def code(at, shift=0, store_pitch=False, scan=False, stretch=False):
+def code(at, shift=0, store_pitch=False, scan=False, stretch=False, lscan=None):
     """-> (words for P:at.., RR's address, TRIG's address).  shift: our Y words moved up (RD8 on: $300, out of voice 7's sample ring
-    Y:$1200..$13FF); store_pitch: RR keeps the pitch it gets (voicefilt's pitch follow); scan: RR moves the scan LFO's phase (voicefilt)."""
+    Y:$1200..$13FF); store_pitch: RR keeps the pitch it gets (voicefilt's pitch follow); scan: RR moves the scan LFO's phase (voicefilt);
+    lscan (loopscan): then jsr lscan (the loop's next start, loopscan_code)."""
     yb, t0, t1 = Y_BASE + shift, Y_TMP0 + shift, Y_TMP1 + shift
     extra = ([f"move y0,y:(r1+${OFF_PITCH:x})"] if store_pitch else []) + (
         [f"move y:(r1+${OFF_SCANPH:x}),a", f"move y:(r1+${OFF_SCANR:x}),x0", "add x0,a", f"move a1,y:(r1+${OFF_SCANPH:x})"] if scan else [])
     rr = DP.asm([
-        "move r4,a", "sub #>$40,a", "lsr #4,a", "move a1,n1", f"move #>${yb:x},r1", "lua (r1)+n1,r1", *extra,
+        "move r4,a", "sub #>$40,a", "lsr #4,a", "move a1,n1", f"move #>${yb:x},r1", "lua (r1)+n1,r1", *extra]) + (
+        [JSR_SHORT | lscan] if lscan is not None else []) + DP.asm([
         "move y:(r1),x0", f"move y:(r1+${OFF_D:x}),x1", "mpyr x1,x0,a", "move a,y:(r1)",                    # E *= D
         "move a,x0", f"move y:(r1+${OFF_A:x}),x1", "mpy x1,x0,b",                                       # b = A * E
         f"move y:(r1+${OFF_PH:x}),a", f"move y:(r1+${OFF_R:x}),x0", "add x0,a", f"move a1,y:(r1+${OFF_PH:x})",  # phase += R
@@ -86,13 +88,47 @@ NEW_DUCK = (0x4ADC00, 0x0204F7, 0x0BC761, 0x0E8268)                         # mo
 LAND_CNT = 0x16DD                                                           # (RD17) the landing routine's counter
 
 
+# (loopscan) the scan moves a looped voice's start at every pass, not only at the note's start (the user, 2026-10-25: «make it modulate the
+# start during a loop»). The stock (traced in dsptool, tests/emu_rh37.py): voice v's refill ($16E, tail-called by $1E5) copies the sample
+# from X:(v + 3) on; past the region's end Y:(v + 3) it goes on from the loop start Y:(v + 4), read at P:$191 / $19B (forward) and
+# P:$1B4 / $1BE (reverse), each a one-word move y:(r4)-,a with r4 = v + 4. Ours, in the landing area (P:$C..):
+#   * LSC, called by RR (r4 = v, r1 = pitchmod's base + t) right after the scan phase moved: the next start
+#     T = Y:(v + 4) + F x (Y:(v + 3) - Y:(v + 4)), F = depth x |phase| (voicefilt's, as the note's start uses them) at most LS_FMAX, kept
+#     in the voice's stretch state + LS_K (Y:$1780 + 16 v + 12: + 7 / + 9 are WSOLA's PEND, + 15 STR's page table);
+#   * LHOOK in place of the four reads: T, or the stock's Y:(v + 4) while T is 0 (pitchmod's TRIG clears the stretch state at each note,
+#     after its RR: the first pass starts where the note started, at most 8 blocks); depth 0 = T = Y:(v + 4), the stock's.
+# The end stays: a pass runs from T to the region's end, so the loop gets shorter as the start moves in (at most 7/8 of it).
+LS_K, LS_FMAX = 12, 0x700000
+P_LSREAD, OLD_LSREAD = (0x191, 0x19B, 0x1B4, 0x1BE), 0x5ED400        # move y:(r4)-,a
+LS_AT = 0xC
+
+
+def loopscan_code(shift=0x300):
+    """-> (address, words, labels): LSC and LHOOK at P:LS_AT (the landing area)"""
+    import stretch as STR
+    import voicefilt as VF
+    yb = Y_BASE + shift
+    tv = STR.ST + LS_K - 0x40                                       # T at r4 + tv (r4 = v)
+    its = [("label", "lsc"),
+           f"move y:(r1+${VF.SCANPH - yb:x}),a", "abs a", "move a,x1", f"move y:(r1+${VF.SCAND - yb:x}),x0", "mpy x1,x0,a",
+           f"move #>${LS_FMAX:x},x0", "cmp x0,a", "tgt x0,a", "move a,x1",                              # F
+           "move y:(r4+$4),b", "move y:(r4+$3),a", "sub b,a", "move a1,x0", "mpy x1,x0,a", "add b,a",     # Y4 + F (Y3 - Y4)
+           f"move a1,y:(r4+${tv:x})", "rts",
+           ("label", "lhook"),                                                                          # r4 = v + 4
+           f"move y:(r4+${tv - 4:x}),a", "tst a", ("jcc", "ne", "lh_t"), "move y:(r4),a",
+           ("label", "lh_t"), "move (r4)-", "rts"]
+    import voicefx as V
+    w, labels = V.assemble(its, LS_AT)
+    return LS_AT, w, labels
+
+
 def landing_code():
     """(RD17) the test routine at P:$C (the landing area): Y:LAND_CNT + 1, called from the block hook (it proves code runs there)"""
     return 0xC, DP.asm([f"move y:>${LAND_CNT:x},a", "add #>1,a", f"move a1,y:>${LAND_CNT:x}", "rts"])
 
 
 def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, clear=False, lite=False, stretch=False, probe=False,
-            duck=False, landing=False, shiboot=False):
+            duck=False, landing=False, shiboot=False, loopscan=False, loopxf=False, stereo=False, qdrain=False, envexp=False):
     """our words through rhdsp1 (after dspload's counters when load: RD6); core 1's two stock words checked and redirected.
     fx (RD7): tools/voicefx.py's words after ours (ring mod, filter modes, drive), P:$240 redirected to them.
     shift (RD8 on: $300): every Y word of ours moved up, out of voice 7's sample ring Y:$1200..$13FF; filt (RD8, needs fx and shift):
@@ -105,14 +141,20 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
     stretch=5 (RD13): + tools/wsola.py in P:$46..$FF (the grains start in step) and silence past the sample's end;
     stretch=6 (RD14): WSOLA v2 (cheaper, one search every 4 blocks: RD13 hung core 1 with 7-8 tracks stretched);
     stretch=7 (RD15): WSOLA v3 (v2, off unless the host sets the gap: RD14 hung core 1 too);
-    stretch=8 (RD16): WSOLA v4 from the main loop (dspload's block hook jumps to WSB; RD15 showed the cause: the hardware stack).
+    stretch=8 (RD16): WSOLA v4 from the main loop (dspload's block hook jumps to WSB; RD15 showed the cause: the hardware stack);
+    stretch=9 (RD19): + the stretch's v7 (Y:(v + 3) as the region's end, loop mode wraps the playhead and the grains).
     probe (RD12, with load): dspload's burn replaced by its probe of the P memory (tools/rhpmem.py).
     duck (RD17): the stock's end-of-sample fade (P:$25C) skipped for looped voices (P:$25D..$260 in place): it ducked a looped voice once
     every pass, -35 dB some 10-15 ms before the loop point, and silenced loops under ~260 words (the user's «click» of short looped grains).
     landing (RD17, with stretch >= 8): the last P segment P:$2..$45 (tools/rhdsp1.py landing_words), with landing_code() at P:$C called from
     the block hook.
+    loopscan (RH37, with landing, filt and stretch >= 8): the scan moves a looped voice's start at every pass (loopscan_code in the landing
+    area in place of RD17's test routine, RR calling LSC, the four reads of the loop start P_LSREAD -> jsr LHOOK).
     shiboot (RH36): P:$10B jsr $72D -> jsr SHI_BOOT, which clears bit 21 of X:$8 first: the host port stays at 24-bit words after a
-    power-up whatever X:$8 came up with."""
+    power-up whatever X:$8 came up with.
+    qdrain (RD26): core 1 takes every waiting trigger of the ARM's queue a block, not one (tools/qdrain.py, in place over the unused $B0
+    path P:$4E4..$4F3); a second message for the same track still waits for the next block.
+    envexp (RD30, with fx and landing): each voice's envelope x gain to shared Y:$37400 + 16 v (tools/envexp.py, P:$2B.. ahead of FX)."""
     assert not filt or (fx and shift == 0x300)
     if clear:
         assert shift
@@ -125,14 +167,20 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
             import wsola as WS0
             low_w, low_labels, low_ci = WS0.code(STR0.low_consts(), WS0.V4)
             hook = low_labels["wsb"]
-        land_at = None
+        land_at, ls_labels = None, None
         if landing:
             assert stretch >= 8
-            land_at, land_w = landing_code()
-        pre, blk_at = dspload.code(shift, probe=probe, hook=hook, call=land_at)
+            if loopscan:
+                assert filt and shift == 0x300
+                land_at, land_w, ls_labels = loopscan_code(shift)
+            else:
+                land_at, land_w = landing_code()
+        pre, blk_at = dspload.code(shift, probe=probe, hook=hook, call=None if loopscan else land_at)
         rhdsp1.patch_p(img, dspload.P_WAIT, dspload.OLD_WAIT, JSR_SHORT | rhdsp1.START)
         rhdsp1.patch_p(img, dspload.P_ACK, dspload.OLD_ACK, JSR_SHORT | blk_at)
-    ours, rr_at, trig_at = code(rhdsp1.START + len(pre), shift, store_pitch=filt, scan=filt, stretch=stretch)
+    assert not loopscan or (load and landing), "loopscan: its code in the landing area"
+    ours, rr_at, trig_at = code(rhdsp1.START + len(pre), shift, store_pitch=filt, scan=filt, stretch=stretch,
+                                lscan=ls_labels["lsc"] if loopscan else None)
     words = pre + ours
     flabels = None
     if fx:
@@ -161,7 +209,8 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
             voicefx.check(low_w[:low_ci], wsola.AT)
             voicefx.check(low_w[low_ci + 1:], wsola.AT + low_ci + 1)
             low = (wsola.AT, low_w, low_ci)
-        sw, slabels = STR.code(rhdsp1.START + len(words), v3=stretch >= 3, grain=stretch >= 4, low=low_labels if stretch >= 5 else None)
+        sw, slabels = STR.code(rhdsp1.START + len(words), v3=stretch >= 3, grain=stretch >= 4, low=low_labels if stretch >= 5 else None,
+                               region=stretch >= 9)      # (RD19) the region's end and loop mode; one-word moves
         voicefx.check(sw, slabels["str"])
         words += sw
         rhdsp1.patch_p(img, STR.P_HOOK, STR.OLD_HOOK, JSR_SHORT | slabels["str"])
@@ -170,17 +219,63 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
         shi_at = rhdsp1.START + len(words)
         words += SHI_BOOT
         rhdsp1.patch_p(img, P_SHI_SETUP, OLD_SHI_SETUP, JSR_SHORT | shi_at)
+    st_at = None
+    if stereo:                                             # (RD23) Sample Rec's write copies the 64 interleaved words (tools/stereorec.py)
+        import stereorec as SR
+        st_at = rhdsp1.START + len(words)
+        words += SR.core1_code(st_at)
+        rhdsp1.patch_p(img, SR.P_HOOK, SR.OLD_HOOK, 0x0C0000 | st_at)
     assert rhdsp1.START + len(words) <= 0x1000, "out of reach of a short jsr"
     rhdsp1.patch_p(img, P_RR_CALL, OLD_RR_CALL, JSR_SHORT | rr_at)
     rhdsp1.patch_p(img, P_TRIG_ADDR, P_START, trig_at)
     if duck:
         for k, (old, new) in enumerate(zip(OLD_DUCK, NEW_DUCK)):
             rhdsp1.patch_p(img, P_DUCK + k, old, new)
+    if loopxf:                                             # (RD18) the loop point's de-click over the stock's dead P:$534..$56D
+        import loopxf as XF
+        import voicefx
+        xw, xf_at = (XF.code4() if loopxf >= 4 else XF.code3() if loopxf >= 3 else XF.code2() if loopxf >= 2 else XF.code())  # (RD19: v2, the real crossfade; RD21: v3, its length a parameter; RD22: v4, short loops wrap)
+        voicefx.check([w for a, w in sorted(xw.items()) if a >= XF.AT], XF.AT)
+        o0, o1 = rhdsp1.where(img, XF.AT), rhdsp1.where(img, XF.END - 1)
+        assert int.from_bytes(img[o0:o0 + 3], "big") == XF.FIRST and int.from_bytes(img[o1:o1 + 3], "big") == XF.LAST, "P:$534..$56D moved"
+        if loopxf >= 4:                                    # (RD22) WC over the stock's dead P:$12A..$150
+            voicefx.check([w for a, w in sorted(xw.items()) if a < XF.AT], XF.WC_AT)
+            o0, o1 = rhdsp1.where(img, XF.WC_AT), rhdsp1.where(img, XF.WC_END - 1)
+            assert int.from_bytes(img[o0:o0 + 3], "big") == XF.WC_FIRST and int.from_bytes(img[o1:o1 + 3], "big") == XF.WC_LAST, "P:$12A..$150 moved"
+        for a, w in xw.items():
+            o = rhdsp1.where(img, a)
+            rhdsp1.patch_p(img, a, int.from_bytes(img[o:o + 3], "big"), w)
+        for pa in XF.P_HOOKS:
+            rhdsp1.patch_p(img, pa, XF.OLD_HOOK, 0x0C0000 | xf_at)
+    if qdrain:                                             # (RD26) core 1 takes every waiting trigger a block (tools/qdrain.py), in place
+        import qdrain as QD
+        for pa, (old, new) in sorted(QD.patches().items()):
+            rhdsp1.patch_p(img, pa, old, new)
+    if loopscan:
+        import voicefx
+        voicefx.check(land_w, land_at)
+        for pa in P_LSREAD:
+            rhdsp1.patch_p(img, pa, OLD_LSREAD, JSR_SHORT | ls_labels["lhook"])
     land = {land_at + i: w for i, w in enumerate(land_w)} if landing else None
+    if envexp:                                             # (RD30) each voice's envelope x gain to shared memory (tools/envexp.py)
+        import envexp as EX
+        assert landing and fx, "envexp: in the landing area, ahead of voicefx's FX"
+        ew = EX.words(fx_at)
+        assert all(EX.AT + i in rhdsp1.LAND_FREE and EX.AT + i not in land for i in range(len(ew))), "envexp's words collide"
+        land.update({EX.AT + i: w for i, w in enumerate(ew)})
+        rhdsp1.patch_p(img, EX.P_HOOK, JSR_SHORT | fx_at, JSR_SHORT | EX.AT)
     labels = rhdsp1.install(img, report, base_addr, words, "pitchmod", low=low, landing=land)
     report["pitchmod"].update(rr=hex(rr_at), trig=hex(trig_at), y_base=hex(Y_BASE + shift), load=load)
     if shiboot:
         report["pitchmod"].update(shiboot=hex(shi_at))
+    if stereo:
+        report["pitchmod"].update(stereo=hex(st_at))
+    if qdrain:
+        report["pitchmod"].update(qdrain=True)
+    if envexp:
+        report["pitchmod"].update(envexp=hex(EX.AT))
+    if loopxf:
+        report["pitchmod"].update(loopxf=hex(xf_at), loopxf_v=int(loopxf))
     if fx:
         report["pitchmod"].update(fx=hex(fx_at), fx_y_base=hex(voicefx.Y_BASE + shift), words=len(words))
     if flabels:
@@ -190,6 +285,8 @@ def install(img, report, base_addr, load=False, fx=False, shift=0, filt=False, c
         if low:
             report["pitchmod"]["wsola"] = {k: hex(v) for k, v in low_labels.items() if k in ("trp", "ws", "copy", "corr", "wsb")}
     if load:
+        if loopscan:
+            report["pitchmod"].update(loopscan={k: hex(v) for k, v in ls_labels.items()})
         report["pitchmod"].update(probe=probe, duck=duck, landing=landing, block=hex(blk_at), y_idle=hex(dspload.Y_IDLE + shift), y_burn=hex(dspload.Y_BURN + shift),
                                   y_blocks=hex(dspload.Y_BLOCKS + shift))
     return labels, b""

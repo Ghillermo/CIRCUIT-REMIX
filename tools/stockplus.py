@@ -36,7 +36,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, ldr_sp, adds_imm8, adds_reg, b, b_cond, b_w, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldrb_imm, ldrb_reg, ldrh_imm,  # noqa: E402
                    lsls_imm, lsls_reg, lsrs_imm, lsrs_reg, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list, push_list, raw, strb_imm,
-                   strh_imm, subs_imm8, subs_reg, tst_reg, ldrb_w, strb_w, strh_w_imm, bics_reg)
+                   strh_imm, subs_imm8, subs_reg, tst_reg, ldrb_w, strb_w, strh_w_imm, bics_reg, str_imm)
 import countin as CI  # noqa: E402
 import cthresh as TH  # noqa: E402
 import pitchmod as PM  # noqa: E402
@@ -98,6 +98,83 @@ O_W = rhstate.OFF["spwait"][0]
 SP_WAIT = 200
 COL_TYPES = (0x151, 0x139, 0x141)
 K6_MIN = 24
+# k8sync (RH38; the user, 2026-10-25: «make the rate knob free running to the right and bpm synced to the left»): K8 (the scan's rate) is
+# bipolar and stored XOR 8192 as K7 (a stored 0, every project's default so far, = the middle):
+#   * the middle (within DEAD) = the scan stands still (SCANR = 0);
+#   * right of it = free, scan_table over the right half (0.05 .. 20 Hz);
+#   * left of it = at the tempo: 16 divisions of 4 clicks from the middle out (DIVS, ticks of 24 a quarter note: 1/16T, 1/16, 1/8T, 1/8,
+#     1/4T, 1/4, 1/2T, 1/2, 1 bar T, 1 bar, 2T, 2, 4T, 4, 8T, 8 bars): SCANR = BPM x KQ[i] >> 8 (BPM = p0 of the tempo store, the cycle's
+#     length in pitch updates), written at each push; and, in every LED frame where the sequencer's global tick (parameter 0 of
+#     [SEQ + 0x90], counted by the tick 0x080344B8, 0 at Play) moved, the phase SCANPH = (tick mod DIVS[i]) x 2^24 / DIVS[i]: each cycle
+#     starts on the bar's first beat at the scan's 0 (no offset), and keeps in step; between ticks (and stopped) the DSP runs at SCANR.
+K8 = 7
+SEQ, TEMPO = 0x2003C380, 0x20012788
+DIVS = (4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768)
+KQ = tuple(round((1 << 24) * 24 * 256 / (60 * UPD * d)) for d in DIVS)
+PHQ = tuple(round((1 << 24) / d) for d in DIVS)
+O_K8T = rhstate.OFF["k8tick"][0]
+DIV_SHIFT = 9                                         # 512 = 4 clicks a division
+DEFU8 = DEFU[:K8] + (8192,) + DEFU[K8 + 1:]           # (k8sync) the defaults as values: K8's stored 0 = 8192
+# k3sync (RH46; from CIRCUIT-HACKS' lfosync): K3 (the pitch LFO's rate) bipolar as K8, stored as it was (its default 8192 = the middle): the
+# middle (within DEAD) = the LFO off at its centre (R = 0, the phase at K3_MIDPH: no pitch offset); right = free, rate_table over the right
+# half (0.05 .. 30 Hz); left = at the tempo, K8's 16 divisions (R = BPM x KQ[i] >> 8; at each new global tick the phase = (tick mod D) / D
+# of a cycle from the centre rising, so the cycle starts on the bar's first beat).  Projects with K3 set change their meaning (below the
+# middle: synced; the default, the middle, is now off).
+K3 = 2
+K3_MIDPH = 0x400000                                   # a quarter cycle: pitchmod's triangle at 0, rising
+
+
+def k8_index(v):
+    """(k8sync) K8's value -> None (the middle), ("free", x) or ("sync", the division's index)"""
+    d = v - X7
+    if abs(d) < DEAD:
+        return None
+    if d > 0:
+        return ("free", d << 1)
+    return ("sync", min(15, (-d - DEAD) >> DIV_SHIFT))
+
+
+def k8_rate(v, bpm):
+    """(k8sync) SCANR for K8's value v at bpm (the ARM's: BPM < 30 counts as 120, as countin)"""
+    k = k8_index(v)
+    if k is None:
+        return 0
+    if k[0] == "free":
+        tab, x = scan_table(), k[1]
+        i, f = x >> 7, x & 127
+        return tab[i] + ((tab[i + 1] - tab[i]) * f >> 7)
+    bpm = bpm if bpm >= 30 else 120
+    return (bpm * KQ[k[1]] >> 8) & 0xFFFFFFFF
+
+
+def k3_rate(v, bpm):
+    """(k3sync) R for K3's value v at bpm: 0 in the middle, the rate table right of it, BPM x KQ[i] >> 8 left of it"""
+    d = v - X7
+    if abs(d) < DEAD:
+        return 0
+    if d > 0:
+        tab, x = rate_table(), d << 1
+        i, f = x >> 7, x & 127
+        return tab[i] + ((tab[i + 1] - tab[i]) * f >> 7)
+    bpm = bpm if bpm >= 30 else 120
+    return (bpm * KQ[min(15, (-d - DEAD) >> DIV_SHIFT)] >> 8) & 0xFFFFFFFF
+
+
+def k3_phase(v, tick):
+    """(k3sync) the LFO's phase the LED task writes for K3's value v at the global tick (None: not synced)"""
+    d = v - X7
+    if d > -DEAD:
+        return None
+    i = min(15, (-d - DEAD) >> DIV_SHIFT)
+    return ((tick % DIVS[i]) * PHQ[i] + K3_MIDPH) & 0xFFFFFF
+
+
+def k8_phase(v, tick):
+    """(k8sync) the phase the LED task writes for K8's value v at the global tick (None: not synced)"""
+    k = k8_index(v)
+    if k is None or k[0] != "sync":
+        return None
+    return ((tick % DIVS[k[1]]) * PHQ[k[1]]) & 0xFFFFFF
 assert BLK2_LEN == 4 + 2 * 4 * NTRK
 
 
@@ -113,8 +190,9 @@ def scan_table():
     return [round(SCAN_LO * (SCAN_HI / SCAN_LO) ** (i / 128) / UPD * (1 << 24)) for i in range(129)]
 
 
-def words2(v, t):
-    """{core 1 Y address: word} that c_spdsp (v2) writes for track t with the 12 values v (K7 as its value, not stored): for the tests"""
+def words2(v, t, k8sync=False, bpm=120, k7flag=False):
+    """{core 1 Y address: word} that c_spdsp (v2) writes for track t with the 12 values v (K7 as its value, not stored; with k8sync K8 too):
+    for the tests"""
     import stretch as STR
     import voicefilt as F
     import voicefx as V
@@ -131,13 +209,14 @@ def words2(v, t):
     if kt != 2:
         out[vy + V.FMODE + t] = 0
     out[F.FOLLOW + t] = v[9] << 9
-    out[STR.STRETCH + t] = 0 if abs(v[6] - X7) < DEAD else interp(speed_table(), v[6])
+    off = v[6] == X7 if k7flag else abs(v[6] - X7) < DEAD                  # (fitflag: K7 stored with bit 14 = off only at the middle)
+    out[STR.STRETCH + t] = 0 if off else interp(speed_table(), v[6])
     if v[10]:
         bits = 16 - (v[10] * 14 >> 14)
         out[vy + V.DG + t], out[vy + V.DMASK + t], out[vy + V.DTYPE + t] = 0x080000, (0xFFFFFF << (24 - bits)) & 0xFFFFFF, 4
     else:
         out[vy + V.DTYPE + t] = 0
-    out[F.SCANR + t] = interp(scan_table(), v[7])
+    out[F.SCANR + t] = k8_rate(v[7], bpm) if k8sync else interp(scan_table(), v[7])
     out[F.SCAND + t] = v[11] << 9
     return out
 
@@ -165,7 +244,7 @@ def words(v):
     return [((v[0] - 8192) * A_SCALE) & 0xFFFFFF, interp(decay_table(), v[1]), interp(rate_table(), v[2]), v[3] * L_SCALE]
 
 
-def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
+def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -196,12 +275,18 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
         t_scan = t_spd + 4 * 129
         E(raw, b"".join(w.to_bytes(4, "little") for w in scan_table()))
         t_defu = t_scan + 4 * 129
-        E(raw, b"".join(v.to_bytes(2, "little") for v in DEFU))
+        E(raw, b"".join(v.to_bytes(2, "little") for v in (DEFU8 if k8sync else DEFU)))
         t_def2 = t_defu + 2 * NK
         E(raw, b"".join(v.to_bytes(2, "little") for v in DEF2))
         if k6swap:
             t_cols = t_def2 + 2 * len(DEF2)
             E(raw, b"".join(v.to_bytes(2, "little") for v in COL_TYPES))
+        if k8sync:
+            assert k6swap
+            t_divs = (t_cols + 2 * len(COL_TYPES) + 3) & ~3
+            E(raw, bytes(t_divs - t_cols - 2 * len(COL_TYPES)))
+            E(raw, b"".join(x.to_bytes(4, "little") for x in DIVS + KQ + PHQ))
+            t_kq, t_phq = t_divs + 4 * len(DIVS), t_divs + 8 * len(DIVS)
 
     # ---- c_spst() -> r0 = our state (rhstate), 0 without our RAM; clobbers r1-r3
     a.label("c_spst")
@@ -712,10 +797,17 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
         E(cmp_imm, 1, NPAR)
         E(b_cond, "xv_b", "hs")
         E(bl, VAL)
+        if k8sync:
+            E(cmp_imm, 4, K8)
+            E(b_cond, "xv_x", "eq")
         E(cmp_imm, 4, K7)
         E(b_cond, "xv_r", "ne")
+        a.label("xv_x")
         E(movw, 1, X7)
         E(eors_reg, 0, 1)
+        if fitflag:                                                       # (bit 14 of K7: stfit's «on near the middle» flag, not the value)
+            E(lsls_imm, 0, 0, 18)
+            E(lsrs_imm, 0, 0, 18)
         a.label("xv_r")
         E(pop_list, [4], pc=True)
         a.label("xv_b")
@@ -726,8 +818,12 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
         E(push_list, [4], lr=True)
         E(cmp_imm, 1, NPAR)
         E(b_cond, "xp_b", "hs")
+        if k8sync:
+            E(cmp_imm, 1, K8)
+            E(b_cond, "xp_x", "eq")
         E(cmp_imm, 1, K7)
         E(b_cond, "xp_a", "ne")
+        a.label("xp_x")
         E(movw, 3, X7)
         E(eors_reg, 2, 3)
         a.label("xp_a")
@@ -778,7 +874,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
     E(movw, 1, YB + PM.OFF_A)
     E(adds_reg, 1, 1, 4)
     E(bl, "c_spw")
-    for k, tab, off in ((1, t_dec, PM.OFF_D), (2, t_rate, PM.OFF_R)):
+    for k, tab, off in ((1, t_dec, PM.OFF_D),) + (() if k3sync else ((2, t_rate, PM.OFF_R),)):
         E(mov_reg, 0, 4)
         E(movs_imm, 1, k)
         E(bl, "c_spval")
@@ -788,6 +884,20 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
         E(movw, 1, YB + off)
         E(adds_reg, 1, 1, 4)
         E(bl, "c_spw")
+    if k3sync:                                                            # K3: the LFO's rate (free / at the tempo / off: the phase at the centre)
+        E(mov_reg, 0, 4)
+        E(bl, "c_k3r")
+        E(mov_reg, 5, 0)
+        E(movw, 1, YB + PM.OFF_R)
+        E(adds_reg, 1, 1, 4)
+        E(bl, "c_spw")
+        E(cmp_imm, 5, 0)
+        E(b_cond, "sd_k3", "ne")
+        imm32(0, K3_MIDPH)
+        E(movw, 1, YB + PM.OFF_PH)
+        E(adds_reg, 1, 1, 4)
+        E(bl, "c_spw")
+        a.label("sd_k3")
     E(mov_reg, 0, 4)
     E(movs_imm, 1, 3)
     E(bl, "c_spval")
@@ -843,9 +953,24 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
         E(b_cond, "sd_pos", "ge")
         E(raw, h(0x4240))                                                 # rsbs r0, r0, #0
         a.label("sd_pos")
+        if fitflag:                                                       # K7 stored with bit 14 (stfit): off only at the middle itself
+            E(push_list, [0])
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, K7)
+            E(bl, VAL)
+            E(lsls_imm, 1, 0, 17)
+            E(pop_list, [0])
+            E(b_cond, "sd_nf", "pl")
+            E(movs_imm, 1, 0)
+            E(cmp_imm, 0, 1)
+            E(b_cond, "sd_sw", "lt")
+            E(b, "sd_on")
+            a.label("sd_nf")
         E(movs_imm, 1, 0)
         E(cmp_imm, 0, DEAD)
         E(b_cond, "sd_sw", "lt")
+        if fitflag:
+            a.label("sd_on")
         E(mov_reg, 1, 5)
         imm32(0, t_spd)
         E(bl, "c_spint")
@@ -874,11 +999,212 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
         E(movs_imm, 0, 4)
         put(vy + V.DTYPE)
         a.label("sd_k8")
-        tab(7, t_scan, F.SCANR)                                           # K8: the scan's speed
+        if k8sync:
+            E(mov_reg, 0, 4)
+            E(bl, "c_k8r")                                                # K8: the scan's rate (free / at the tempo / still)
+            put(F.SCANR)
+        else:
+            tab(7, t_scan, F.SCANR)                                       # K8: the scan's speed
         val(11)                                                           # Shift + K8: its depth
         E(lsls_imm, 0, 0, 9)
         put(F.SCAND)
     E(pop_list, [3, 4, 5], pc=True)
+
+    if k8sync:
+        import voicefilt as F
+
+        def k8div(rn):                                                    # r0 = K8's value - 8192 < 0 -> r0 = its division's index (0..15)
+            E(raw, h(0x4240))                                             # rsbs r0, r0, #0
+            E(subs_imm8, 0, DEAD)
+            E(lsrs_imm, 0, 0, DIV_SHIFT)
+            E(cmp_imm, 0, 15)
+            E(b_cond, f"kd_{rn}", "le")
+            E(movs_imm, 0, 15)
+            a.label(f"kd_{rn}")
+
+        # ---- c_k8r(r0 = track) -> r0 = SCANR: 0 in the middle, the free table right of it, BPM x KQ[i] >> 8 left of it; clobbers r1-r3
+        a.label("c_k8r")
+        E(push_list, [4], lr=True)
+        E(movs_imm, 1, K8)
+        E(bl, "c_spval")
+        E(movw, 1, X7)
+        E(subs_reg, 0, 0, 1)
+        E(b_cond, "kr_l", "lt")
+        E(cmp_imm, 0, DEAD)
+        E(b_cond, "kr_0", "lt")
+        E(lsls_imm, 1, 0, 1)
+        imm32(0, t_scan)
+        E(bl, "c_spint")
+        E(pop_list, [4], pc=True)
+        a.label("kr_l")
+        E(mov_reg, 1, 0)
+        E(raw, h(0x4249))                                                 # rsbs r1, r1, #0
+        E(cmp_imm, 1, DEAD)
+        E(b_cond, "kr_0", "lt")
+        k8div("r")
+        E(lsls_imm, 4, 0, 2)
+        imm32(0, TEMPO)
+        E(movs_imm, 1, 0)
+        E(bl, CI.PARAM_NEW)
+        E(ldrb_imm, 0, 0, 0)                                              # the BPM
+        E(cmp_imm, 0, 30)
+        E(b_cond, "kr_b", "hs")
+        E(movs_imm, 0, 120)
+        a.label("kr_b")
+        imm32(1, t_kq)
+        E(adds_reg, 1, 1, 4)
+        E(ldr_imm, 1, 1, 0)
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 8)
+        E(pop_list, [4], pc=True)
+        a.label("kr_0")
+        E(movs_imm, 0, 0)
+        E(pop_list, [4], pc=True)
+
+        # ---- c_k8sync(): the global tick moved since the last frame -> every synced track's scan phase from it; clobbers r0-r3
+        a.label("c_k8sync")
+        E(push_list, [4, 5, 6, 7], lr=True)
+        E(bl, L["c_rst"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "ks_x", "eq")
+        E(adds_imm8, 0, O_K8T)
+        E(mov_reg, 5, 0)                                                  # r5 = the tick last seen
+        imm32(0, SEQ + 0x90)
+        E(ldr_imm, 0, 0, 0)
+        E(movs_imm, 1, 0)
+        E(bl, CI.PARAM_NEW)
+        E(ldr_imm, 7, 0, 0)                                               # r7 = the global tick
+        E(ldr_imm, 0, 5, 0)
+        E(cmp_reg, 0, 7)
+        E(b_cond, "ks_x", "eq")
+        E(str_imm, 7, 5, 0)
+        E(movs_imm, 4, 0)
+        a.label("ks_t")
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, K8)
+        E(bl, "c_spval")
+        E(movw, 1, X7)
+        E(subs_reg, 0, 0, 1)
+        E(b_cond, "ks_n", "ge")                                           # the middle or free: not ours
+        E(mov_reg, 1, 0)
+        E(raw, h(0x4249))                                                 # rsbs r1, r1, #0
+        E(cmp_imm, 1, DEAD)
+        E(b_cond, "ks_n", "lt")
+        k8div("s")
+        E(lsls_imm, 6, 0, 2)
+        imm32(1, t_divs)
+        E(adds_reg, 1, 1, 6)
+        E(ldr_imm, 1, 1, 0)                                               # D
+        E(raw, CI.udiv(0, 7, 1))
+        E(muls, 0, 1)
+        E(subs_reg, 0, 7, 0)                                              # tick mod D
+        imm32(1, t_phq)
+        E(adds_reg, 1, 1, 6)
+        E(ldr_imm, 1, 1, 0)
+        E(muls, 0, 1)                                                     # the phase (c_spw keeps its 24 low bits)
+        E(movw, 1, F.SCANPH)
+        E(adds_reg, 1, 1, 4)
+        E(bl, "c_spw")
+        a.label("ks_n")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, NTRK)
+        E(b_cond, "ks_t", "lo")
+        a.label("ks_x")
+        E(pop_list, [4, 5, 6, 7], pc=True)
+
+    if k3sync:
+        # ---- c_k3r(r0 = track) -> r0 = R, the LFO's step: 0 in the middle, the rate table right of it, BPM x KQ[i] >> 8 left of it;
+        #      clobbers r1-r3
+        a.label("c_k3r")
+        E(push_list, [4], lr=True)
+        E(movs_imm, 1, K3)
+        E(bl, "c_spval")
+        E(movw, 1, X7)
+        E(subs_reg, 0, 0, 1)
+        E(b_cond, "k3_l", "lt")
+        E(cmp_imm, 0, DEAD)
+        E(b_cond, "k3_0", "lt")
+        E(lsls_imm, 1, 0, 1)
+        imm32(0, t_rate)
+        E(bl, "c_spint")
+        E(pop_list, [4], pc=True)
+        a.label("k3_l")
+        E(mov_reg, 1, 0)
+        E(raw, h(0x4249))                                                 # rsbs r1, r1, #0
+        E(cmp_imm, 1, DEAD)
+        E(b_cond, "k3_0", "lt")
+        k8div("3r")
+        E(lsls_imm, 4, 0, 2)
+        imm32(0, TEMPO)
+        E(movs_imm, 1, 0)
+        E(bl, CI.PARAM_NEW)
+        E(ldrb_imm, 0, 0, 0)                                              # the BPM
+        E(cmp_imm, 0, 30)
+        E(b_cond, "k3_b", "hs")
+        E(movs_imm, 0, 120)
+        a.label("k3_b")
+        imm32(1, t_kq)
+        E(adds_reg, 1, 1, 4)
+        E(ldr_imm, 1, 1, 0)
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 8)
+        E(pop_list, [4], pc=True)
+        a.label("k3_0")
+        E(movs_imm, 0, 0)
+        E(pop_list, [4], pc=True)
+
+        # ---- c_k3sync(): the global tick moved since the last frame (c_k8sync keeps it, after this) -> every synced track's LFO phase:
+        #      (tick mod D) / D of a cycle from the centre rising; clobbers r0-r3
+        a.label("c_k3sync")
+        E(push_list, [4, 5, 6, 7], lr=True)
+        E(bl, L["c_rst"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "k3s_x", "eq")
+        E(adds_imm8, 0, O_K8T)
+        E(mov_reg, 5, 0)                                                  # r5 = the tick last seen
+        imm32(0, SEQ + 0x90)
+        E(ldr_imm, 0, 0, 0)
+        E(movs_imm, 1, 0)
+        E(bl, CI.PARAM_NEW)
+        E(ldr_imm, 7, 0, 0)                                               # r7 = the global tick
+        E(ldr_imm, 0, 5, 0)
+        E(cmp_reg, 0, 7)
+        E(b_cond, "k3s_x", "eq")
+        E(movs_imm, 4, 0)
+        a.label("k3s_t")
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, K3)
+        E(bl, "c_spval")
+        E(movw, 1, X7)
+        E(subs_reg, 0, 0, 1)
+        E(b_cond, "k3s_n", "ge")                                          # the middle or free: not ours
+        E(mov_reg, 1, 0)
+        E(raw, h(0x4249))                                                 # rsbs r1, r1, #0
+        E(cmp_imm, 1, DEAD)
+        E(b_cond, "k3s_n", "lt")
+        k8div("3s")
+        E(lsls_imm, 6, 0, 2)
+        imm32(1, t_divs)
+        E(adds_reg, 1, 1, 6)
+        E(ldr_imm, 1, 1, 0)                                               # D
+        E(raw, CI.udiv(0, 7, 1))
+        E(muls, 0, 1)
+        E(subs_reg, 0, 7, 0)                                              # tick mod D
+        imm32(1, t_phq)
+        E(adds_reg, 1, 1, 6)
+        E(ldr_imm, 1, 1, 0)
+        E(muls, 0, 1)
+        imm32(1, K3_MIDPH)
+        E(adds_reg, 0, 0, 1)                                              # from the centre (c_spw keeps the 24 low bits)
+        E(movw, 1, YB + PM.OFF_PH)
+        E(adds_reg, 1, 1, 4)
+        E(bl, "c_spw")
+        a.label("k3s_n")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, NTRK)
+        E(b_cond, "k3s_t", "lo")
+        a.label("k3s_x")
+        E(pop_list, [4, 5, 6, 7], pc=True)
 
     if v2:
         # ---- c_spgrain(): the stretch's grain words (one size for every track: 2048)
@@ -957,6 +1283,10 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
     E(adds_imm8, 4, 1)
     E(cmp_imm, 4, NTRK)
     E(b_cond, "ld_d", "lo")
+    if k3sync:
+        E(bl, "c_k3sync")
+    if k8sync:
+        E(bl, "c_k8sync")
     a.label("ld_v")
     E(bl, "c_spview")
     E(cmp_imm, 0, NTRK)
@@ -1011,13 +1341,14 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
         else:
             E(mov_reg, 0, 4)
             E(movs_imm, 1, k)
-        if k == K7:                                                       # K7 (the stretch): from the middle; with Shift (the bitcrush) plain
+        mid = k == K7 or (k8sync and k == K8) or (k3sync and k == K3)     # K7 (the stretch; k8sync: K8, k3sync: K3 too): from the middle
+        if mid:
             E(mov_reg, 6, 1)
             E(push_list, [6])
         E(bl, "c_spval")
-        if k == K7:
+        if mid:
             E(pop_list, [1])
-            E(cmp_imm, 1, K7)
+            E(cmp_imm, 1, k)
             E(b_cond, f"lk_q{k}", "ne")
             E(movw, 1, X7)
             E(subs_reg, 0, 0, 1)
@@ -1029,7 +1360,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
             E(mov_reg, 6, 7)
             E(adds_imm8, 6, O_ST - O_KB)                                  # (r6 back: our state = the overlay + (O_ST - O_KB))
         E(lsrs_imm, 0, 0, 7)                                              # 0..127
-        if k == K7:
+        if mid:
             E(cmp_imm, 0, 127)
             E(b_cond, f"lk_c{k}", "le")
             E(movs_imm, 0, 127)
@@ -1066,7 +1397,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False):
+def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False):
     """Append the code; the head of the button chain, the head of the container's knob slot, the LED task calls (outermost).  pitchmod's
     core 1 code (tools/pitchmod.py, without dspload) must be in the build too, with the same shift."""
     global YB
@@ -1083,7 +1414,10 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False)
     prev = dict(btn=rhbuild.bw_target(img, CI.BTN_ENTRY), knob=u(SLOT_KNOB) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
     assert v2 or not k6swap
-    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap, wait=wait)
+    assert k6swap or not k8sync
+    assert v2 or not fitflag
+    assert k8sync or not k3sync
+    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync, fitflag=fitflag, k3sync=k3sync)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1091,6 +1425,8 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False)
     rhbuild.patch_word(img, SLOT_KNOB, prev["knob"] | 1, labels["c_spknob"] | 1)
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_spled"]))
-    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), v2=v2, k6swap=k6swap, wait=wait,
+    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync,
+                               **({"fitflag": True, "t_spd": hex(base_addr + 8 * 129 + 2 * NPAR + 4 * 129)} if fitflag else {}),
+                               **({"k3sync": True} if k3sync else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

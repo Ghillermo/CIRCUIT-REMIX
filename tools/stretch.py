@@ -31,7 +31,8 @@ ST = 0x1780                                               # + 16 v
 S_P, S_PF, S_R0, S_R0F, S_R1, S_R1F, S_CLK = range(7)                    # (S_CLK: v1)
 T_SPEED, T_R, T_A0, T_LEN, T_TAB = 0x16F8, 0x16F9, 0x16FA, 0x16FB, 0x16FC
 T_OUT = 0x16FD
-T_END = 0x16FE                                            # (v5) A0 + the length - 1: the sample's last word
+T_END = 0x16FE                                            # (v5) A0 + the length - 1: the sample's last word (v7: end - 1)
+T_WR = 0x16FD                                             # (v7) a loop's length (0 = not a loop): what the playhead / a grain jumps back by
 GSTEP, GNSTEP, GHALF, GMASK = 0x16D8, 0x16D9, 0x16DA, 0x16DB
 GHM = 0x16DC                                              # (RD16, WSOLA v4) G / 2 - 1: RD12-RD15 had the P probe's command word there    # (grain, RD12) the grain size G for every track, from the host (tools/rhvfx.py
                                                               # grain): the window's step, its negation, G / 2, G - 1
@@ -54,7 +55,7 @@ G0, G1, INIT = 2, 8, 14                                  # the state: + 0 / 1 P,
 N_STATE = 15
 
 
-def items(v3=False, grain=False, low=None):
+def items(v3=False, grain=False, low=None, region=False):
     """v2: one grain at a time over the block (its read position in a, r in Y = y1:y0); keeps r0, n0, r4 (the voice block, as $1E5 gets
     it); uses what $1E5 uses.
     v3 (RD11 on; RD10 on the device: «a bit glitchy, … like bitcrushed or ring modulated»): the stock's level (its resampler gives half the
@@ -78,8 +79,11 @@ def items(v3=False, grain=False, low=None):
     E(("jcc", "eq", "stock"))
     for s in (f"move a,y:>${T_SPEED:x}",
               "move y:(r4+$4),x0", f"move x0,y:>${T_A0:x}",
-              "move y:(r4+$3),x0", f"move x0,y:>${T_LEN:x}",
-              *((f"move y:>${T_A0:x},a", "add x0,a", "sub #>$1,a", f"move a1,y:>${T_END:x}") if low else ()),
+              *(("move y:(r4+$3),x0", f"move x0,y:>${T_LEN:x}",
+                 *((f"move y:>${T_A0:x},a", "add x0,a", "sub #>$1,a", f"move a1,y:>${T_END:x}") if low else ())) if not region else
+                ("move y:(r4+$3),a", "sub #$1,a", f"move a1,y:>${T_END:x}",           # (v7) Y:(v + 3) is the region's end (exclusive)
+                 "add #$1,a", "sub x0,a", f"move a1,y:>${T_LEN:x}",                     # its length = end - start
+                 "move y:(r4+$5),x1", "clr b", "btst #$1,x1", "tcs a,b", f"move b1,y:>${T_WR:x}")),   # a loop: wrap by the length
               "move x:(r4+$5),r1", "nop", "move y:(r1),y0",
               f"move #>${PAGE_STRIDE:x},x0", "mpy y0,x0,a", "asr a", "move a0,a",
               f"add #>${PAGES:x},a", f"move a1,y:>${T_TAB:x}",
@@ -111,6 +115,14 @@ def items(v3=False, grain=False, low=None):
     for s in ("move a1,y:(r6)", "move a0,y:(r6+$1)", f"move y:>${T_LEN:x},x0", "cmp x0,a"):
         E(s)
     E(("jcc", "lt", "s_x"))                       # past the end: the envelope's fast release
+    if region:                                    # (v7) a loop: back by its length instead
+        for s in (f"move y:>${T_WR:x},b", "tst b"):
+            E(s)
+        E(("jcc", "eq", "s_rel"))
+        E("sub b,a")
+        E("move a1,y:(r6)")
+        E(("jmp", "s_x"))
+        E(("label", "s_rel"))
     for s in ("move x:(r4+$a),a", "cmp #>$4,a"):
         E(s)
     E(("jcc", "ge", "s_x"))
@@ -146,7 +158,15 @@ def items(v3=False, grain=False, low=None):
     if low:
         for s in (f"move y:>${T_END:x},x0", "cmp x0,a"):         # past the sample's last word: nothing
             E(s)
-        E(("jcc", "ge", "g_sil"))
+        if region:                                                 # (v7) a loop: back by its length
+            E(("jcc", "lt", "g_ok"))
+            for s in (f"move y:>${T_WR:x},b", "tst b"):
+                E(s)
+            E(("jcc", "eq", "g_sil"))
+            E("sub b,a")
+            E(("label", "g_ok"))
+        else:
+            E(("jcc", "ge", "g_sil"))
     for s in ("tfr a,b", "lsr #12,b", "move b1,x0", "move n3,b", "cmp x0,b"):
         E(s)
     E(("jcc", "eq", "g_pg"))
@@ -196,9 +216,13 @@ def items(v3=False, grain=False, low=None):
     return L
 
 
-def code(at, v3=False, grain=False, low=None):
+def code(at, v3=False, grain=False, low=None, region=False):
     assert v3 or not grain
-    return V.assemble(items(v3, grain, low), at)
+    its = items(v3, grain, low, region)
+    if region:                                                     # (v7) every move with a short displacement in its one-word form
+        import rhdsppatch as DP
+        its = [DP.short(x) if isinstance(x, str) else x for x in its]
+    return V.assemble(its, at)
 
 
 def low_consts():

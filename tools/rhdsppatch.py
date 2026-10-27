@@ -101,3 +101,16 @@ def relocate(img: bytearray, words, extra):
         img += b"\xFF"
     struct.pack_into("<I", img, TABLE - BASE, at)
     return at, total
+
+_short = None
+
+
+def short(line):
+    """(RD19 on) the one-word form of «move X:/Y:(Rn+d),D» / «move S,X:/Y:(Rn+d)» (a 7-bit displacement, data ALU registers only), which
+    dsptool's asm does not emit (it always gives the two-word form): -> ("words", [w]) for voicefx.assemble, or the line as it was.  The words
+    come from dsptool's own disassembler over 0x020000..0x03FFFF (tools/rhdsp_short.json), e.g. 0x0204F7 = move y:(r4+$1),y1."""
+    global _short
+    if _short is None:
+        _short = json.loads((Path(__file__).resolve().parent / "rhdsp_short.json").read_text())
+    w = _short.get(line)
+    return ("words", [w]) if w is not None else line

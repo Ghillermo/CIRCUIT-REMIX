@@ -40,11 +40,13 @@ ONE = 0x7FFFFF
 
 
 def assemble(items, at):
-    """items: asm lines, ("label", name), ("jcc", cond, name), ("jmp", name), ("do", name) = do x:$1 until name, ("doa", "do n7", name) -> words (two passes)"""
+    """items: asm lines, ("label", name), ("jcc", cond, name), ("jmp", name), ("do", name) = do x:$1 until name, ("doa", "do n7", name),
+    ("jccs", cond, target) / ("jmps", target) / ("jsrs", target) = the one-word forms (target < $1000) -> words (two passes)"""
     def size(it):
         if isinstance(it, str):
             return len(DP.asm([it]))
-        return {"label": 0, "jcc": 2, "jmp": 2, "do": 2, "doa": 2, "jsr": 2, "words": len(it[1]) if it[0] == "words" else 0}[it[0]]
+        return {"label": 0, "jcc": 2, "jmp": 2, "do": 2, "doa": 2, "jsr": 2, "jccs": 1, "jmps": 1, "jsrs": 1,
+                "words": len(it[1]) if it[0] == "words" else 0}[it[0]]
     addr, labels = at, {}
     for it in items:
         if isinstance(it, tuple) and it[0] == "label":
@@ -66,6 +68,11 @@ def assemble(items, at):
             out += w
         elif it[0] == "jsr":
             out += DP.jsr(labels[it[1]] if isinstance(it[1], str) else it[1])
+        elif it[0] in ("jccs", "jmps", "jsrs"):                         # the one-word forms (a target below $1000; dsptool's asm gives the long ones)
+            t = it[-1]
+            t = labels[t] if isinstance(t, str) else t
+            assert 0 <= t < 0x1000, (it, hex(t))
+            out.append({"jccs": lambda: 0x0E0000 | DP.CC[it[1]] << 12, "jmps": lambda: 0x0C0000, "jsrs": lambda: 0x0D0000}[it[0]]() | t)
         elif it[0] == "words":
             out += list(it[1])
     return out, labels
