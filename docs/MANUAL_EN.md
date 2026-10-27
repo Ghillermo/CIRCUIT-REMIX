@@ -22,6 +22,19 @@ Since Alpha 0.04 playback starts sooner (≈ 10 ms from Play to the first sound;
 
 Stopped, Shift + Play without count-in is the original's (play from where it stopped). The count-in is not saved: at power-on it is back to "no count-in".
 
+### A0.04F / A04FS: the count-in on the music's clock
+In the builds A0.04F and A04FS, the count-in and the metronome above work with these changes:
+
+| | A0.04F / A04FS |
+|---|---|
+| **Timing** | the clicks follow the clock the music follows: the project's tempo, or the external MIDI clock as a slave. Play goes through at the start of the count and the clock's start is held; the music starts on the clock's own pulse after the 4th click, so the 1 is on time |
+| **During the count** | nothing records, and the Play LED stays as stopped until the 1. Record flashes red on each click |
+| **Slave** | the first click comes on the master's next bar when the Rhythm knows the master's position (it received the master's Start or Song Position); otherwise on the first clock pulse after the press. A Start from the master during the count stops it |
+| **Visual metronome** | with the click's level at 0 (K5 of the Tempo / Swing view), Clear flashes for 100 ms on each click of the count, and on each beat while playing with the metronome or the count-in on, in the state's colour (green, magenta, cyan). Not while Shift or Clear is held |
+| **Error light** | Clear blinks red (250 ms on, 250 ms off) if one of these features cannot run on the firmware it finds |
+
+Shift + Play (the count, then playback from where it stopped) and Play during the count (cancels it) work as above. Play also loads the steps faster (the same result with a quarter of the calls).
+
 ## 2. Mixer
 | Gesture | What it does |
 |---|---|

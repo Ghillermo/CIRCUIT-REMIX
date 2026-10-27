@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## A0.04F / A04FS (2026-10-27)
+
+**Español.** Dos versiones con la cuenta atrás sobre el reloj de la música ([manual](docs/MANUAL.md), sección 1):
+- **A0.04F** (marca `A0.04F`): Alpha 0.04 + estas funciones + el diagnóstico remoto por USB (rdiag, como las builds RH de prueba), para leer el registro de la cuenta.
+- **A04FS** (marca `A04FS`): Alpha 0.04S + estas funciones, sin rdiag. Ninguna de ellas escribe en la tarjeta.
+
+Qué cambia:
+- **La cuenta sigue el reloj de la música:** el tempo del proyecto, o el reloj MIDI externo como esclavo. Antes la contaba la tarea de los LED: clics de 0 a 10 ms tarde.
+- **El 1 a tiempo:** Play entra al empezar la cuenta y el arranque del reloj queda en espera hasta el pulso tras el 4.º clic, así el trabajo de Play (12-14 ms en el aparato) ocurre durante la cuenta y no retrasa el 1. Antes Play entraba tras el último clic y su trabajo retrasaba el 1.
+- **Durante la cuenta** no se graba nada y el LED de Play sigue como parado hasta el 1; Record parpadea en rojo en cada clic.
+- **Esclavo:** la cuenta empieza en el siguiente compás del maestro cuando se conoce su posición (Start o Song Position).
+- **Metrónomo visual:** con el nivel del clic a 0, Clear destella en cada clic y en cada tiempo.
+- **Carga de pasos más rápida al pulsar Play** (el mismo resultado con la cuarta parte de las llamadas).
+- **Luz de error:** Clear parpadea en rojo si alguna de estas funciones no puede funcionar.
+
+Probado en el aparato con A0.04F: cuenta como maestro, cuenta como esclavo en el compás del maestro, metrónomo visual, Shift + Play con cuenta, Play cancela la cuenta. A04FS: comprobada en emulación y por desensamblado, no en el aparato. Instalador: `firmware/a0.04f/a004f_uploader.html`. **Haz una copia de la tarjeta SD.**
+
+**English.** Two builds with the count-in on the music's clock ([manual](docs/MANUAL_EN.md), section 1):
+- **A0.04F** (marker `A0.04F`): Alpha 0.04 + these features + the remote diagnostics over USB (rdiag, as in the RH test builds), to read the count-in's log.
+- **A04FS** (marker `A04FS`): Alpha 0.04S + these features, no rdiag. None of them writes to the card.
+
+What changes:
+- **The count follows the music's clock:** the project's tempo, or the external MIDI clock as a slave. Before, the LED task timed it: clicks 0 to 10 ms late.
+- **The 1 on time:** Play goes through at the start of the count and the clock's start is held until the pulse after the 4th click, so Play's work (12-14 ms on the device) runs during the count and does not delay the 1. Before, Play went through after the last click and its work delayed the 1.
+- **During the count** nothing records and the Play LED stays as stopped until the 1; Record flashes red on each click.
+- **Slave:** the count starts on the master's next bar when its position is known (Start or Song Position).
+- **Visual metronome:** with the click's level at 0, Clear flashes on each click and each beat.
+- **Faster step load on Play** (the same result with a quarter of the calls).
+- **Error light:** Clear blinks red if one of these features cannot run.
+
+Tested on the device with A0.04F: master count, slave count on the master's bar, visual metronome, Shift + Play with the count, Play cancels the count. A04FS: checked in emulation and by disassembly, not on the device. Installer: `firmware/a0.04f/a004f_uploader.html`. **Back up the SD card.**
+
 ## Alpha 0.04 (2026-10-27) — experimental
 
 > ⚠️ **Experimental: necesita pulirse.** Casi todo lo nuevo se ha comprobado solo en emulación. En el aparato se han probado el granular de una pista, el de-clicker y los loops cortos, la grabación estéreo, el arranque de la reproducción y el reloj al guardar un sample. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**

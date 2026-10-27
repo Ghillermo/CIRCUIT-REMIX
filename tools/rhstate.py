@@ -31,6 +31,7 @@ MAGIC = 0x31545352                         # "RST1"
 SIZE2 = 0x800
 ST2 = ST - SIZE2                           # 0x2004EE60
 MAGIC2 = 0x32545352                        # "RST2"
+OUR_LIMIT = ST2                            # the heap limit once c_rst has run with ram2
 OFF2 = {                                   # module -> (offset, length) inside the second block
     "magic": (0, 4),
     "latdiag": (4, 224),                   # (RD24) the playback start's times: state, the start, the clock's first pass, 16 queue writes, the freeze
@@ -49,6 +50,7 @@ OFF2 = {                                   # module -> (offset, length) inside t
     "linein": (1748, 4),                   # (RH47) + 0 the line input's words to send now, + 1 the round; (RH48) + 0 sent once, + 2 / + 3 the pair sent
     "slink": (1752, 4),                    # (RH49) + 0 the stereo link's leaders applied, + 1 applied once
     "granmulti": (1756, 64),               # (RH50) + 0 the granular slots to send, + 1 the round, + 2 sent once, + 4 their low 7 bits (13 a slot)
+    "clkci": (1820, 52),                   # (A0.04F) the count-in on the music's clock: flags, the held mode, the master, clicks, times, its log
 }
 OFF = {                                    # module -> (offset, length) inside the block
     "magic": (0, 4),
@@ -77,6 +79,7 @@ OFF = {                                    # module -> (offset, length) inside t
     "stockplus": (218, 4),                 # (RH32) + 0 the tracks on the Stock+ page (bit t), + 1 the tracks to push to core 1, + 2 the round, + 3 Duplicate's source + 1
     "granpage": (228, 4),                  # (RH39) + 0 to push (bit 0 the granular's words to core 0, bit 1 the crossfade's to core 1), + 1 / + 2 their rounds
     "smpcopy": (202, 12),                  # the sample copy: tag, source + 1, its pack, the slot asked about + 1, time, the last copy + 1, its pack, status, time
+    "vismet": (232, 4),                    # (A0.04F) the visual metronome: the last silent beat or click (HAL tick, 0 = none)
     "stereorec": (248, 8),                 # (RD23) Sample Rec in stereo: phase, A, B, STF written, our functors installed
 }
 

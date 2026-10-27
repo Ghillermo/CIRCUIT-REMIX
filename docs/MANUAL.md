@@ -22,6 +22,19 @@ Desde Alpha 0.04 la reproducción empieza antes (≈ 10 ms de Play al primer son
 
 Parado, Shift + Play sin cuenta atrás es el del original (reproducir desde donde se paró). La cuenta atrás no se guarda: al encender vuelve a «sin cuenta atrás».
 
+### A0.04F / A04FS: la cuenta atrás con el reloj de la música
+En las versiones A0.04F y A04FS, la cuenta atrás y el metrónomo de arriba funcionan con estos cambios:
+
+| | A0.04F / A04FS |
+|---|---|
+| **Tiempo** | los clics siguen el reloj que sigue la música: el tempo del proyecto, o el reloj MIDI externo como esclavo. Play entra al empezar la cuenta y el arranque del reloj queda en espera; la música arranca en el propio pulso del reloj tras el 4.º clic, así que el 1 cae a tiempo |
+| **Durante la cuenta** | no se graba nada y el LED de Play sigue como parado hasta el 1. Record parpadea en rojo en cada clic |
+| **Esclavo** | el primer clic llega en el siguiente compás del maestro cuando el Rhythm conoce su posición (recibió su Start o Song Position); si no, en el primer pulso de reloj tras la pulsación. Un Start del maestro durante la cuenta la para |
+| **Metrónomo visual** | con el nivel del clic a 0 (K5 de la vista Tempo / Swing), Clear destella 100 ms en cada clic de la cuenta, y en cada tiempo mientras suena con el metrónomo o la cuenta atrás activos, en el color del estado (verde, magenta, cian). No mientras se mantiene Shift o Clear |
+| **Luz de error** | Clear parpadea en rojo (250 ms encendido, 250 ms apagado) si alguna de estas funciones no puede funcionar con el firmware que encuentra |
+
+Shift + Play (la cuenta y luego la reproducción desde donde se paró) y Play durante la cuenta (la cancela) funcionan como arriba. Play además carga los pasos más rápido (el mismo resultado con la cuarta parte de las llamadas).
+
 ## 2. Mixer
 | Gesto | Qué hace |
 |---|---|
