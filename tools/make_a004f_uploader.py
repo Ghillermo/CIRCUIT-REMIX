@@ -14,12 +14,12 @@ import make_rm_uploader as m  # noqa: E402
 import rh_fw  # noqa: E402
 
 VERSIONS = ("A0.04F", "A04FS")
-DESC = {"A0.04F": ("Alpha 0.04 (experimental) + la cuenta atrás con el reloj de la música (maestro o esclavo, el 1 a tiempo, nada se graba durante la cuenta), "
+DESC = {"A0.04F": ("A0.04F — experimental — Alpha 0.04 + la cuenta atrás con el reloj de la música (maestro o esclavo, el 1 a tiempo, nada se graba durante la cuenta), "
                    "metrónomo visual, carga de pasos más rápida, luz de error; con diagnóstico remoto por USB",
-                   "Alpha 0.04 (experimental) + the count-in on the music's clock (master or slave, the 1 on time, nothing records during the count), "
+                   "A0.04F — experimental — Alpha 0.04 + the count-in on the music's clock (master or slave, the 1 on time, nothing records during the count), "
                    "visual metronome, faster step load, error light; with remote diagnostics over USB"),
-        "A04FS": ("Alpha 0.04S (experimental, más segura) + las mismas funciones, sin diagnóstico remoto",
-                  "Alpha 0.04S (experimental, safer) + the same features, no remote diagnostics")}
+        "A04FS": ("A04FS — experimental, más segura — Alpha 0.04S + las mismas funciones, sin diagnóstico remoto",
+                  "A04FS — experimental, safer — Alpha 0.04S + the same features, no remote diagnostics")}
 OUT = m.ROOT / "firmware/a0.04f/a004f_uploader.html"
 
 
