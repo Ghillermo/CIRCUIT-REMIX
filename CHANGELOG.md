@@ -1,5 +1,71 @@
 # CHANGELOG
 
+## Alpha 0.04 (2026-10-27) — experimental
+
+> ⚠️ **Experimental: necesita pulirse.** Casi todo lo nuevo se ha comprobado solo en emulación. En el aparato se han probado el granular de una pista, el de-clicker y los loops cortos, la grabación estéreo, el arranque de la reproducción y el reloj al guardar un sample. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
+
+**Español.** Dos versiones nuevas: **Alpha 0.04** (marca `A0.04`) y **Alpha 0.04S** (marca `A0.04S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Todo en el [manual](docs/MANUAL.md).
+
+Novedades:
+- **Menú de pista:** mantén el botón de una pista y los pads 1-7 son un menú: página stock / Stock+ / Granular, el granular encendido / apagado, la entrada de línea y su gate, el enlace estéreo. Sustituye a pulsar otra vez el botón de la pista.
+- **Granular** (el motor de CIRCUIT-HACKS, en el DSP del master):
+  - página Granular en los knobs (tamaño, densidad, posición, scan, altura, dispersiones, ventana; con Shift: ajuste fino, apertura estéreo, zona, reverso, gate);
+  - sigue la nota (vista Note, teclado, MIDI);
+  - el filtro y la envolvente de la pista actúan sobre él;
+  - **hasta 4 pistas granulares a la vez**, cada una con sus ajustes; se guarda con el proyecto.
+- **Entrada de línea como sonido de una pista** (una pista: L + R; dos pistas: L y R), con gate por notas.
+- **Enlace estéreo:** una pista y la siguiente suenan como un solo sonido estéreo (su sample a la izquierda, el siguiente a la derecha).
+- **Sample Rec estéreo** (pad 24): L en el hueco elegido, R en el siguiente.
+- **Loops:**
+  - de-clicker por crossfade (pad 19 de Sample mode por pista; pad 23 de Sample Rec para todas; encendido por defecto);
+  - los loops cortos suenan a su longitud (en el original se repetían cada ~128 muestras);
+  - el scan (K8 de Stock+) mueve el inicio del loop en cada vuelta.
+- **Stock+:** K3 (LFO de tono) y K8 (scan) desde el centro: centro = quieto, derecha = libre, izquierda = a tempo. En proyectos de Alpha 0.02 / 0.03 pueden sonar distinto.
+- **Sample mode, pads 9 / 10:** ajustar el sample al patrón con stretch, sin cambiar el tono.
+- **Mixer, modo cue** (página de panoramas, Shift + knob): la mezcla por la salida izquierda, el cue por la derecha.
+- **Micro Step:** longitud fija (pad 31) y gate por pulsación (pad 32) al introducir pasos.
+- **Vista Velocity, Shift + paso:** en ese paso, los parámetros automatizados vuelven a su knob.
+- **Pattern Settings, Clear + pad 25:** borra las dinámicas y la mutación del patrón.
+- **Setup:** modo General MIDI (pad 22, la nota de cada pista en K1-K8); Advanced Setup: teclado externo al arpegiador (pad 22) y fusión USB del DIN In (pad 23).
+
+Arreglos del firmware original:
+- La reproducción empieza antes (≈ 10 ms de Play al primer sonido; el original ≈ 18 ms) y las notas de un mismo paso suenan juntas.
+- El reloj ya no tropieza al guardar un sample.
+- Notas perdidas con muchas pistas en el mismo paso (la cola de disparos al DSP se llenaba).
+- Los canales de Program Change y el modo del Thru (Merge / Filter) se guardan al apagar (sin comprobar en el aparato).
+
+**English.** Two new builds: **Alpha 0.04** (marker `A0.04`) and **Alpha 0.04S** (marker `A0.04S`: no project copy, pack delete or sample copy). Everything is in the [manual](docs/MANUAL_EN.md).
+
+> ⚠️ **Experimental: needs refinement.** Almost everything new has only been checked in emulation. On the device we tested the single-track granular, the de-clicker and short loops, stereo recording, the playback start and the clock while a sample is saved. Expect bugs, noises or hangs: for serious playing, stay on **Alpha 0.03** (still in the installer). **Back up the SD card.**
+
+What's new:
+- **Track menu:** hold a track's button and pads 1-7 become a menu: stock / Stock+ / Granular page, granular on / off, line input and its gate, stereo link. It replaces pressing the track's button again.
+- **Granular** (the CIRCUIT-HACKS engine, on the master DSP):
+  - a Granular knob page (size, density, position, scan, pitch, sprays, window; with Shift: fine control, stereo spread, zone, reverse, gate);
+  - it follows the note (Note view, keyboard, MIDI);
+  - the track's filter and envelope act on it;
+  - **up to 4 granular tracks at once**, each with its own settings; saved with the project.
+- **Line input as a track's sound** (one track: L + R; two tracks: L and R), with a note gate.
+- **Stereo link:** a track and the next one play as one stereo sound (its sample on the left, the next one on the right).
+- **Stereo Sample Rec** (pad 24): L into the chosen slot, R into the next one.
+- **Loops:**
+  - crossfade de-clicker (Sample mode pad 19 per track; Sample Rec pad 23 for all; on by default);
+  - short loops play at their own length (the original repeated them every ~128 samples);
+  - the scan (Stock+ K8) moves the loop's start on every pass.
+- **Stock+:** K3 (pitch LFO) and K8 (scan) from the centre: centre = still, right = free, left = synced to the tempo. Projects from Alpha 0.02 / 0.03 may sound different.
+- **Sample mode, pads 9 / 10:** fit the sample to the pattern with stretch, without changing pitch.
+- **Mixer cue mode** (pan page, Shift + knob): the mix on the left output, the cue on the right.
+- **Micro Step:** fixed length (pad 31) and gate by press (pad 32) when entering steps.
+- **Velocity view, Shift + step:** on that step, automated parameters go back to their knob.
+- **Pattern Settings, Clear + pad 25:** clears the pattern's dynamics and mutation.
+- **Setup:** General MIDI mode (pad 22, each track's note on K1-K8); Advanced Setup: external keyboard into the arpeggiator (pad 22) and USB merge of DIN In (pad 23).
+
+Fixes to the original firmware:
+- Playback starts sooner (≈ 10 ms from Play to the first sound; the original ≈ 18 ms) and the notes of one step sound together.
+- The clock no longer stumbles while a sample is saved.
+- Lost notes with many tracks on the same step (the trigger queue to the DSP overflowed).
+- The Program Change channels and the Thru mode (Merge / Filter) are kept after power-off (not yet checked on the device).
+
 ## Alpha 0.03 (2026-10-25)
 
 **Español.** Dos versiones nuevas (las anteriores siguen en el instalador):

@@ -15,9 +15,9 @@ import rodisk  # noqa: E402
 NAME = "RH01"
 
 
-def build(name=NAME, diag=True, dsp=False):
+def build(name=NAME, diag=True, dsp=False, ram2=False):
     b = build_rd1.build(name, dsp=dsp) if diag else rhbuild.Build(name)   # diag=False: without rdiag (the public builds)
-    b.add("rhstate", rhstate)
+    b.add("rhstate", rhstate, **({"ram2": True} if ram2 else {}))      # ram2 (RH41+): the second RAM block
     b.add("rodisk", rodisk)
     return b
 

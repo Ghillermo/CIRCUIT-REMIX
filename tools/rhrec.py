@@ -21,7 +21,8 @@ ENG, ENG_VT, REC_OWNER = 0x2003C380, 0x08066B34, 0x2003C0CC
 TAIL, TAIL_LEN = 0x29110, 0x374
 FREE_LEN = 0x372                           # the last 2 bytes of the record are the stock's (seen on the unit, 2026-10-19)
 OFF = {                                    # module -> (offset, length) in the tail
-    "drumpat": (0, 2),                     # "DQ": the project's step bytes (pattern + 0x108 + step) are ours
+    "drumpat": (0, 2),
+    "granmulti": (2, 58),                  # (RH50) "N", a check byte, 4 granular slots x 14 B: the track + 1 (0 = free), the 13 values >> 7                     # "DQ": the project's step bytes (pattern + 0x108 + step) are ours
     "patchain": (64, 128),                 # + 0..47 "CTC1", sum, the tracks on the rules, 16 scene flags, 16 scene repeats; + 64..127 the running part
     "sckn": (192, 40),                     # "SK", sum, the tracks whose side-chain values are ours, 8 x 4 values, the compressor's flag + 3 values
     "drumarp": (232, 68),                  # "AD", sum, the arpeggiator's setting of each track and pattern (8 x 8)
@@ -30,7 +31,12 @@ OFF = {                                    # module -> (offset, length) in the t
     "mfsess": (540, 4),                    # "MF", the master filter's resonance, its check byte (written when the project is saved)
     "cthresh": (544, 4),                   # "TH", the compressor's threshold (0..127, 127 = the stock's), its check byte
     "stockplus": (548, 132),               # (RH32) "SP", a check byte, 0, then 8 tracks x 8 halfwords: the Stock+ knob page's values
-    "stockplus2": (680, 68),               # (RH33) "SQ", a check byte, 0, then 8 tracks x 4 halfwords: K5-K8's Shift layer on the Stock+ page
+    "stockplus2": (680, 68),
+    "granpage": (748, 32),                 # (RH39) "GP", a check byte, the granular track + 1, the crossfade's tracks (bit t), 0, 12 halfwords: its knobs               # (RH33) "SQ", a check byte, 0, then 8 tracks x 4 halfwords: K5-K8's Shift layer on the Stock+ page
+    "stepgate": (780, 12),                 # (RH46) "SG", a check byte, the gate-by-holding tracks (bit t), each track's fixed length (bit 7 on, 1..16)
+    "gmmode": (792, 12),                   # (RH46) "GM", a check byte, the flags (bit 0 on), the GM note of each track (35..81)
+    "linein": (804, 4),                    # (RH47) "L", a check byte, the line input's track + 1, its gate (1 = the track's notes); (RH48) the two line tracks, each track + 1 | gate << 4
+    "slink": (808, 4),                     # (RH49) "S", a check byte, the stereo link's leaders (bit t: t leads, t + 1 follows), 0
 }
 
 

@@ -26,8 +26,8 @@ import trkcopy  # noqa: E402
 NAME = "RH18"
 
 
-def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True, dsp=False, scniter=False, bpm0=False, rh30=False, rh31=False):
-    b = build_rh01.build(name, diag=diag, dsp=dsp)
+def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True, dsp=False, scniter=False, bpm0=False, rh30=False, rh31=False, ram2=False):
+    b = build_rh01.build(name, diag=diag, dsp=dsp, ram2=ram2)
     b.add("countin", countin, v2=True, **({"bpm0": True} if bpm0 else {}))
     b.add("quant", quant, v2=True)
     b.add("qmute", qmute)
