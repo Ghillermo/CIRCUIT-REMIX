@@ -71,6 +71,7 @@ PAGE_SND = (None, SND_SAMPLE, SND_GRAN, SND_SYNTH)     # the page pads 1-4: the 
 # byte + 3, M_ENV); a page pad 1-4, a sound switched (pads 11-13) or the Synth page set takes it off; held, as the others (pagehold's bit 3);
 # py_sound also as c_sysnd for envpage; the synth's length (the release's value) 64 by default (~200 ms: one-shot is percussive now)
 UI_PAD_ENV, M_ENV = 4, 3
+# spall (RH55; tools/spall.py, «Stock+ for every sound»): the Stock+ page (pad 2) for a granular or synth track too (not for the line input)
 LEN_DEF = 64
 UI_KNOB, UI_BLINK, UI_DIM = 0x4F, 0x4F, 0x50
 UI_WAVES = (0x55, 0x2F, 0x1E, 0x01)
@@ -131,7 +132,7 @@ def model_block(slots):
     return bytes(blk)
 
 
-def _pad_ui(a, E, bc, L, prev, menu2=False, env=False):
+def _pad_ui(a, E, bc, L, prev, menu2=False, env=False, spall=False):
     """(ui) c_sypad: pad 4 the Synth page (the synth put on the track first), pad 12 the synth on / off; pads 1-3 leave our page; pads 3 / 11 /
     13 (granular page, granular on, the line input) take the synth off the track first, then theirs; a page pad's press remembered (pagehold),
     c_syrel: held past PAGE_HOLD, the track's pages back at its release"""
@@ -163,6 +164,14 @@ def _pad_ui(a, E, bc, L, prev, menu2=False, env=False):
             E(b_cond, "pd_ok", "eq")
             E(b, "pd_no")
             a.label("pd_ne")
+        if spall:                                                         # (spall) pad 2: Stock+ for a granular or synth track too
+            E(cmp_imm, 5, 1)
+            E(b_cond, "pd_ns2", "ne")
+            E(cmp_imm, 0, SND_GRAN)
+            E(b_cond, "pd_ok", "eq")
+            E(cmp_imm, 0, SND_SYNTH)
+            E(b_cond, "pd_ok", "eq")
+            a.label("pd_ns2")
         E(adds_imm8, 0, 1)
         E(cmp_reg, 0, 5)
         E(b_cond, "pd_ok", "eq")
@@ -463,7 +472,7 @@ def _pad_ui(a, E, bc, L, prev, menu2=False, env=False):
     E(pop_list, [5], pc=True)
 
 
-def arm_code(base, L, prev, ui=False, menu2=False, env=False):
+def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -908,7 +917,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False):
     E(pop_list, [4, 5], pc=True)
 
     if ui:
-        _pad_ui(a, E, bc, L, prev, menu2, env)
+        _pad_ui(a, E, bc, L, prev, menu2, env, spall)
     else:
         # ---- c_sypad (the controller's pad press, slink's head after it: r0 = ctrl, r1 = pad, r2 = velocity): the menu open, pad 8 is ours;
         # pads 1-3 leave our page; pads 3-5 take the synth off the track first
@@ -1169,8 +1178,12 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False):
             E(bl, "py_sound")
             E(movs_imm, 1, 0)
             for k in (1, 2, 3):
-                E(cmp_imm, 0, PAGE_SND[k])
-                E(b_cond, f"lu_d{k}", "eq")
+                if spall and k == 1:                                      # (spall) Stock+: dark only on a line track
+                    E(cmp_imm, 0, SND_LINE)
+                    E(b_cond, f"lu_d{k}", "ne")
+                else:
+                    E(cmp_imm, 0, PAGE_SND[k])
+                    E(b_cond, f"lu_d{k}", "eq")
                 E(strh_imm, 1, 5, 2 * k)
                 a.label(f"lu_d{k}")
         E(b, "ll_pg")
@@ -1277,7 +1290,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, ui=False, menu2=False, env=False):
+def install(img, report, base_addr, ui=False, menu2=False, env=False, spall=False):
     """The controller's pad press (in front of slink's), the container's knob slot (in front of granpage's), the head of the LED calls, the
     note-off's one-shot test.  Needs granpage multi, linein two, slink, stockplus, kbright, cthresh, rhrec, rhstate ram2, and synth0 on core 0."""
     import rhbuild
@@ -1301,7 +1314,8 @@ def install(img, report, base_addr, ui=False, menu2=False, env=False):
     assert ui or not menu2
     assert not menu2 or report["granpage"].get("menu2"), "synthpage menu2 needs granpage's"
     assert menu2 or not env
-    code_, labels = arm_code(base_addr, L, prev, ui, menu2, env)
+    assert env or not spall
+    code_, labels = arm_code(base_addr, L, prev, ui, menu2, env, spall)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1312,6 +1326,6 @@ def install(img, report, base_addr, ui=False, menu2=False, env=False):
     rhbuild.patch(img, NOFF_AT, NOFF_HEAD, bl(NOFF_AT, labels["c_synoff"]))
     if ui:
         rhbuild.patch(img, GP.PR_ENTRY, f"b.w #{prev['rel']:#x}", b_w(GP.PR_ENTRY, labels["c_syrel"]))
-    report["synthpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}),
+    report["synthpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}), **({"spall": True} if spall else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code_

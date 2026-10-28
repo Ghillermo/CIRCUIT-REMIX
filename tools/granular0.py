@@ -92,7 +92,7 @@ def X(r, off):
     return f"x:({r})" if off == 0 else f"x:({r}+${off:x})"
 
 
-def items(tab_at, note=False, post=None, stereo=False, multi=False):
+def items(tab_at, note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX):
     """the engine at P:CODE; tab_at = {table: P address}; note (RH40): the played note pitches the whole granular, as a sampler: r =
     2^((note - 60) / 12), each grain's increment x r, its length / r (the same source span, sooner), the spawn interval / r; multi (RH50):
     NSLOT slots, the controls and the voice state in Y"""
@@ -105,7 +105,7 @@ def items(tab_at, note=False, post=None, stereo=False, multi=False):
 
     # ================================================================ GR: from P:$224 (in place of `jsr $367`), then the stock's mix
     if multi:
-        e(*gr_multi(tab_at, post))
+        e(*gr_multi(tab_at, post, mix))
     else:
         e(("label", "gr"), f"move x:>${GB + P_KEY:x},a", f"move #>${KEY:x},x0", "cmp x0,a", ("jcc", "ne", MIX),
           f"move x:>${GB + P_TRK:x},a", "tst a", ("jcc", "eq", MIX), ("jsr", "g_save"), ("jsr", "g_block"), ("jsr", "g_rest"),
@@ -201,7 +201,8 @@ def items(tab_at, note=False, post=None, stereo=False, multi=False):
     # ---- the zone Z = L (ZONE + 1) / 128 (>= 64), its start ZS = (L - Z) POS / 128
     e(f"move {V('r6', P_ZONE)},a", "and #>$7f,a", "add #>$1,a", "move a1,x0", f"move {V('r7', V_L)},x1", "mpy x1,x0,a", "asr a",
       "asr #7,a,a", "move a0,b", "move #>$40,x0", "cmp x0,b", "tlt x0,b", f"move b1,{V('r7', V_Z)}",
-      f"move {V('r7', V_L)},a", "sub b,a", "move a1,x1", f"move {V('r6', P_POS)},a", "and #>$7f,a", "move a1,x0", "mpy x1,x0,a", "asr a",
+      f"move {V('r7', V_L)},a", "sub b,a", "move a1,x1", f"move {V('r6', P_POS)},a", "and #>$7f,a", *_hook(sp, "gpos"), "move a1,x0",
+      "mpy x1,x0,a", "asr a",
       "asr #7,a,a", f"move a0,{V('r7', V_ZS)}")
     # ---- the playhead: += SCAN |SCAN| / 64 samples a block, inside [0, Z) (v |v| is in a0 after the asr: << 18 = / 64 in a1, the rest
     #      the fraction; the Tracks' line had `move a0,a` before the shift, which puts it in a1 and shifts it out: its scan never moved)
@@ -238,7 +239,7 @@ def items(tab_at, note=False, post=None, stereo=False, multi=False):
     e(f"move {V('r7', V_LGB)},x0", f"move x0,{V('r7', V_LGG)}")
     # ---- the pitch in 1/64 semitone: PITCH (+-24) x 64 + FINE + the spray (rnd x PSPR / 128 x 12 semitones)
     e(f"move {V('r6', P_PITCH)},a", "move #>$18,x1", "cmp x1,a", "tgt x1,a", "move #>$ffffe8,x1", "cmp x1,a", "tlt x1,a", "asl #6,a,a",
-      f"move {V('r6', P_FINE)},x0", "add x0,a", f"move a1,{V('r7', V_Q)}", ("jsr", "g_rnd"),
+      f"move {V('r6', P_FINE)},x0", "add x0,a", *_hook(sp, "gpm"), f"move a1,{V('r7', V_Q)}", ("jsr", "g_rnd"),
       f"move {V('r6', P_PSPR)},b", "and #>$7f,b", "asl #16,b,b", "move b,y0", "mpy y0,x0,b", "move b,x1", "move #>$300,x0", "mpy x1,x0,b",
       f"move {V('r7', V_Q)},a", "move b1,x0", "add x0,a",
       f"move #>${PITCH_MAX:x},x0", "cmp x0,a", "tgt x0,a", f"move #>${(PT_LO * 64) & 0xFFFFFF:x},x0", "cmp x0,a", "tlt x0,a")
@@ -382,7 +383,15 @@ def note_q(V=X):
 Q_MAX = 0x27FFFF                                       # (RH40) < 5 x 2^19: the block's copy (32 x 5 + 2 words) still fits X:LB
 
 
-def gr_multi(tab_at, post):
+def _hook(sp, name):
+    """(RH55, sp) a jsr to tools/sp0.py's entry (Stock+: the grain's pitch + the pitch envelope / LFO, the position + the scan LFO)"""
+    if not sp:
+        return []
+    import sp0 as SP0
+    return [("jsr", SP0.entry(name))]
+
+
+def gr_multi(tab_at, post, mix=MIX):
     """(multi) GR: the active slots (their KEY and TRK; V_ACT), the cap; each active slot's block (g_pre), the shared pool (g_gm), each
     slot's out (g_post), then the chain / the mix"""
     L = []
@@ -396,7 +405,7 @@ def gr_multi(tab_at, post):
           f"move y:>${y + P_TRK:x},a", "tst a", ("jcc", "eq", f"g_n{k}"),
           "move #>$1,a", f"move a1,y:>${y + 0x10 + V_ACT:x}", "add #>$1,b", ("jmp", f"g_d{k}"),
           ("label", f"g_n{k}"), "clr a", f"move a1,y:>${y + 0x10 + V_ACT:x}", ("label", f"g_d{k}"))
-    e("tst b", ("jcc", "eq", MIX), f"move b1,y:>${NACT:x}", f"add #>${tab_at['CAP_T'] - 1:x},b", "move b1,r0", "nop", "move p:(r0),x0",
+    e("tst b", ("jcc", "eq", mix), f"move b1,y:>${NACT:x}", f"add #>${tab_at['CAP_T'] - 1:x},b", "move b1,r0", "nop", "move p:(r0),x0",
       f"move x0,y:>${CAPW:x}", ("jsr", "g_save"))
     # the pool, once (power-up garbage): its grains and their slots cleared
     e(f"move y:>${GMAG:x},a", f"move #>${MAGIC:x},x0", "cmp x0,a", ("jcc", "eq", "g_pok"),
@@ -413,7 +422,7 @@ def gr_multi(tab_at, post):
         y = slot_y(k)
         e(f"move #>${y:x},r6", f"move #>${y + 0x10:x},r7", "nop", f"move {Ym('r7', V_ACT)},a", "tst a", ("jcc", "eq", f"g_o{k}"),
           f"move {Ym('r7', V_ON)},a", "tst a", ("jcc", "eq", f"g_o{k}"), ("jsr", "g_post"), ("label", f"g_o{k}"))
-    e(("jsr", "g_rest"), ("jmp", post or MIX))
+    e(("jsr", "g_rest"), ("jmp", post or mix))
     # ---- g_gm: a pool grain (r2): live, its slot's r6 / r7 / sums; a slot not running (or a new voice) kills it
     e(("label", "g_gm"), "move x:(r2),a", "tst a", ("jcc", "gt", "g_gml"), "rts",
       ("label", "g_gml"), f"move y:(r2+${PANOFF + 1:x}),r6", "nop", "move r6,a", "add #>$10,a", "move a1,r7", "nop",
@@ -423,19 +432,19 @@ def gr_multi(tab_at, post):
     return L
 
 
-def code(note=False, post=None, stereo=False, multi=False):
+def code(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX):
     """-> (the segment's words from P:CODE (multi: P:MCODE), labels, {table: address})"""
     tb = tables()
     names = ("SIZE_T", "PT", "GAIN_T") + (("CAP_T",) if multi else ())
     if multi:
         tb["CAP_T"] = list(CAP_T)
     at0 = MCODE if multi else CODE
-    w0, _ = C0.asm_at(items({k: 0x3000 for k in tb}, note=note, post=post, stereo=stereo, multi=multi), at0)
+    w0, _ = C0.asm_at(items({k: 0x3000 for k in tb}, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix), at0)
     at, tab_at = at0 + len(w0), {}
     for k in names:
         tab_at[k] = at
         at += len(tb[k])
-    w, labels = C0.asm_at(items(tab_at, note=note, post=post, stereo=stereo, multi=multi), at0)
+    w, labels = C0.asm_at(items(tab_at, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix), at0)
     assert len(w) == len(w0)
     for k in names:
         w += tb[k]
@@ -443,23 +452,24 @@ def code(note=False, post=None, stereo=False, multi=False):
     return w, labels, tab_at
 
 
-def segs(note=False, post=None, stereo=False, multi=False):
+def segs(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX):
     """-> core0.py's segments: RD20's test segment + 1 pad word + the engine at P:CODE, and the hook at P:$224; multi: the test segment
     alone, the engine at P:MCODE"""
     sw, _ = C0.asm_at(C0.seg_items(), C0.SEG)
-    w, labels, _ = code(note=note, post=post, stereo=stereo, multi=multi)
+    w, labels, _ = code(note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix)
     if multi:
         return [(C0.SEG, sw), (MCODE, w), (HOOK, [0x0BF080, labels["gr"]])], labels
     first = sw + [0] * (CODE - C0.SEG - len(sw)) + w
     return [(C0.SEG, first), (HOOK, [0x0BF080, labels["gr"]])], labels
 
 
-def install(img, report, base_addr, counter=True, note=False, extra=None, post=None, stereo=False, multi=False):
+def install(img, report, base_addr, counter=True, note=False, extra=None, post=None, stereo=False, multi=False, sp=False, mix=MIX):
     """counter: RD20's pass counter in core 0's vectors (diagnostic builds); the user builds (RH39 on) without it.  note (RH40): the
     played note pitches the granular (X:GB + P_NOTE, written by tools/granpage.py).  extra (RD23): f(labels) -> more core 0 segments,
-    sent after ours (tools/stsplit.py: its code and P:$224 -> its SPL, which goes on to GR)"""
+    sent after ours (tools/stsplit.py: its code and P:$224 -> its SPL, which goes on to GR).  sp / mix (RH55): tools/sp0.py's hooks in the
+    grains' pitch and position, and the end (with no slot running, or after `post`) to `mix` (sp0's SPX) in place of the stock's mix"""
     import voicefx
-    sg, labels = segs(note=note, post=post, stereo=stereo, multi=multi)
+    sg, labels = segs(note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix)
     if extra:
         sg = sg + extra(labels)
     if multi:
@@ -470,5 +480,5 @@ def install(img, report, base_addr, counter=True, note=False, extra=None, post=N
     assert tuple(ws[HOOK:HOOK + 2]) == OLD_HOOK, "core 0's jsr $367 at P:$224 moved"
     C0.install(img, report, base_addr, counter=counter, loader=True, segs=sg)
     report["granular0"] = dict(gr=hex(labels["gr"]), words=len(sg[0][1]), x=hex(GB), lb=hex(LB), outb=hex(OUTB), save=hex(SAVE), note=note,
-                               **({"stereo": True} if stereo else {}), **({"multi": True} if multi else {}))
+                               **({"stereo": True} if stereo else {}), **({"multi": True} if multi else {}), **({"sp": True} if sp else {}))
     return labels

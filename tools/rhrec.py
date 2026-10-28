@@ -46,6 +46,7 @@ OFF = {                                    # module -> (offset, length) in the t
 REUSE = (328, 212)
 OFF54 = {
     "envelope": (328, 22),                 # (RH54) "E", a check byte, the synth slots' slope (4 B), the granular slots' start, length, slope, env -> filter (4 x 4 B)
+    "waveshape": (350, 34),                # (RH55) "W", a check byte, 8 tracks x (the waveshaper's amount, its type) halfwords: Stock+ K7 of a granular / synth track
 }
 
 

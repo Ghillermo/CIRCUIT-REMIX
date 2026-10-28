@@ -1,7 +1,7 @@
 """tools/rm_uploader.html: the Circuit Remix installer, a web page that takes the OFFICIAL Circuit Rhythm firmware from the user, patches it in
 the browser and sends it (no Novation code inside; MIT, from CIRCUIT-HACKS' make_rc_uploader.py).
 
-    python tools/make_rm_uploader.py [VERSION ...]          (default: A0.06 A0.06S A0.05 A0.05S A0.04 A0.04S A0.03 A0.03S A0.02 A0.02S A0.01 A0.01S A0.0 A0.0S; needs firmware/<dir>/*.bin and the stock image of a full checkout)
+    python tools/make_rm_uploader.py [VERSION ...]          (default: A0.07 A0.07S A0.06 A0.06S A0.05 A0.05S A0.04 A0.04S A0.03 A0.03S A0.02 A0.02S A0.01 A0.01S A0.0 A0.0S; needs firmware/<dir>/*.bin and the stock image of a full checkout)
 Each version becomes a patch against the official image: COPY (offset, length) from the user's official image, or ADD (our bytes).  The matching is greedy
 on 8-byte keys, so an ADD run never holds 8 or more consecutive bytes that also occur in the official image: the page carries only our own work
 (checked again below).  The page:
@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -92,7 +92,11 @@ def main(versions):
     print("tools/rm_uploader.html", len(page), "bytes")
 
 
-DESC = {"A0.06": ("⚠️ experimental, necesita pulirse — Alpha 0.06 — la versión completa: Alpha 0.05 más la envolvente por modo de reproducción para el sinte y el granular (página Envolvente, pad 5 del menú) y la entrada de línea desde los retornos de reverb o delay (pad 15) con el filtro de la pista en su gate; la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
+DESC = {"A0.07": ("⚠️ experimental, necesita pulirse — Alpha 0.07 — la versión completa: Alpha 0.06 más Stock+ para todos los sonidos (la página Stock+ en el granular y el sinte, con un waveshaper en K7 y K8 sobre la posición de los granos / la FM) y el knob de distorsión de la pista en el granular y el sinte; la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
+                  "⚠️ experimental, needs refinement — Alpha 0.07 — full build: Alpha 0.06 plus Stock+ for every sound (the Stock+ page on the granular and the synth, with a waveshaper on K7 and K8 on the grains' position / the FM) and the track's distortion knob on the granular and the synth; the project and sample copy and the pack delete write to the card"),
+        "A0.07S": ("⚠️ experimental, necesita pulirse — Alpha 0.07S — versión más segura: Alpha 0.07 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "⚠️ experimental, needs refinement — Alpha 0.07S — safer build: Alpha 0.07 without the project copy, the pack delete and the sample copy; nothing of Circuit Remix writes or deletes files on the SD card or in the internal memory"),
+        "A0.06": ("⚠️ experimental, necesita pulirse — Alpha 0.06 — la versión completa: Alpha 0.05 más la envolvente por modo de reproducción para el sinte y el granular (página Envolvente, pad 5 del menú) y la entrada de línea desde los retornos de reverb o delay (pad 15) con el filtro de la pista en su gate; la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
                   "⚠️ experimental, needs refinement — Alpha 0.06 — full build: Alpha 0.05 plus the envelope by play mode for the synth and the granular (Envelope page, menu pad 5) and the line input from the reverb or delay returns (pad 15) with the track's filter on its gate; the project and sample copy and the pack delete write to the card"),
         "A0.06S": ("⚠️ experimental, necesita pulirse — Alpha 0.06S — versión más segura: Alpha 0.06 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "⚠️ experimental, needs refinement — Alpha 0.06S — safer build: Alpha 0.06 without the project copy, the pack delete and the sample copy; nothing of Circuit Remix writes or deletes files on the SD card or in the internal memory"),

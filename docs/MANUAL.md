@@ -1,4 +1,4 @@
-# Circuit Remix Alpha 0.06 — manual
+# Circuit Remix Alpha 0.07 — manual
 
 [English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)
 
@@ -68,7 +68,7 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.06)* es nuevo o cambia en esta versión.
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.07)* es nuevo o cambia en esta versión.
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 
 <a id="colores"></a>
@@ -152,7 +152,7 @@ Los pads se convierten en el menú de esa pista *(Alpha 0.06)*:
 | Pad | Qué hace |
 |---|---|
 | **1** | página **stock** de los knobs (la del original) |
-| **2** | página **[Stock+](#stockplus)** (con un sample) |
+| **2** | página **[Stock+](#stockplus)** (con un sample; con el granular o el sinte *(Alpha 0.07)*) |
 | **3** | página **[Granular](#granular)** (con el granular) |
 | **4** | página **[Sinte](#sinte)** (con el sinte) |
 | **5** | página **[Envolvente](#envolvente)** (con el sinte o el granular) *(Alpha 0.06)* |
@@ -164,18 +164,18 @@ Los pads se convierten en el menú de esa pista *(Alpha 0.06)*:
 | **15** | la fuente de la entrada: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón) *(Alpha 0.06)* |
 
 - **Abrirlo:** un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.
-- Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Granular y Envolvente; sinte: stock, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
+- Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Stock+, Granular y Envolvente; sinte: stock, Stock+, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
 - Fila 2, debajo, los **conmutadores**: brillante = encendido, tenue = apagado. **El sonido de la pista solo cambia aquí:** sample, granular, sinte o entrada, uno por pista; poner uno quita los otros.
-- Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos.
+- Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos; también la **distorsión**, con la misma curva que en un sample *(Alpha 0.07)*.
 
 En Alpha 0.04 el menú era: 1-3 páginas, 4 granular, 5 / 6 entrada y gate, 7 enlace.
 
 <a id="stockplus"></a>
 ### 2.3 Página Stock+
 
-*Cómo se llega:* menú de pista, pad 2, en una pista con un sample (el botón de la pista parpadea en azul cielo)
+*Cómo se llega:* menú de pista, pad 2, en una pista con un sample, el granular o el sinte (el botón de la pista parpadea en azul cielo)
 
-La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8 desde Alpha 0.02)*. Actúa sobre el sample de la pista.
+La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8 desde Alpha 0.02)*. Actúa sobre el sample de la pista; con el granular o el sinte, sobre ellos *(Alpha 0.07)*.
 
 | Knob | Solo | Con Shift |
 |---|---|---|
@@ -192,6 +192,18 @@ La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8
 - **Clear + knob:** su valor por defecto (en K5-K8, las dos capas).
 - **Se guarda con el proyecto.** En proyectos de Alpha 0.04, la mitad a tempo de K3 y K8 va ahora al revés.
 - **El stretch** reparte el sample en granos de unos 43 ms que se mantienen en fase (WSOLA): a 0,5× suena muy bien; a 0,25× la batería puede sonar con clics.
+
+**Con el granular o el sinte** *(Alpha 0.07)*: los mismos valores de la pista, sobre su sonido.
+
+| Knob | Granular | Sinte |
+|---|---|---|
+| K1-K4 | la envolvente y el LFO de tono, en el tono de cada grano nuevo | la envolvente y el LFO de tono, en los dos osciladores |
+| K5, K6 | ring, pitch follow y el tipo de filtro, sobre su filtro | lo mismo |
+| K7 | ★ **waveshaper**: cantidad (0 = apagado; la ganancia de ×1 a ×16; en bitcrush, los bits). Shift: su **tipo**, **suave** (dorado), **duro** (rojo anaranjado), **plegado** (turquesa), **bitcrush** (lima) | lo mismo |
+| K8 | ★ LFO de la **posición** de los granos (Shift: su profundidad) | ★ LFO de la **cantidad de FM** (Shift: su profundidad) |
+
+- El LED de K7 va en el color del tipo y brilla según la cantidad; con Shift, a tope. Clear + K7: apagado y suave.
+- El waveshaper se guarda con el proyecto y lo llevan Clear + el botón de la pista y Duplicate.
 
 <a id="granular"></a>
 ### 2.4 Página Granular
@@ -465,6 +477,7 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Cuenta atrás** | un compás antes de grabar; Shift + Clear | [1.1 Transporte, metrónomo y cuantizar](#transporte) | Alpha 0.0 |
 | **De-clicker de loops** | crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec | [4.1 Sample mode](#samplemode) | Alpha 0.04 |
 | **Dinámicas por paso** | velocity y retraso al azar dentro del paso; fila 3 de la probabilidad | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
+| **Distorsión en granular y sinte** | el knob de distorsión del original también en ellos | [2.2 El menú de pista](#menu) | Alpha 0.07 |
 | **Enlace estéreo** | una pista y la siguiente como un sonido estéreo; menú, pad 9 | [2.7 Entrada de línea y enlace estéreo](#entrada) | Alpha 0.04 |
 | **Entrada de línea** | la entrada de audio como sonido de una pista; menú, pads 13 / 14 | [2.7 Entrada de línea y enlace estéreo](#entrada) | Alpha 0.04 |
 | **Envolvente de tono** | Stock+, K1 / K2 | [2.3 Página Stock+](#stockplus) | Alpha 0.01 |
@@ -489,7 +502,7 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Nivel a 100 / 0** | Shift + knob en los niveles del Mixer | [5.1 Mixer](#mixer) | Alpha 0.0 |
 | **Nudge** | el primer paso pasa a ser el 1; pad 26 de Pattern Settings | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
 | **Órdenes fractal / deconstruido** | pads 27 / 28 de Pattern Settings | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
-| **Página Stock+** | ocho knobs más por pista; menú, pad 2 | [2.3 Página Stock+](#stockplus) | Alpha 0.01 |
+| **Página Stock+** | ocho knobs más por pista; menú, pad 2; desde 0.07 también en el granular y el sinte | [2.3 Página Stock+](#stockplus) | Alpha 0.01 |
 | **Program Change** | canales de escucha y salida; Setup, pads 29 / 30 | [6.2 Setup y Advanced Setup](#setup) | Alpha 0.0 |
 | **Repetir la escena** | la escena actual 1-8 veces; Mixer, Shift + pads 9-16 | [5.1 Mixer](#mixer) | Alpha 0.0 |
 | **Reset de knobs de pista** | Clear + botón de la pista | [2.1 El botón de pista](#pista) | Alpha 0.0 |
@@ -504,3 +517,4 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Thru: Out 2 / Merge / Filter** | Duplicate en Advanced Setup | [6.2 Setup y Advanced Setup](#setup) | Alpha 0.0 |
 | **Tipo de filtro (24 dB, comb)** | Stock+, Shift + K6 | [2.3 Página Stock+](#stockplus) | Alpha 0.02 |
 | **Umbral del compresor** | K5 de la vista Sidechain | [5.2 FX y Sidechain](#fx) | Alpha 0.01 |
+| **Waveshaper** | suave, duro, plegado o bitcrush en el granular y el sinte; Stock+, K7 (Shift: el tipo) | [2.3 Página Stock+](#stockplus) | Alpha 0.07 |
