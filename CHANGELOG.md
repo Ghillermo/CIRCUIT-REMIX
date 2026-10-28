@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## Alpha 0.05 (2026-10-28) — experimental
+
+> ⚠️ **Experimental: necesita pulirse.** El sinte y la interfaz nueva solo se han comprobado en emulación, como casi todo lo de Alpha 0.04. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
+
+**Español.** Dos versiones nuevas: **Alpha 0.05** (marca `A0.05`) y **Alpha 0.05S** (marca `A0.05S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). **Manual nuevo**, vista por vista, con un glosario de funciones: [texto](docs/MANUAL.md) o [ilustrado](docs/manual/index.html).
+
+Novedades:
+- **Sinte** (en el DSP del master), como sonido de cualquier pista, hasta 4 pistas:
+  - dos osciladores (sierra, pulso, triángulo, seno) con sync, FM, SUB, ruido, glide y octava;
+  - su página de knobs (menú de pista, pad 4);
+  - los knobs del original de la pista (tono, envolvente, filtros, nivel, envíos…) actúan sobre él;
+  - se guarda con el proyecto.
+- **Interfaz nueva**, con reglas fijas (el manual: «El código de colores»):
+  - cada página de knobs tiene su color: Stock+ azul cielo, Granular lila, Sinte menta, en sus knobs, en el botón de la pista y en su pad del menú;
+  - **menú de pista:** las páginas en los pads 1-4 (stock, Stock+, Granular, Sinte), solo las del sonido de la pista; debajo, los conmutadores: 9 enlace estéreo, 11 granular, 12 sinte, 13 entrada de línea, 14 su gate. El sonido solo cambia con los conmutadores. **Cambia de sitio todo menos los pads 1-3**;
+  - **un toque en el botón de la pista elegida deja el menú abierto** hasta que eliges algo o lo tocas otra vez; mantenerlo, solo mientras lo mantienes. Mantener un pad de página la muestra hasta soltar, como los botones de vista del original;
+  - Stock+ K3 / K8, la mitad a tempo: ahora **más rápido hacia el extremo izquierdo** (8 compases junto al centro, 1/16T en el extremo). En proyectos de Alpha 0.04 suenan distinto;
+  - apagado = el mismo color, tenue (Micro Step, Setup, Advanced Setup, el arpegiador); en Velocity con Shift, solo los pasos marcados en rojo y los demás como los dibuja la vista;
+  - Sinte K1 / K2 en el color de su forma de onda; Stock+ K6 en colores propios por tipo de filtro; el gate del granular (Shift + K8) y el sync del sinte (Shift + K2) como conmutadores.
+
+**English.** Two new builds: **Alpha 0.05** (marker `A0.05`) and **Alpha 0.05S** (marker `A0.05S`: no project copy, pack delete or sample copy). **A new manual**, view by view, with a glossary of functions: [text](docs/MANUAL_EN.md) or [illustrated](docs/manual/en.html).
+
+> ⚠️ **Experimental: needs refinement.** The synth and the new interface have only been checked in emulation, like most of Alpha 0.04. Expect bugs, noises or hangs: for serious playing, stay on **Alpha 0.03** (still in the installer). **Back up the SD card.**
+
+What's new:
+- **Synth** (on the master DSP), as any track's sound, up to 4 tracks:
+  - two oscillators (saw, pulse, triangle, sine) with sync, FM, SUB, noise, glide and octave;
+  - its knob page (track menu, pad 4);
+  - the track's original knobs (pitch, envelope, filters, level, sends…) act on it;
+  - saved with the project.
+- **New interface**, with fixed rules (the manual: "The colour code"):
+  - each knob page has its colour: Stock+ sky blue, Granular lilac, Synth mint, on its knobs, the track's button and its menu pad;
+  - **track menu:** the pages on pads 1-4 (stock, Stock+, Granular, Synth), only those of the track's sound; below, the toggles: 9 stereo link, 11 granular, 12 synth, 13 line input, 14 its gate. The sound only changes with the toggles. **Everything but pads 1-3 moves**;
+  - **a tap on the selected track's button leaves the menu open** until you pick something or tap again; holding it, only while held. Holding a page pad shows it until you let go, like the original's view buttons;
+  - Stock+ K3 / K8, the synced half: now **faster towards the left end** (8 bars by the centre, 1/16T at the end). Alpha 0.04 projects sound different;
+  - off = the same colour, dim (Micro Step, Setup, Advanced Setup, the arpeggiator); in Velocity with Shift, only the marked steps in red and the others as the view draws them;
+  - Synth K1 / K2 in their waveform's colour; Stock+ K6 in its own colours per filter type; the granular's gate (Shift + K8) and the synth's sync (Shift + K2) as toggles.
+
 ## Alpha 0.04 (2026-10-27) — experimental
 
 > ⚠️ **Experimental: necesita pulirse.** Casi todo lo nuevo se ha comprobado solo en emulación. En el aparato se han probado el granular de una pista, el de-clicker y los loops cortos, la grabación estéreo, el arranque de la reproducción y el reloj al guardar un sample. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**

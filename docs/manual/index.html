@@ -1,0 +1,1298 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.05 — manual</title><style>
+:root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
+:root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 "Helvetica Neue", Arial, sans-serif; overflow-x:hidden; }
+header.cover { background:#17181b; color:#fff; padding:56px 24px 40px; text-align:center; }
+header.cover h1 { font-size:40px; margin:0 0 8px; letter-spacing:.5px; } header.cover p { color:#c9cdd2; margin:4px 0; }
+header.cover .bar { height:6px; width:180px; margin:18px auto 0; background:linear-gradient(90deg,#ffffff,#14a5fe,#ffa2ff,#8affd0,#ffaf2f,#5e84cc); border-radius:3px; }
+main { max-width:980px; margin:0 auto; padding:24px 16px 64px; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 22px; }
+nav.toc h2 { margin-top:0; } nav.toc ol { padding-left:20px; } nav.toc a { color:var(--fg); }
+h2.group { margin-top:48px; padding-bottom:6px; border-bottom:3px solid var(--accent); }
+section.feat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 24px; margin:22px 0; }
+section.feat h3 { margin-top:0; } section.feat .code { color:var(--accent); font-weight:bold; margin-right:6px; }
+.summary { color:var(--muted); border-left:4px solid var(--accent); padding-left:12px; }
+figure { margin:16px 0; } figure svg { width:100%; max-width:600px; height:auto; border-radius:14px; display:block; margin:0 auto; }
+figcaption { color:var(--muted); font-size:14px; margin-top:6px; text-align:center; }
+table { border-collapse:collapse; width:100%; margin:12px 0; font-size:14.5px; display:block; overflow-x:auto; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:rgba(255,106,19,.10); } code { background:rgba(127,127,127,.15); padding:1px 4px; border-radius:4px; }
+footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
+p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
+p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
+</style></head><body>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.05</p><div class="bar"></div></header><main>
+<p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>
+<p class="warn">⚠️ <strong>Alpha 0.05 es experimental:</strong> lo nuevo (el sinte y la interfaz de Alpha 0.05, y casi todo lo de Alpha 0.04) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
+<p>Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.</p>
+<nav class="toc"><h2>Índice</h2>
+<h3>0. Introducción</h3><ol>
+<li><a href="#leer">0.1 Cómo leer este manual</a></li>
+<li><a href="#colores">0.2 El código de colores</a></li>
+<li><a href="#instalar">0.3 Instalar y volver al original</a></li>
+</ol>
+<h3>1. En cualquier vista</h3><ol>
+<li><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></li>
+</ol>
+<h3>2. Vistas de pista</h3><ol>
+<li><a href="#pista">2.1 El botón de pista</a></li>
+<li><a href="#menu">2.2 El menú de pista</a></li>
+<li><a href="#stockplus">2.3 Página Stock+</a></li>
+<li><a href="#granular">2.4 Página Granular</a></li>
+<li><a href="#sinte">2.5 Página Sinte</a></li>
+<li><a href="#entrada">2.6 Entrada de línea y enlace estéreo</a></li>
+<li><a href="#note">2.7 Vista Note</a></li>
+</ol>
+<h3>3. Pasos y patrón</h3><ol>
+<li><a href="#velocity">3.1 Velocity y Micro Step</a></li>
+<li><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></li>
+<li><a href="#patterns">3.3 Patterns: cadenas</a></li>
+</ol>
+<h3>4. Samples</h3><ol>
+<li><a href="#samplemode">4.1 Sample mode</a></li>
+<li><a href="#samplerec">4.2 Sample Rec</a></li>
+</ol>
+<h3>5. Mezcla y efectos</h3><ol>
+<li><a href="#mixer">5.1 Mixer</a></li>
+<li><a href="#fx">5.2 FX y Sidechain</a></li>
+</ol>
+<h3>6. Proyectos y ajustes</h3><ol>
+<li><a href="#projects">6.1 Projects y Packs</a></li>
+<li><a href="#setup">6.2 Setup y Advanced Setup</a></li>
+</ol>
+<h3>A. Apéndice</h3><ol>
+<li><a href="#guardado">A.1 Qué se guarda y dónde</a></li>
+<li><a href="#midi">A.2 MIDI</a></li>
+</ol>
+<h3><a href="#glosario">Glosario de funciones</a></h3></nav>
+<h2 class="group">0. Introducción</h2>
+<section class="feat" id="leer"><h3><span class="code">0.1</span>Cómo leer este manual</h3>
+<p>Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, knobs y botones con Circuit Remix. Todo lo demás funciona como en el firmware original de Novation (consulta su manual); los gestos nuevos son combinaciones que en el original no hacían nada o repetían el gesto sin modificador.</p>
+<ul>
+<li><strong>Pads 1-32</strong> de izquierda a derecha y de arriba abajo: fila 1 = 1-8, fila 2 = 9-16, fila 3 = 17-24, fila 4 = 25-32.</li>
+<li><strong>K1-K8</strong> = los 8 knobs. <strong>▲ / ▼</strong> = los botones de flecha.</li>
+<li><strong>Mantener</strong> un botón = pulsarlo y no soltarlo; <strong>A + B</strong> = B con A mantenido.</li>
+<li><strong>★</strong> = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).</li>
+<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.05)</em> es nuevo o cambia en esta versión.</li>
+<li>Al final, el <strong><a href="#glosario">glosario</a></strong>: una entrada por función, con su vista y su gesto.</li>
+</ul>
+</section>
+<section class="feat" id="colores"><h3><span class="code">0.2</span>El código de colores</h3>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Las páginas de knobs en el menú de pista: brillante = la que se ve.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.95" stroke="#000"/>
+<text x="49.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">stock</text>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#14a5fe" fill-opacity="0.32" stroke="#000"/>
+<text x="115.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Stock+</text>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#ffa2ff" fill-opacity="0.32" stroke="#000"/>
+<text x="181.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Granular</text>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.32" stroke="#000"/>
+<text x="247.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Sinte</text>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Las páginas de knobs en el menú de pista: brillante = la que se ve.</figcaption></figure>
+<p>Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas <em>(Alpha 0.05)</em>:</p>
+<table><thead><tr><th>Regla</th><th>Qué ves</th></tr></thead><tbody>
+<tr><td>El brillo es el valor</td><td>en una página de knobs, todos los knobs del mismo color; cuanto más brillo, más valor</td></tr>
+<tr><td>Knobs con centro</td><td>el centro (el cero) oscuro; más brillo hacia los dos extremos</td></tr>
+<tr><td>Frecuencias (LFO, scan)</td><td>centro = parado; a la derecha libre, más rápido hacia el extremo; a la izquierda a tempo, divisiones más rápidas hacia el extremo</td></tr>
+<tr><td>Adelante / atrás (scan del granular)</td><td>centro = parado; a la derecha hacia delante, a la izquierda hacia atrás, más rápido hacia los extremos</td></tr>
+<tr><td>Encendido / apagado</td><td>el mismo color, brillante / tenue</td></tr>
+<tr><td>Modos</td><td>un color por modo (las formas de onda del sinte, el tipo de filtro de Stock+, el metrónomo)</td></tr>
+<tr><td>Opciones que se eligen entre sí</td><td>en la misma fila; la elegida brillante, las demás tenues</td></tr>
+<tr><td>Abrir un menú o una página</td><td>un toque lo deja abierto; mantenerlo lo muestra hasta soltar</td></tr>
+</tbody></table>
+<p>Cada página de knobs de una pista tiene su color, el mismo en sus knobs, en el botón de la pista (que parpadea) y en su pad del menú:</p>
+<table><thead><tr><th>Página</th><th>Color</th></tr></thead><tbody>
+<tr><td>stock (la del firmware original)</td><td>blanco en el menú; los knobs, los del original</td></tr>
+<tr><td>Stock+</td><td>azul cielo</td></tr>
+<tr><td>Granular</td><td>lila</td></tr>
+<tr><td>Sinte</td><td>menta</td></tr>
+</tbody></table>
+</section>
+<section class="feat" id="instalar"><h3><span class="code">0.3</span>Instalar y volver al original</h3>
+<ol>
+<li>Descarga <code>rm_uploader.zip</code>, descomprímelo y abre <code>rm_uploader.html</code> en Chrome o Edge.</li>
+<li>Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.</li>
+<li>Elige la versión y envíala al aparato por USB.</li>
+</ol>
+<p><strong>Versiones S</strong> (A0.05S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.</p>
+<p><strong>Volver al firmware oficial:</strong> mantén <strong>Sample Rec + Samples + Note</strong> al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.</p>
+</section>
+<h2 class="group">1. En cualquier vista</h2>
+<section class="feat" id="transporte"><h3><span class="code">1.1</span>Transporte, metrónomo y cuantizar</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> en cualquier vista</p></div>
+<figure><svg viewBox="0 0 560 408" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Shift + Clear: el LED de Clear da el estado del metrónomo.">
+<rect x="0" y="0" width="560" height="408" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+<rect x="20" y="368" width="49" height="22" rx="5" fill="#ff6a13"/>
+<text x="44.5" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Shift</text>
+<rect x="77" y="368" width="49" height="22" rx="5" fill="#ff6a13"/>
+<text x="101.5" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Clear</text>
+</svg><figcaption>Shift + Clear: el LED de Clear da el estado del metrónomo.</figcaption></figure>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Shift + Clear</strong></td><td>metrónomo en cuatro estados; con Shift, el LED de Clear: rojo = sin metrónomo, verde = metrónomo, magenta = solo cuenta atrás, cian = las dos <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Record armado + Play</strong> (parado, con cuenta atrás)</td><td>un compás de clics al tempo y arranca grabando (Record parpadea); Play durante la cuenta la cancela</td></tr>
+<tr><td><strong>Shift + Play</strong> (parado)</td><td>el del original: sigue desde donde se paró; con cuenta atrás, la cuenta y luego sigue</td></tr>
+<tr><td><strong>Shift + Play</strong> (sonando)</td><td>cuantiza el patrón de la pista elegida: los micropasos 2-3 al comienzo de su paso, 4-6 al del siguiente; los redobles se quedan. LED de Play con Shift: amarillo; verde tras cuantizar; rojo = nada que cuantizar <em>(desde Alpha 0.0)</em></td></tr>
+</tbody></table>
+<p>La cuenta atrás no se guarda: al encender vuelve a «sin cuenta atrás».</p>
+<p><strong>Arreglos del original</strong> (desde Alpha 0.04): la reproducción empieza antes (≈ 10 ms de Play al primer sonido; el original ≈ 18 ms), las notas de un mismo paso suenan juntas, no se pierden notas con muchas pistas en el mismo paso y el reloj no tropieza al guardar un sample.</p>
+</section>
+<h2 class="group">2. Vistas de pista</h2>
+<section class="feat" id="pista"><h3><span class="code">2.1</span>El botón de pista</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> las vistas de pista (Samples, Note, Velocity, Gate, Pattern Settings…)</p></div>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Clear + botón de la pista</strong></td><td>★ sus knobs por defecto y su automatización borrada; el resto (nivel, panorama, envíos, sidechain, sample) como al cargar el proyecto <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Duplicate + pista A, luego pista B</strong></td><td>★ B recibe los parámetros y el sample de A; con Duplicate mantenido, más pistas <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Mantener el botón de la pista</strong> (¼ s)</td><td>abre el <a href="#menu">menú de pista</a> en los pads <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td><strong>Pads de sample mantenidos</strong> (arpegiador encendido)</td><td>★ arpegio de los samples mantenidos (también uno solo): cada golpe cambia el sample, con la velocity de su pad; con Record y Play se graba <em>(desde Alpha 0.0)</em></td></tr>
+</tbody></table>
+<p>Pulsar el botón sin mantenerlo elige la pista, como en el original. Desde el Mixer, Clear + pista hace lo del original. El arpegiador se enciende en <a href="#patternsettings">Pattern Settings</a> (Shift + pad 25).</p>
+</section>
+<section class="feat" id="menu"><h3><span class="code">2.2</span>El menú de pista</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> toca el botón de la pista elegida (el menú se queda abierto hasta que eliges algo o lo vuelves a tocar), o mantén el botón de cualquier pista (el menú solo mientras lo mantienes)</p></div>
+<figure><svg viewBox="0 0 560 408" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="El menú de una pista con un sample, en la página stock.">
+<rect x="0" y="0" width="560" height="408" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.95" stroke="#000"/>
+<text x="49.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">stock</text>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#14a5fe" fill-opacity="0.32" stroke="#000"/>
+<text x="115.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Stock+</text>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#5e84cc" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">enlace</text>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#ffa2ff" fill-opacity="0.32" stroke="#000"/>
+<text x="181.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">granular</text>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.32" stroke="#000"/>
+<text x="247.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">sinte</text>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#ffaf2f" fill-opacity="0.32" stroke="#000"/>
+<text x="313.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">entrada</text>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+<rect x="20" y="368" width="161" height="22" rx="5" fill="#ff6a13"/>
+<text x="100.5" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Pista elegida (toque)</text>
+</svg><figcaption>El menú de una pista con un sample, en la página stock.</figcaption></figure>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="El menú de una pista con el sinte, en su página.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">stock</text>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.95" stroke="#000"/>
+<text x="247.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">Sinte</text>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#5e84cc" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">enlace</text>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#ffa2ff" fill-opacity="0.32" stroke="#000"/>
+<text x="181.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">granular</text>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.95" stroke="#000"/>
+<text x="247.0" y="190" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">sinte</text>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#ffaf2f" fill-opacity="0.32" stroke="#000"/>
+<text x="313.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">entrada</text>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>El menú de una pista con el sinte, en su página.</figcaption></figure>
+<p>Los pads se convierten en el menú de esa pista <em>(Alpha 0.05)</em>:</p>
+<table><thead><tr><th>Pad</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>1</strong></td><td>página <strong>stock</strong> de los knobs (la del original)</td></tr>
+<tr><td><strong>2</strong></td><td>página <strong><a href="#stockplus">Stock+</a></strong> (con un sample)</td></tr>
+<tr><td><strong>3</strong></td><td>página <strong><a href="#granular">Granular</a></strong> (con el granular)</td></tr>
+<tr><td><strong>4</strong></td><td>página <strong><a href="#sinte">Sinte</a></strong> (con el sinte)</td></tr>
+<tr><td><strong>9</strong></td><td>★ <strong><a href="#entrada">enlace estéreo</a></strong> con la pista siguiente, sí / no</td></tr>
+<tr><td><strong>11</strong></td><td>el <strong>granular</strong> de la pista, sí / no (hasta 4 pistas); encendido, su página</td></tr>
+<tr><td><strong>12</strong></td><td>★ el <strong>sinte</strong> de la pista, sí / no (hasta 4 pistas); encendido, su página</td></tr>
+<tr><td><strong>13</strong></td><td>★ la <strong><a href="#entrada">entrada de línea</a></strong> como sonido de la pista, sí / no</td></tr>
+<tr><td><strong>14</strong></td><td>el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas (oscuro si la pista no es de entrada)</td></tr>
+</tbody></table>
+<ul>
+<li><strong>Abrirlo:</strong> un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.</li>
+<li>Fila 1, las <strong>páginas</strong> de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock y Granular; sinte: stock y Sinte; entrada: stock); las demás, oscuras. Brillante = la que se ve. <strong>Mantener</strong> un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.</li>
+<li>Fila 2, debajo, los <strong>conmutadores</strong>: brillante = encendido, tenue = apagado. <strong>El sonido de la pista solo cambia aquí:</strong> sample, granular, sinte o entrada, uno por pista; poner uno quita los otros.</li>
+<li>Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos.</li>
+</ul>
+<p>En Alpha 0.04 el menú era: 1-3 páginas, 4 granular, 5 / 6 entrada y gate, 7 enlace.</p>
+</section>
+<section class="feat" id="stockplus"><h3><span class="code">2.3</span>Página Stock+</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pad 2, en una pista con un sample (el botón de la pista parpadea en azul cielo)</p></div>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Página Stock+: knobs en azul cielo; K6 en el color de su tipo de filtro.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<text x="49.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">pitch env.</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<text x="115.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">decay</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<text x="181.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">LFO rate</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<text x="247.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">LFO depth</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<text x="313.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">ring</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#ffffff" stroke-width="4"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<text x="379.0" y="82" font-size="10" fill="#ffffff" text-anchor="middle">follow</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<text x="445.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">stretch</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<text x="511.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">scan</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Página Stock+: knobs en azul cielo; K6 en el color de su tipo de filtro.</figcaption></figure>
+<p>La página Stock+ es por pista y se queda hasta apagar <em>(desde Alpha 0.01; K5-K8 desde Alpha 0.02)</em>. Actúa sobre el sample de la pista.</p>
+<table><thead><tr><th>Knob</th><th>Solo</th><th>Con Shift</th></tr></thead><tbody>
+<tr><td>K1</td><td>★ envolvente de tono: centro = nada; derecha = cada golpe empieza más agudo, izquierda más grave (hasta ±24 semitonos)</td><td>ajuste fino</td></tr>
+<tr><td>K2</td><td>★ lo que tarda en volver a la nota (5 ms - 4 s)</td><td>ajuste fino</td></tr>
+<tr><td>K3</td><td>★ velocidad del LFO de tono: centro = apagado; derecha = libre (0,05-30 Hz); izquierda = a tempo, de 8 compases junto al centro a 1/16T en el extremo <em>(Alpha 0.05)</em></td><td>ajuste fino</td></tr>
+<tr><td>K4</td><td>★ profundidad del LFO de tono (0-24 semitonos)</td><td>ajuste fino</td></tr>
+<tr><td>K5</td><td>★ cantidad del ring mod</td><td>★ su frecuencia (20 Hz-5 kHz)</td></tr>
+<tr><td>K6</td><td>★ pitch follow: el corte del paso bajo sigue a la nota</td><td>★ tipo de filtro sobre los knobs de filtro del original: <strong>stock</strong> (blanco), <strong>24 dB</strong> (naranja), <strong>comb</strong> (lavanda)</td></tr>
+<tr><td>K7</td><td>★ <strong>stretch</strong>: más lento (izquierda, hasta 0,25×) o más rápido (derecha, hasta 4×) sin cambiar el tono; centro = el original</td><td>★ bitcrush</td></tr>
+<tr><td>K8</td><td>★ velocidad del scan (mueve el inicio de cada nota; en un loop, el inicio del loop en cada vuelta): centro = quieto; derecha = libre (0,05-20 Hz); izquierda = a tempo, más rápido hacia el extremo <em>(Alpha 0.05)</em></td><td>★ su profundidad</td></tr>
+</tbody></table>
+<ul>
+<li><strong>LEDs:</strong> azul cielo con el brillo según el valor (K1, K3, K7 y K8: la distancia al centro); K6 en el color de su tipo de filtro. Con Shift, K5-K8 enseñan su segunda capa.</li>
+<li><strong>Clear + knob:</strong> su valor por defecto (en K5-K8, las dos capas).</li>
+<li><strong>Se guarda con el proyecto.</strong> En proyectos de Alpha 0.04, la mitad a tempo de K3 y K8 va ahora al revés.</li>
+<li><strong>El stretch</strong> reparte el sample en granos de unos 43 ms que se mantienen en fase (WSOLA): a 0,5× suena muy bien; a 0,25× la batería puede sonar con clics.</li>
+</ul>
+</section>
+<section class="feat" id="granular"><h3><span class="code">2.4</span>Página Granular</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pad 11 (pone el granular y su página) o pad 3 (su página) (el botón de la pista parpadea en lila)</p></div>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Página Granular: knobs en lila.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<text x="49.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">size</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<text x="115.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">density</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<text x="181.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">position</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<text x="247.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">scan</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<text x="313.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">pitch</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<text x="379.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">pos. spray</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<text x="445.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">pitch spray</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#ffa2ff" stroke-width="4"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<text x="511.0" y="82" font-size="10" fill="#ffa2ff" text-anchor="middle">window</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Página Granular: knobs en lila.</figcaption></figure>
+<p>El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master <em>(desde Alpha 0.04)</em>. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él. <strong>Hasta 4 pistas granulares</strong>, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).</p>
+<table><thead><tr><th>Knob</th><th>Solo</th><th>Con Shift</th></tr></thead><tbody>
+<tr><td>K1</td><td>tamaño del grano (5-500 ms)</td><td>fino</td></tr>
+<tr><td>K2</td><td>densidad (1-16 granos)</td><td>★ apertura estéreo (0 = mono)</td></tr>
+<tr><td>K3</td><td>posición en el sample</td><td>fina</td></tr>
+<tr><td>K4</td><td>scan: centro = quieto; derecha hacia delante, izquierda hacia atrás</td><td>fino</td></tr>
+<tr><td>K5</td><td>altura (centro = la nota; ±24 semitonos)</td><td>altura fina</td></tr>
+<tr><td>K6</td><td>dispersión de la posición</td><td>zona (qué parte del sample)</td></tr>
+<tr><td>K7</td><td>dispersión de la altura</td><td>probabilidad de reverso</td></tr>
+<tr><td>K8</td><td>ventana (rectángulo → triángulo → percusiva)</td><td>gate, encendido / apagado: tenue = siempre suena (drone), brillante = lo abren las notas <em>(Alpha 0.05)</em></td></tr>
+</tbody></table>
+<p>Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro). Clear + knob = por defecto. Se guarda con el proyecto.</p>
+</section>
+<section class="feat" id="sinte"><h3><span class="code">2.5</span>Página Sinte</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pad 12 (pone el sinte y su página) o pad 4 (su página) (el botón de la pista parpadea en menta)</p></div>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Página Sinte: K1 / K2 en el color de la forma de onda, el resto en menta.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#ff2020" stroke-width="4"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<text x="49.0" y="82" font-size="10" fill="#ff2020" text-anchor="middle">OSC 1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#ff2020" stroke-width="4"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<text x="115.0" y="82" font-size="10" fill="#ff2020" text-anchor="middle">OSC 2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<text x="181.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle">pitch 2</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<text x="247.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle">fine 2</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<text x="313.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle">mix</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<text x="379.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle">SUB</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<text x="445.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle">FM</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<text x="511.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle">pulse</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Página Sinte: K1 / K2 en el color de la forma de onda, el resto en menta.</figcaption></figure>
+<p>★ Un sinte monofónico de dos osciladores en el DSP del master, como sonido de cualquier pista <em>(Alpha 0.05)</em>. <strong>Hasta 4 pistas con sinte.</strong> Las notas le llegan como a un sample (pads, vista Note, secuencia, MIDI).</p>
+<table><thead><tr><th>Knob</th><th>Solo</th><th>Con Shift</th></tr></thead><tbody>
+<tr><td>K1</td><td>forma de onda de OSC 1: sierra (rojo), pulso (amarillo), triángulo (verde), seno (blanco)</td><td>ruido</td></tr>
+<tr><td>K2</td><td>forma de onda de OSC 2 (los mismos colores)</td><td>sync, encendido / apagado (mitad derecha = encendido)</td></tr>
+<tr><td>K3</td><td>altura de OSC 2 (±24 semitonos)</td><td>glide (5 ms - 2 s)</td></tr>
+<tr><td>K4</td><td>afinación fina de OSC 2 (±50 cents)</td><td>octava (−3 … +3)</td></tr>
+<tr><td>K5</td><td>mezcla OSC 1 ↔ OSC 2</td><td>velocity → FM</td></tr>
+<tr><td>K6</td><td>SUB (una octava por debajo)</td><td>release (2 ms - 4 s)</td></tr>
+<tr><td>K7</td><td>FM (OSC 2 modula a OSC 1)</td><td>envolvente → paso bajo (desde el centro)</td></tr>
+<tr><td>K8</td><td>ancho del pulso (50 % → 2 %)</td><td>—</td></tr>
+</tbody></table>
+<ul>
+<li><strong>Los knobs del original</strong> de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, nivel, panorama, envíos, sidechain y mute.</li>
+<li><strong>Note-off:</strong> una pista con sinte recibe el note-off aunque esté en one-shot, para que suene el release.</li>
+<li><strong>LEDs:</strong> menta con el brillo según el valor (K3, K4, Shift + K4, Shift + K7: la distancia al centro); K1 / K2 en el color de su forma de onda.</li>
+<li>Clear + knob = por defecto. <strong>Se guarda con el proyecto.</strong></li>
+</ul>
+</section>
+<section class="feat" id="entrada"><h3><span class="code">2.6</span>Entrada de línea y enlace estéreo</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pads 13 / 14 y 9</p></div>
+<p><strong>Entrada de línea</strong> (pad 13; desde Alpha 0.04): la entrada de audio suena como el sonido de la pista, con su nivel, panorama, envíos, filtro y envolvente.</p>
+<ul>
+<li>Una pista de entrada: L + R. Dos: la de número menor es L, la mayor R. En una tercera, sale la primera puesta.</li>
+<li><strong>Pad 14, el gate:</strong> tenue = siempre suena; brillante = solo mientras suenan sus notas.</li>
+</ul>
+<p><strong>Enlace estéreo</strong> (pad 9; desde Alpha 0.04): la pista (izquierda, su sample) y la siguiente (derecha, el sample siguiente) suenan juntas con los parámetros y las notas de la primera. Pad 9 en cualquiera de las dos = deshacer. En la pista 8 sola, oscuro. Sin enlazar quedan el LFO y el scan libres de Stock+ y el WSOLA del stretch.</p>
+<p>Las dos se guardan con el proyecto.</p>
+</section>
+<section class="feat" id="note"><h3><span class="code">2.7</span>Vista Note</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Note</p></div>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Teclas mantenidas</strong> (arpegiador encendido)</td><td>★ arpegio de las notas mantenidas sobre el sample de la pista; con Record y Play se graba <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Shift mantenido</strong></td><td>★ editor de la <strong>escala propia de la pista</strong> <em>(desde Alpha 0.0)</em></td></tr>
+</tbody></table>
+<p><strong>El editor:</strong> los 32 pads son dos octavas de piano desde la tónica (fila 4 = las blancas de la octava de abajo, el pad 25 = la tónica; fila 3 = sus negras; filas 2 / 1 = la octava de arriba). Cada tecla enciende o apaga su grado (7 como máximo); la más alta es el <strong>periodo</strong>: la tónica de la siguiente iteración (la octava u otra, hasta 24 semitonos). Tónica blanca, grados verdes, periodo azul.</p>
+<p>Al soltar Shift, el teclado toca la escala: una iteración por fila (dos si tiene 4 notas o menos); ▲ / ▼ mueven una fila. Sin teclas, vuelve el piano del original. Se guarda con el proyecto.</p>
+</section>
+<h2 class="group">3. Pasos y patrón</h2>
+<section class="feat" id="velocity"><h3><span class="code">3.1</span>Velocity y Micro Step</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Velocity; Micro Step = Shift + Gate</p></div>
+<figure><svg viewBox="0 0 560 408" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Micro Step: pad 31 longitud fija, pad 32 gate por pulsación (apagados: tenues).">
+<rect x="0" y="0" width="560" height="408" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#fc9108" fill-opacity="0.32" stroke="#000"/>
+<text x="445.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">longitud</text>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="511.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">gate</text>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+<rect x="20" y="368" width="49" height="22" rx="5" fill="#ff6a13"/>
+<text x="44.5" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Shift</text>
+<rect x="77" y="368" width="42" height="22" rx="5" fill="#ff6a13"/>
+<text x="98.0" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Gate</text>
+</svg><figcaption>Micro Step: pad 31 longitud fija, pad 32 gate por pulsación (apagados: tenues).</figcaption></figure>
+<table><thead><tr><th>Vista</th><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td>Velocity</td><td><strong>Shift + paso</strong></td><td>marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista <em>(Alpha 0.05)</em> <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td>Micro Step</td><td><strong>pad 31</strong></td><td>longitud fija: apagada → el selector en los pads 17-32 (1-16 pasos; elegir una la enciende); encendida → apagada (naranja brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td>Micro Step</td><td><strong>pad 32</strong></td><td>gate por pulsación: el golpe dura lo que mantienes el pad del paso; mantener un paso vacío 300 ms o más también lo crea (verde brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
+</tbody></table>
+<p>Encender uno de los dos de Micro Step apaga el otro. Con cualquiera, un golpe introducido a mano en los pasos toma esa longitud.</p>
+</section>
+<section class="feat" id="patternsettings"><h3><span class="code">3.2</span>Pattern Settings y probabilidad</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Pattern Settings (dos veces: la vista de probabilidad, modo 1)</p></div>
+<figure><svg viewBox="0 0 560 408" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pattern Settings con Shift: el arpegiador.">
+<rect x="0" y="0" width="560" height="408" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="256" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">1/4</text>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.95" stroke="#000"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.95" stroke="#000"/>
+<text x="49.0" y="322" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">arp</text>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="181.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">fract.</text>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="247.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">decon.</text>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.95" stroke="#000"/>
+<text x="313.0" y="322" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">↑</text>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="379.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">↓</text>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="445.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">↕</text>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.32" stroke="#000"/>
+<text x="511.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">?</text>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+<rect x="20" y="368" width="49" height="22" rx="5" fill="#ff6a13"/>
+<text x="44.5" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Shift</text>
+</svg><figcaption>Pattern Settings con Shift: el arpegiador.</figcaption></figure>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Pad 26</strong> (azul)</td><td>Nudge: el patrón se reescribe para que su primer paso sea el 1 (suena igual) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Pad 27 / 28</strong></td><td>órdenes <strong>fractal</strong> (1 · 1 2 · 1 2 3 …) y <strong>deconstruido</strong> (1 6 11 16 · 2 7 12 13 …); un pad de dirección vuelve al original <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Pad 25</strong> (gris)</td><td>vista de probabilidad, modo 2: elige un paso; <strong>fila 3 = dinámicas</strong> (velocity y retraso dentro del paso; con Record, cada paso con dinámicas queda escrito como sonó), <strong>fila 4 (25-28) = mutación del sample</strong> (a veces suena el vecino) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Pattern Settings dos veces</strong></td><td>vista de probabilidad, modo 1: <strong>fila 4 = frecuencia</strong> del paso (suena una de cada n pasadas) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Clear + pad 25</strong></td><td>borra las dinámicas y la mutación del patrón (la frecuencia se queda) <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td><strong>Shift + pad 25</strong></td><td>★ arpegiador de la pista encendido / apagado (verde brillante / tenue) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Shift + pads 27-32</strong></td><td>orden del arpegio: fractal, deconstruido, arriba, abajo, ping-pong, aleatorio</td></tr>
+<tr><td><strong>Shift + pads 17-24</strong></td><td>resolución del arpegio (1/4 … 1/32T); otra vez la misma = el sync rate de la pista</td></tr>
+</tbody></table>
+<p>Las filas del arpegiador con Shift: la opción elegida verde brillante, las demás verde tenue (desde Alpha 0.05). Los valores por paso viajan con el golpe al cuantizar, al hacer Nudge, al copiar un paso y con el Mutate del original.</p>
+</section>
+<section class="feat" id="patterns"><h3><span class="code">3.3</span>Patterns: cadenas</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Patterns</p></div>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Shift + botón de página de arriba</strong></td><td>modo cadena (verde) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td>En el modo: <strong>un patrón</strong> (A), <strong>otra vez</strong> (n + 1 pasadas), <strong>otro</strong> (B), <strong>otro más</strong> (C)</td><td>regla «n veces A, luego B; la vez siguiente, C» (AAB AAC …)</td></tr>
+<tr><td><strong>Clear + patrón</strong></td><td>sin regla</td></tr>
+<tr><td><strong>Shift + botón de página de abajo</strong></td><td>fuera del modo: la cadena del original</td></tr>
+</tbody></table>
+<p>Cada escena recuerda el modo con que se guardó. Las reglas se guardan con el proyecto.</p>
+</section>
+<h2 class="group">4. Samples</h2>
+<section class="feat" id="samplemode"><h3><span class="code">4.1</span>Sample mode</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Samples dos veces</p></div>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sample mode: pads 9 / 10 bajo los 1 / 2; pad 19 sobre el loop.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
+<text x="49.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">tono +</text>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
+<text x="115.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">tono −</text>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
+<text x="49.0" y="190" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">stretch +</text>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
+<text x="115.0" y="190" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">stretch −</text>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
+<text x="181.0" y="256" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">de-click</text>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.32" stroke="#000"/>
+<text x="181.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">loop</text>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Sample mode: pads 9 / 10 bajo los 1 / 2; pad 19 sobre el loop.</figcaption></figure>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Pads 1 / 2</strong> (del original)</td><td>ajustan el sample al patrón cambiando el tono; desde Alpha 0.04 apagan antes el stretch</td></tr>
+<tr><td><strong>Pads 9 / 10</strong></td><td>★ lo mismo con el <strong>stretch</strong> (K7 de Stock+), sin cambiar el tono: la longitud siguiente / la anterior <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td><strong>Pad 19</strong></td><td>★ de-clicker del loop de la pista elegida (crossfade de 256 muestras), encendido / apagado (azul brillante / tenue); encendido por defecto, se guarda con el proyecto <em>(desde Alpha 0.04)</em></td></tr>
+</tbody></table>
+<p>El pad 19 está sobre el 27 (loop). Los loops muy cortos suenan a su longitud (en el original se repetían cada ~128 muestras).</p>
+</section>
+<section class="feat" id="samplerec"><h3><span class="code">4.2</span>Sample Rec</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Sample Rec</p></div>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Pad 23</strong></td><td>★ de-clicker de los loops de todas las pistas, encendido / apagado (encendido al arrancar) <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td><strong>Pad 24</strong></td><td>★ <strong>grabación estéreo</strong>: L en el hueco elegido, R en el siguiente (que debe estar vacío; si no, solo el primero, en mono); apagada al arrancar <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td><strong>Duplicate + hueco A, Duplicate + hueco B</strong></td><td>★ copia el sample A en B, también desde otro pack (no en las versiones S) <em>(desde Alpha 0.01)</em></td></tr>
+<tr><td><strong>Fixed Recording</strong> (pads 17-21, del original)</td><td>con reloj MIDI externo, usa el tempo del reloj que llega <em>(desde Alpha 0.02)</em></td></tr>
+</tbody></table>
+<p><strong>Copiar un sample</strong> (transporte parado): Duplicate + hueco con sample (parpadea en amarillo); Duplicate + hueco B (de este pack o, tras cargar otro, de ese): verde ~1,5 s y B suena al momento. Si B tiene sample, parpadea en blanco y Duplicate + B otra vez antes de ~5 s lo sobrescribe. Rojo = no se ha podido (memoria llena, aparato ocupado o pack interno).</p>
+</section>
+<h2 class="group">5. Mezcla y efectos</h2>
+<section class="feat" id="mixer"><h3><span class="code">5.1</span>Mixer</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Mixer</p></div>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Shift + pad de pista</strong> (fila 1)</td><td>mute de esa pista en el compás siguiente (el pad parpadea; otra vez = cancelar; parado, al momento) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Shift + knob</strong> (página de niveles)</td><td>derecha = nivel 100; izquierda = 0 (grabando, queda como automatización) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Shift + pads 9-16</strong></td><td>la escena actual se repite 1-8 veces; sonando, con Shift, la vuelta que suena en blanco <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td><strong>Página de panoramas, Shift + knob</strong> a la derecha / izquierda</td><td>★ <strong>modo cue</strong> sí / no (botón 19 en rosa): la mezcla por la salida izquierda, el cue por la derecha <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td><strong>Modo cue, knob</strong></td><td>el envío al cue de su pista (knobs en rosa, brillo = envío); una pista silenciada con envío suena solo en el cue; Clear + knob = 0</td></tr>
+</tbody></table>
+<p>El pad 9 sin Shift sigue siendo el Mute Recall del original. El modo cue no se guarda.</p>
+</section>
+<section class="feat" id="fx"><h3><span class="code">5.2</span>FX y Sidechain</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón FX; Sidechain = Shift + FX</p></div>
+<table><thead><tr><th>Vista</th><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td>FX</td><td><strong>▼ / ▲</strong></td><td>los knobs pasan a los envíos de <strong>reverb</strong> (▼, crema) / <strong>delay</strong> (▲, melocotón) de las 8 pistas <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td>FX</td><td><strong>Shift + knob</strong></td><td>delay: K1 time, K2 sync, K3 feedback, K4 width, K5 ratio, K6 slew; reverb: K1 tipo, K2 decay, K3 damping</td></tr>
+<tr><td>FX</td><td><strong>Shift + ▲ / ▼</strong></td><td>resonancia del filtro master ±16 (global, del aparato)</td></tr>
+<tr><td>FX</td><td><strong>Duplicate</strong></td><td>reset: envíos a 0, filtro master al centro</td></tr>
+<tr><td>FX</td><td><strong>Clear + knob</strong></td><td>el envío de esa pista a 0</td></tr>
+<tr><td>Sidechain</td><td><strong>K1-K4</strong></td><td>ataque, hold, decay y profundidad del sidechain de la pista elegida <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td>Sidechain</td><td><strong>K5</strong></td><td>umbral del compresor master (a tope = el del original) <em>(desde Alpha 0.01)</em></td></tr>
+<tr><td>Sidechain</td><td><strong>K6 / K7 / K8</strong></td><td>soft clip / ataque / release del compresor master</td></tr>
+<tr><td>Sidechain</td><td><strong>Clear + knob</strong></td><td>K1-K4: el valor de su preset; K6-K8: el de fábrica; K5: el umbral del original</td></tr>
+</tbody></table>
+<p>Con Shift, el brillo de cada knob muestra su valor. Reverb, delay y sidechain se guardan con el proyecto; la resonancia y el compresor son del aparato. El compresor solo se oye si está encendido (Advanced Setup).</p>
+</section>
+<h2 class="group">6. Proyectos y ajustes</h2>
+<section class="feat" id="projects"><h3><span class="code">6.1</span>Projects y Packs</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> botón Projects (dos veces: Packs)</p></div>
+<p><strong>Copiar un proyecto</strong> (no en las versiones S; desde Alpha 0.0), con el transporte parado:</p>
+<ol>
+<li><strong>Duplicate + pad con proyecto (A)</strong>: parpadea en amarillo.</li>
+<li><strong>Duplicate + pad vacío (B)</strong>: copia A en B (verde ~1,5 s). B puede estar en otro pack: elige A, carga otro pack y Duplicate + un pad vacío.</li>
+<li><strong>Duplicate + un pad con proyecto</strong>: parpadea en blanco (pregunta); <strong>Duplicate + el mismo pad</strong> antes de ~5 s lo sobrescribe.</li>
+</ol>
+<p>Copia el proyecto <strong>tal como está guardado</strong> y no toca el cargado. (Save + pad, del original, guarda el cargado con sus cambios.)</p>
+<p><strong>Borrar un pack</strong> (vista Packs; no en las versiones S; desde Alpha 0.01): <strong>Clear + pad del pack</strong> = pregunta (parpadea en rojo ~5 s); <strong>Clear + el mismo pad</strong> = lo borra de la tarjeta (verde ~1,5 s). Nunca el cargado, el interno ni un hueco vacío.</p>
+<p>El mod nunca escribe en el pack de la memoria interna (rojo + LED de Save rojo).</p>
+</section>
+<section class="feat" id="setup"><h3><span class="code">6.2</span>Setup y Advanced Setup</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> Shift + Save (Setup); Advanced Setup como en el original</p></div>
+<table><thead><tr><th>Vista</th><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td>Advanced</td><td><strong>Duplicate</strong></td><td>la toma Thru: <strong>Thru</strong> (verde) → <strong>Out 2</strong> (rojo tenue) → <strong>Merge</strong> (amarillo: MIDI In + el MIDI del aparato) → <strong>Filter</strong> (azul: MIDI In menos los canales del aparato) <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td>Setup</td><td><strong>Pad 29 / 30</strong> (la primera vez)</td><td>canal de escucha / de salida de <strong>Program Change</strong> en los pads 1-16; el pad otra vez = PGM Rx / Tx sí / no <em>(desde Alpha 0.0)</em></td></tr>
+<tr><td>Setup</td><td><strong>Pad 22</strong></td><td>★ <strong>modo General MIDI</strong> del proyecto (verde brillante / tenue): las pistas salen por el canal 10 con su nota GM; las notas GM del canal 10 tocan su pista <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td>Setup</td><td><strong>K1-K8</strong>, con el modo GM</td><td>la nota GM de cada pista (35-81, dos clics por nota; cada nota nueva suena una vez). De fábrica: 36, 38, 42, 46, 39, 37, 45, 49</td></tr>
+<tr><td>Advanced</td><td><strong>Pad 22</strong></td><td>★ teclado externo al arpegiador: las notas que entran por el canal de una pista con el arpegiador encendido se arpegian (verde brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td>Advanced</td><td><strong>Pad 23</strong></td><td>★ fusión USB: lo que entra por el DIN In sale también por USB (verde brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
+</tbody></table>
+<p>Todo se guarda en los ajustes del aparato, salvo el modo GM, que va con el proyecto. Si los dos canales de Program Change son distintos, el recibido se reenvía por el de salida.</p>
+</section>
+<h2 class="group">A. Apéndice</h2>
+<section class="feat" id="guardado"><h3><span class="code">A.1</span>Qué se guarda y dónde</h3>
+<table><thead><tr><th>Dónde</th><th>Qué</th></tr></thead><tbody>
+<tr><td><strong>Con el proyecto</strong></td><td>Stock+, Granular, Sinte (ajustes y pistas), entrada de línea, enlace estéreo, de-clicker por pista, escala propia, reglas de cadena, dinámicas / mutación / frecuencia por paso, marcas de Velocity, Micro Step, modo GM, reverb / delay / sidechain</td></tr>
+<tr><td><strong>Ajustes del aparato</strong></td><td>canales de Program Change, modo del Thru, teclado al arpegiador, fusión USB, resonancia del filtro master, compresor</td></tr>
+<tr><td><strong>Hasta apagar</strong></td><td>la página de knobs de cada pista, el modo cue, el metrónomo / cuenta atrás, Sample Rec pads 23 / 24</td></tr>
+</tbody></table>
+<p>Lo propio del mod va en una zona del fichero de proyecto que el original no usa. Un proyecto de una versión anterior carga sin lo que esa versión no tenía. <strong>Guarda copias de tus proyectos.</strong></p>
+</section>
+<section class="feat" id="midi"><h3><span class="code">A.2</span>MIDI</h3>
+<p>Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía del programador del Circuit Rhythm): sidechain NRPN 1:1-1:4 (canal de la pista); reverb NRPN 1:18-1:20; delay NRPN 1:6-1:11; resonancia master CC 71; compresor NRPN 1:22-1:26. Las páginas Stock+, Granular y Sinte aún no tienen MIDI.</p>
+</section>
+<h2 class="group" id="glosario">Glosario de funciones</h2><section class="feat"><table><thead><tr><th>Función</th><th>Qué es / gesto</th><th>Capítulo</th><th>Desde</th></tr></thead><tbody>
+<tr><td><strong>Arpegiador de notas</strong></td><td>arpegia las teclas mantenidas en la vista Note</td><td><a href="#note">2.7 Vista Note</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Arpegiador de samples</strong></td><td>arpegia los pads de sample mantenidos; Shift + pad 25 de Pattern Settings lo enciende</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Bitcrush</strong></td><td>Stock+, Shift + K7</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>Borrar un pack</strong></td><td>Clear + pack dos veces en Packs</td><td><a href="#projects">6.1 Projects y Packs</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Cadenas con reglas</strong></td><td>patrones que se encadenan «n veces A, luego B»</td><td><a href="#patterns">3.3 Patterns: cadenas</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Compresor master</strong></td><td>umbral, soft clip, ataque y release en la vista Sidechain</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Copiar parámetros de pista</strong></td><td>Duplicate + pista A, pista B</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Copiar proyectos</strong></td><td>Duplicate + A, Duplicate + B en Projects, también a otro pack</td><td><a href="#projects">6.1 Projects y Packs</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Copiar samples</strong></td><td>Duplicate + A, Duplicate + B en Sample Rec</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Cuantizar</strong></td><td>Shift + Play sonando</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Cuenta atrás</strong></td><td>un compás antes de grabar; Shift + Clear</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>De-clicker de loops</strong></td><td>crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Dinámicas por paso</strong></td><td>velocity y retraso al azar dentro del paso; fila 3 de la probabilidad</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Enlace estéreo</strong></td><td>una pista y la siguiente como un sonido estéreo; menú, pad 9</td><td><a href="#entrada">2.6 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Entrada de línea</strong></td><td>la entrada de audio como sonido de una pista; menú, pads 13 / 14</td><td><a href="#entrada">2.6 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Envolvente de tono</strong></td><td>Stock+, K1 / K2</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Envíos de FX en los knobs</strong></td><td>▼ / ▲ en la vista FX</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Escala propia</strong></td><td>una escala por pista; Shift en la vista Note</td><td><a href="#note">2.7 Vista Note</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Fixed Recording con reloj externo</strong></td><td>la duración al tempo del reloj MIDI que llega</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>Frecuencia por paso</strong></td><td>el paso suena una de cada n pasadas</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Fusión USB</strong></td><td>el DIN In también por USB; Advanced Setup, pad 23</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Gate por pulsación</strong></td><td>el golpe dura lo que mantienes el pad; Micro Step, pad 32</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>General MIDI</strong></td><td>las pistas por el canal 10 con su nota GM; Setup, pad 22</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Grabación estéreo</strong></td><td>L y R en dos huecos; Sample Rec, pad 24</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Granular</strong></td><td>el motor granular en hasta 4 pistas; menú, pads 11 / 3</td><td><a href="#granular">2.4 Página Granular</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>LFO de tono</strong></td><td>Stock+, K3 / K4; libre o a tempo</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Longitud fija</strong></td><td>los golpes a mano con una longitud; Micro Step, pad 31</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Marcas de Velocity</strong></td><td>en el paso marcado la automatización vuelve al knob; Shift + paso</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Menú de pista</strong></td><td>tocar el botón de la pista elegida (se queda abierto) o mantener el de una pista</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Metrónomo</strong></td><td>cuatro estados con Shift + Clear</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Modo cue</strong></td><td>mezcla a la izquierda, cue a la derecha; Mixer, panoramas, Shift + knob</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Mutación del sample</strong></td><td>a veces suena el vecino; fila 4 de la probabilidad</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Mute al compás</strong></td><td>Shift + pad de pista en el Mixer</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Nivel a 100 / 0</strong></td><td>Shift + knob en los niveles del Mixer</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Nudge</strong></td><td>el primer paso pasa a ser el 1; pad 26 de Pattern Settings</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Órdenes fractal / deconstruido</strong></td><td>pads 27 / 28 de Pattern Settings</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Página Stock+</strong></td><td>ocho knobs más por pista; menú, pad 2</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Program Change</strong></td><td>canales de escucha y salida; Setup, pads 29 / 30</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Repetir la escena</strong></td><td>la escena actual 1-8 veces; Mixer, Shift + pads 9-16</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Reset de knobs de pista</strong></td><td>Clear + botón de la pista</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Resonancia master</strong></td><td>Shift + ▲ / ▼ en la vista FX</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Ring mod</strong></td><td>Stock+, K5 (Shift: la frecuencia)</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>Scan</strong></td><td>mueve el inicio de cada nota o del loop; Stock+, K8</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>Sidechain por knobs</strong></td><td>K1-K4 de la vista Sidechain</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Sinte</strong></td><td>dos osciladores con FM en hasta 4 pistas; menú, pads 12 / 4</td><td><a href="#sinte">2.5 Página Sinte</a></td><td>Alpha 0.05</td></tr>
+<tr><td><strong>Stretch</strong></td><td>más lento o rápido sin cambiar el tono; Stock+ K7, Sample mode pads 9 / 10</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>Teclado externo al arpegiador</strong></td><td>Advanced Setup, pad 22</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Thru: Out 2 / Merge / Filter</strong></td><td>Duplicate en Advanced Setup</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Tipo de filtro (24 dB, comb)</strong></td><td>Stock+, Shift + K6</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>Umbral del compresor</strong></td><td>K5 de la vista Sidechain</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.01</td></tr>
+</tbody></table></section>
+<footer>Circuit Remix — MIT. Sin código de Novation.</footer></main></body></html>

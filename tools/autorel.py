@@ -51,6 +51,10 @@ CONT, O_MODE, MODE_VEL = SK.CONT, SK.O_MODE, 2
 SV0, SV_SZ, SV_VT, SV_ST1, SV_PAGE = SG.SV0, SG.SV_SZ, SG.SV_VT, SG.SV_ST1, SG.SV_PAGE
 LANES_OFF = 0x128
 COL_AV, COL_MARK = 0x2F, 0x55                                            # yellow, red (Tracks 0x2D / 0x53)
+# ui (RH52; docs/INTERFAZ.md): the marks in one colour, bright = marked, dim = not (was yellow / red)
+UI_AV = 0x54                                              # dim red
+# keep (RH53; the user, 2026-10-28: «Make pads with automation release red, regular pads keep their previous state from velocity view»):
+# with Shift only the marked steps are drawn (red); the others keep the Velocity view's own colours
 GET = CI.PARAM_GET
 O = rhstate.OFF2["autorel"][0]
 R_SW, R_TRK, T_SZ = 0, 4, 16
@@ -67,7 +71,7 @@ def ldrh_reg(rt, rn, rm): return h(0x5A00 | rm << 6 | rn << 3 | rt)
 def strh_reg(rt, rn, rm): return h(0x5200 | rm << 6 | rn << 3 | rt)
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, ui=False, keep=False):
     a = Asm(base)
     E = a.emit
 
@@ -419,13 +423,20 @@ def arm_code(base, L, prev):
     E(lsls_imm, 0, 0, 3)
     E(adds_reg, 0, 0, 7)
     E(ldrb_imm, 0, 0, MARK_OFF)
-    E(movs_imm, 1, COL_AV)
-    E(lsls_imm, 0, 0, 31)
-    E(b_cond, "ld_w", "pl")
-    E(movs_imm, 1, COL_MARK)
-    a.label("ld_w")
+    if keep:                                                              # (keep) only a marked step drawn
+        E(lsls_imm, 0, 0, 31)
+        E(b_cond, "ld_n", "pl")
+        E(movs_imm, 1, COL_MARK)
+    else:
+        E(movs_imm, 1, UI_AV if ui else COL_AV)
+        E(lsls_imm, 0, 0, 31)
+        E(b_cond, "ld_w", "pl")
+        E(movs_imm, 1, COL_MARK)
+        a.label("ld_w")
     E(lsls_imm, 0, 3, 1)
     E(raw, strh_reg(1, 5, 0))
+    if keep:
+        a.label("ld_n")
     E(adds_imm8, 3, 1)
     E(cmp_imm, 3, 16)
     E(b_cond, "ld_l", "lo")
@@ -434,7 +445,7 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, ui=False, keep=False):
     """The head of 0x08055324, the step views' slots 0 / 1 (stepgate's in front), the head of the LED calls.  Needs stepgate, rhrec, rhstate ram2."""
     import rhbuild
     BASE = rhbuild.BASE
@@ -445,7 +456,7 @@ def install(img, report, base_addr):
     prev = dict(press=u(SV_VT) & ~1, rel=u(SV_VT + 4) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert prev["press"] == lab("stepgate", "c_sgpress") and prev["rel"] == lab("stepgate", "c_sgrel")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    code, labels = arm_code(base_addr, L, prev, ui, keep)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -454,5 +465,5 @@ def install(img, report, base_addr):
     rhbuild.patch_word(img, SV_VT + 4, prev["rel"] | 1, labels["c_arrel"] | 1)
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_arled"]))
-    report["autorel"] = dict(prev={k: hex(v) for k, v in prev.items()}, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["autorel"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"keep": True} if keep else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

@@ -161,6 +161,11 @@ R_SENT, R_LO, R_HI = 0, 2, 3                           # (two) + 0 sent once, + 
 NW = 5                                                 # (two) the words: LTRK, LGATE, LTRK2, LGATE2, LKEY
 O_TH = rhstate.OFF["cthresh"][0] + 1
 PAD_LINE, PAD_GATE = 4, 5                              # the menu's pads 5 / 6
+PAD_LINE_, PAD_GATE_ = PAD_LINE, PAD_GATE
+# ui (RH52; docs/INTERFAZ.md): the track menu's pads 13 / 14 (the row under the pages), in amber: pad 13 bright = a line track, dim = not;
+# pad 14 (the gate) bright = with the notes, dim = always, dark when not a line track
+UI_PAD_LINE, UI_PAD_GATE = 12, 13
+UI_COL, UI_DIM = 0x2B, 0x2C
 PAL, PAL_ON, PAL_OFF, PAL_TON, PAL_TOFF = GP.PAL, GP.PAL_ON, GP.PAL_OFF, GP.PAL_TON, GP.PAL_TOFF
 PP_ENTRY = GP.PP_ENTRY
 M_GRAN, M_SWAL = GP.M_GRAN, GP.M_SWAL
@@ -178,8 +183,9 @@ def _liw(a, E):
     E(pop_list, [4], pc=True)
 
 
-def _arm2(a, E, imm32, L, prev):
-    """(two) c_lipad, c_liw, c_liwk, c_liled"""
+def _arm2(a, E, imm32, L, prev, ui=False):
+    """(two) c_lipad, c_liw, c_liwk, c_liled; ui: the menu's pads 13 / 14 in amber (bright / dim)"""
+    PAD_LINE, PAD_GATE = (UI_PAD_LINE, UI_PAD_GATE) if ui else (PAD_LINE_, PAD_GATE_)
     # ---- c_lipad (the controller's pad press, granpage's head after it): the menu open, pads 5 / 6 are ours
     a.label("c_lipad")
     E(cmp_imm, 1, PAD_LINE)
@@ -400,30 +406,44 @@ def _arm2(a, E, imm32, L, prev):
     E(ands_reg, 2, 0)
     E(cmp_reg, 2, 4)
     E(b_cond, "ll_on", "eq")
-    imm32(1, PAL + PAL_TOFF)                                              # not a line track: pad 5 off, pad 6 dark
-    E(raw, h(0x8808))                                                     # ldrh r0, [r1]
+    if ui:                                                                # not a line track: pad 13 dim, pad 14 dark
+        E(movs_imm, 0, UI_DIM)
+    else:
+        imm32(1, PAL + PAL_TOFF)                                          # not a line track: pad 5 off, pad 6 dark
+        E(raw, h(0x8808))                                                 # ldrh r0, [r1]
     E(strh_imm, 0, 5, 2 * PAD_LINE)
     E(movs_imm, 0, 0)
     E(strh_imm, 0, 5, 2 * PAD_GATE)
     E(b, "ll_x")
     a.label("ll_on")                                                      # r0 = its byte
     E(mov_reg, 7, 0)
-    imm32(1, PAL + PAL_TON)
-    E(raw, h(0x8808))
+    if ui:
+        E(movs_imm, 0, UI_COL)
+    else:
+        imm32(1, PAL + PAL_TON)
+        E(raw, h(0x8808))
     E(strh_imm, 0, 5, 2 * PAD_LINE)
-    imm32(1, PAL + PAL_OFF)
-    E(movs_imm, 2, GATE_BIT)
-    E(tst_reg, 7, 2)
-    E(b_cond, "ll_g", "eq")
-    imm32(1, PAL + PAL_ON)
-    a.label("ll_g")
-    E(raw, h(0x8808))
+    if ui:
+        E(movs_imm, 0, UI_DIM)
+        E(movs_imm, 2, GATE_BIT)
+        E(tst_reg, 7, 2)
+        E(b_cond, "ll_g", "eq")
+        E(movs_imm, 0, UI_COL)
+        a.label("ll_g")
+    else:
+        imm32(1, PAL + PAL_OFF)
+        E(movs_imm, 2, GATE_BIT)
+        E(tst_reg, 7, 2)
+        E(b_cond, "ll_g", "eq")
+        imm32(1, PAL + PAL_ON)
+        a.label("ll_g")
+        E(raw, h(0x8808))
     E(strh_imm, 0, 5, 2 * PAD_GATE)
     a.label("ll_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
 
 
-def arm_code(base, L, prev, two=False):
+def arm_code(base, L, prev, two=False, ui=False):
     a = Asm(base)
     E = a.emit
 
@@ -508,7 +528,7 @@ def arm_code(base, L, prev, two=False):
     a.label("lr_x")
     E(pop_list, [4], pc=True)
     if two:
-        _arm2(a, E, imm32, L, prev)
+        _arm2(a, E, imm32, L, prev, ui)
         return a.assemble()
 
     # ---- c_lipad (the controller's pad press, granpage's head after it): the menu open, pads 5 / 6 are ours
@@ -664,7 +684,7 @@ def arm_code(base, L, prev, two=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, two=False):
+def install(img, report, base_addr, two=False, ui=False):
     """The controller's pad press (in front of granpage v2's head), the head of the LED calls.  core 0's LI goes in through granular0's extra
     (segs, with the same two).  Needs granpage v2, cthresh, rhrec, rhstate ram2."""
     import rhbuild
@@ -679,12 +699,13 @@ def install(img, report, base_addr, two=False):
     prev = dict(pad=rhbuild.bw_target(img, PP_ENTRY), ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert prev["pad"] == lab("granpage", "c_gpmpad")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code_, labels = arm_code(base_addr, L, prev, two)
+    assert two or not ui
+    code_, labels = arm_code(base_addr, L, prev, two, ui)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
     rhbuild.patch(img, PP_ENTRY, f"b.w #{prev['pad']:#x}", b_w(PP_ENTRY, labels["c_lipad"]))
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_liled"]))
-    report["linein"] = dict(prev={k: hex(v) for k, v in prev.items()}, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["linein"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"ui": True} if ui else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code_

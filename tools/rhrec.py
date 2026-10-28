@@ -37,6 +37,7 @@ OFF = {                                    # module -> (offset, length) in the t
     "gmmode": (792, 12),                   # (RH46) "GM", a check byte, the flags (bit 0 on), the GM note of each track (35..81)
     "linein": (804, 4),                    # (RH47) "L", a check byte, the line input's track + 1, its gate (1 = the track's notes); (RH48) the two line tracks, each track + 1 | gate << 4
     "slink": (808, 4),                     # (RH49) "S", a check byte, the stereo link's leaders (bit t: t leads, t + 1 follows), 0
+    "synth": (812, 70),                    # (RH51) "Y", a check byte, 4 synth slots x 17 B: the track + 1 (0 = free), its 16 knob values (7 bits)
 }
 
 

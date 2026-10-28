@@ -36,12 +36,14 @@ S_N, S_TRK, S_FL, S_FIRST, S_K, S_FG, S_FP, S_NEXT, S_SEEN = DA.S_N, DA.S_TRK, D
 F_NOTES = DA.F_NOTES
 SETUP_VT = PG.SETUP_VT
 COL_ON, COL_DIM = UM.COL_ON, UM.COL_DIM
+# ui (RH52; docs/INTERFAZ.md, the user, 2026-10-28: «toggles change brightness if they're on-off»): off = the dim of its own colour
+UI_DIM = 0x1F                                             # dim green
 
 
 def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, ui=False):
     a = Asm(base)
     E = a.emit
 
@@ -237,7 +239,7 @@ def arm_code(base, L, prev):
     E(bl, prev["ledtask"])
     UM.advanced(E, imm32, L, "xl_x")
     UM.p2bit(E, imm32, BIT)
-    E(movs_imm, 1, COL_DIM)
+    E(movs_imm, 1, UI_DIM if ui else COL_DIM)
     E(cmp_imm, 0, 0)
     E(b_cond, "xl_w", "eq")
     E(movs_imm, 1, COL_ON)
@@ -248,7 +250,7 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, ui=False):
     """The MIDI-in listener's slots 0 / 1, the head of the Setup view's slot 0, the head of the LED calls.  Needs drumarp (notes)."""
     import rhbuild
     BASE = rhbuild.BASE
@@ -262,7 +264,7 @@ def install(img, report, base_addr):
         L["c_da1st"] = lab("drumarp", "c_da1st")
     prev = dict(on=u(LIS_VT) & ~1, off=u(LIS_VT + 4) & ~1, pad=u(SETUP_VT) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    code, labels = arm_code(base_addr, L, prev, ui)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])

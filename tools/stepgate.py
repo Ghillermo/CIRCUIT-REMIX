@@ -55,6 +55,8 @@ HAL_TICK = CI.HAL_TICK
 O_HELD, B_CLEAR, B_DUP = 0xA0, 23, 24
 HOLD_MS, MS_MAX, GMAX = 300, 60000, 96
 COL_ON, COL_DIM, COL_FIX = 0x1E, 0x09, 0x41                 # green, dim, orange
+# ui (RH52; docs/INTERFAZ.md, the user, 2026-10-28: «toggles change brightness if they're on-off»): off = the dim of its own colour
+UI_DIM_ON, UI_DIM_FIX = 0x1F, 0x42                        # dim green, dim orange
 MARK0, MARK1, CHECK = 0x53, 0x47, 0x5A                      # "SG"
 BLK, BLK_LEN = rhrec.OFF["stepgate"]
 T_HOLD, T_FIX = 3, 4                                        # the tail block: + 3 the gate-by-holding bits, + 4 + t the fixed lengths
@@ -80,7 +82,7 @@ def gate_ms(ms, bpm, tps):
     return max(1, min(GMAX, g))
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, ui=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -614,7 +616,7 @@ def arm_code(base, L, prev):
     E(raw, h(0x4030))                                                     # ands r0, r6
     E(movs_imm, 2, 0)
     a.label("ld_l")
-    E(movs_imm, 1, COL_DIM)
+    E(movs_imm, 1, UI_DIM_ON if ui else COL_DIM)
     E(cmp_reg, 2, 0)
     E(b_cond, "ld_w", "hs")
     E(movs_imm, 1, COL_ON)
@@ -627,13 +629,13 @@ def arm_code(base, L, prev):
     E(b_cond, "ld_l", "lo")
     E(b, "ld_x")
     a.label("ld_p")
-    E(movs_imm, 1, COL_DIM)
+    E(movs_imm, 1, UI_DIM_FIX if ui else COL_DIM)
     E(lsls_imm, 0, 6, 24)
     E(b_cond, "ld_f", "pl")
     E(movs_imm, 1, COL_FIX)
     a.label("ld_f")
     E(strh_imm, 1, 5, 2 * (16 + PAD_FIX))
-    E(movs_imm, 1, COL_DIM)
+    E(movs_imm, 1, UI_DIM_ON if ui else COL_DIM)
     E(lsrs_imm, 0, 6, 9)
     E(b_cond, "ld_h", "lo")
     E(movs_imm, 1, COL_ON)
@@ -644,7 +646,7 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, ui=False):
     """The step views' slots 0 / 1, the Micro Step views' slot 0, the head of the LED calls.  Needs rhstate ram2, rhrec, countin."""
     import rhbuild
     BASE = rhbuild.BASE
@@ -655,7 +657,7 @@ def install(img, report, base_addr):
              c_cishift=lab("countin", "c_cishift"))
     prev = dict(press=u(SV_VT) & ~1, rel=u(SV_VT + 4) & ~1, mpad=u(MV_VT) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    code, labels = arm_code(base_addr, L, prev, ui)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])

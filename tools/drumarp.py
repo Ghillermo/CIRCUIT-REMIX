@@ -58,6 +58,9 @@ ORD_OF_PAD = (4, 5, 0, 1, 2, 3)                          # pads 27-32: fractal, 
 M_UP, M_DOWN, M_PP, M_RND, M_FRAC, M_DEC = 0, 1, 2, 3, 4, 5
 KWRAP = 120
 COL_ON, COL_OFF = 0x1E, 0x09                             # (Tracks 0x17, 0x02)
+# ui (RH52; docs/INTERFAZ.md, the user, 2026-10-28): off / not chosen = the dim of its own colour (dim green), not grey
+UI_OFF = 0x1F
+UI = False
 SEEN_MS = 200
 HELD_CLEAR_DUP = (1 << 23) | (1 << 24)
 # the running state (RAM)
@@ -1101,10 +1104,10 @@ def arm_code(base, L, prev):
     E(ldr_imm, 0, 0, 4)
     E(ldr_imm, 6, 0, 0)                                                   # r6 = the LED buffer
     for p in list(range(PS_PAD_RATE, PS_PAD_ARP)) + list(range(PS_PAD_ORD, 32)):
-        E(movs_imm, 1, COL_OFF)
+        E(movs_imm, 1, UI_OFF if UI else COL_OFF)
         E(movs_imm, 0, 2 * p)
         E(strh_reg, 1, 6, 0)
-    E(movs_imm, 1, COL_OFF)
+    E(movs_imm, 1, UI_OFF if UI else COL_OFF)
     E(lsls_imm, 0, 4, 24)
     E(b_cond, "pb_a", "pl")
     E(movs_imm, 1, COL_ON)
@@ -1423,7 +1426,7 @@ def emit_notes(a, E, L, prev, imm32, bc):
     E(pop_list, [4, 5], pc=True)
 
 
-def install(img, report, base_addr, notes=False, rec=False, single=False, bpm0=False):
+def install(img, report, base_addr, notes=False, rec=False, single=False, bpm0=False, ui=False):
     """Append the code; the sample views' slots 0 / 1 / 7, Pattern Settings' slots 0 / 7, the players' slot 2, the LED task calls."""
     import rhbuild
     BASE = rhbuild.BASE
@@ -1433,8 +1436,8 @@ def install(img, report, base_addr, notes=False, rec=False, single=False, bpm0=F
              c_cinew=lab("countin", "c_cinew"), c_pmtrk=lab("playmode", "c_pmtrk"))
     if rec:
         L.update(c_pmfind=lab("playmode", "c_pmfind"), c_qzst=lab("quant", "c_qzst"))
-    global NOTES, REC, SINGLE, BPM0
-    NOTES, REC, SINGLE, BPM0 = notes, rec, single, bpm0
+    global NOTES, REC, SINGLE, BPM0, UI
+    NOTES, REC, SINGLE, BPM0, UI = notes, rec, single, bpm0, ui
     slots = dict(pad=(SV_VT, 0), rel=(SV_VT, 1), leds=(SV_VT, 7), pspad=(PS_VT, 0), psled=(PS_VT, 7), play=(DP_VT, 2))
     if notes:
         slots.update(npad=(NV_VT, 0), nrel=(NV_VT, 1), nleds=(NV_VT, 7))

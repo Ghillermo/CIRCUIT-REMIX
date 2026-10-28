@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from thumb import (Asm, adds_imm3, adds_imm8, adds_reg, b, b_cond, b_w, bics_reg, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldr_sp, ldrb_imm, ldrb_w,  # noqa: E402
+from thumb import (Asm, adds_imm3, ands_reg, adds_imm8, adds_reg, b, b_cond, b_w, bics_reg, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldr_sp, ldrb_imm, ldrb_w,  # noqa: E402
                    ldrb_reg, ldrh_imm, lsls_imm, lsls_reg, lsrs_imm, lsrs_reg, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list,
                    push_list, raw, str_imm, strb_imm, strb_reg, strh_imm, strh_reg, strh_w_imm, subs_imm8, subs_reg, tst_reg)
 import countin as CI  # noqa: E402
@@ -57,6 +57,15 @@ MUL = (128, 101, 128, 128, 48, 128, 128, 101, 128, 128, 128, 2)   # the engine's
 OFFS = (0, 0, 0, 64, 24, 0, 0, 0, 64, 0, 0, 0)
 IDX = (G.P_SIZE, G.P_DENS, G.P_POS, G.P_SCAN, G.P_PITCH, G.P_SPR, G.P_PSPR, G.P_WIN, G.P_FINE, G.P_ZONE, G.P_REV, G.P_GATE)
 BIP = (0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0)                 # from the middle (the LED: |v - 8192|)
+# ui (RH52; docs/INTERFAZ.md, the user, 2026-10-28): the page in its own colour (lilac: the knobs, the track's button blinking, the menu's
+# pads 3 / 11), Shift + K8 (the gate, on / off) as a toggle (dim = always, full = with the voice); the track menu: pads 1-3 the pages in
+# their colours (stock white, Stock+ sky blue, Granular lilac: bright = shown, dim = not), pad 11 the slot on / off (bright / dim lilac),
+# pad 4 left to the Synth page (synthpage)
+UI_KNOB, UI_BLINK, UI_DIM = 0x60, 0x60, 0x61
+UI_PAGES = ((0x01, 0x09), (SP.UI_KNOB, SP.UI_DIM), (UI_KNOB, UI_DIM))
+UI_PAD_ENG = 10                                            # the menu's pad 11
+BIP_UI = BIP[:11] + (2,)                                   # 2 = a toggle: dim below the middle, full from it
+T_DIM, T_FULL = 16, 127
 NW_G, NW_X = 14, 10                                        # the engine's words (12 + key + track), the crossfade's (8 flags + N + 1 / N)
 NOTE_ON_BL, TRIG = 0x080407E6, 0x080406A8                  # (RH40, note) the DSP note-on 0x08040778(code, note, velocity): its trigger {w0, w1}
 CUR_NOTE = 0x20006D90                                      #   (w0 & 7 = the track, w1 = (note - 60) << 16) sent by bl TRIG; the track's
@@ -80,6 +89,11 @@ XN, XQ = XF.length_words(256)
 MN_O = rhstate.OFF2["menu"][0]
 M_GRAN, M_TRK, M_FLAGS, M_TICK, M_SWAL = 0, 1, 2, 4, 8
 F_NODECLICK, F_STEREO = 1, 2
+# menu2 (RH53; the user, 2026-10-28: «Tap the track button»): a tap on the selected track's button (let go before the menu showed) opens the
+# menu and leaves it open (sticky) until a menu pad is let go (synthpage's release head), the button is pressed again, another track's
+# button is pressed or the track views are left; held = the menu while held, as before.  M_FLAGS: CAND = this press is on the track that was
+# already selected, SHOWN = the menu showed during this press, STICKY = open without the button
+F_CAND, F_STICKY, F_SHOWN = 4, 8, 16
 HOLD_MS = 250
 MENU_PADS = 4
 PP_ENTRY, PP_HEAD, PP_CONT = 0x0803D7FE, "push {r4, r5, r6, lr}|mov r6, r0", 0x0803D802
@@ -507,7 +521,104 @@ def _gn_funcs(a, E, imm32, L, nk, t_def, t_mul, t_off, t_idx, note):
     E(pop_list, [4, 5, 6], pc=True)
 
 
-def _gn_mact(a, E, L):
+def _gpmopen2(a, E, L, imm32):
+    """(menu2) c_gpmopen() -> r0 = the menu's track while it is open, else 8: held (HOLD_MS, SHOWN noted), or sticky (STICKY: a tap on the
+    selected track's button, let go before the menu showed); closed when the track views are left; clobbers r1-r3"""
+    a.label("c_gpmopen")
+    E(push_list, [4, 5, 6], lr=True)
+    E(bl, "c_gpmst")
+    E(cmp_imm, 0, 0)
+    E(b_cond, "mo_n", "eq")
+    E(mov_reg, 4, 0)
+    E(ldrb_imm, 5, 4, M_TRK)
+    E(cmp_imm, 5, 0)
+    E(b_cond, "mo_n", "eq")
+    E(subs_imm8, 5, 1)                                                    # r5 = its track
+    E(ldrb_imm, 0, 4, M_FLAGS)
+    E(lsls_imm, 0, 0, 31 - 3)
+    E(b_cond, "mo_h", "pl")
+    E(bl, L["c_spview"])                                                  # sticky: open while its track's views are on the screen
+    E(cmp_reg, 0, 5)
+    E(b_cond, "mo_c", "ne")
+    E(mov_reg, 0, 5)
+    E(pop_list, [4, 5, 6], pc=True)
+    a.label("mo_h")
+    E(bl, L["c_spheld"])
+    E(lsrs_reg, 0, 5)
+    E(lsls_imm, 0, 0, 31)
+    E(b_cond, "mo_r", "eq")
+    imm32(0, CI.HAL_TICK)                                                 # held
+    E(ldr_imm, 0, 0, 0)
+    E(ldr_imm, 1, 4, M_TICK)
+    E(subs_reg, 0, 0, 1)
+    E(cmp_imm, 0, HOLD_MS)
+    E(b_cond, "mo_n", "lo")
+    E(bl, L["c_spview"])
+    E(cmp_reg, 0, 5)
+    E(b_cond, "mo_n", "ne")
+    E(ldrb_imm, 0, 4, M_FLAGS)
+    E(movs_imm, 1, F_SHOWN)
+    E(orrs_reg, 0, 1)
+    E(strb_imm, 0, 4, M_FLAGS)
+    E(mov_reg, 0, 5)
+    E(pop_list, [4, 5, 6], pc=True)
+    a.label("mo_r")                                                       # let go: a tap on the selected track's button sticks
+    E(ldrb_imm, 0, 4, M_FLAGS)
+    E(movs_imm, 1, F_CAND | F_SHOWN)
+    E(ands_reg, 1, 0)
+    E(cmp_imm, 1, F_CAND)
+    E(b_cond, "mo_c", "ne")
+    E(movs_imm, 1, F_CAND)
+    E(bics_reg, 0, 1)
+    E(movs_imm, 1, F_STICKY)
+    E(orrs_reg, 0, 1)
+    E(strb_imm, 0, 4, M_FLAGS)
+    E(bl, L["c_spview"])
+    E(cmp_reg, 0, 5)
+    E(b_cond, "mo_c", "ne")
+    E(mov_reg, 0, 5)
+    E(pop_list, [4, 5, 6], pc=True)
+    a.label("mo_c")                                                       # closed: forgotten
+    E(movs_imm, 0, 0)
+    E(strb_imm, 0, 4, M_TRK)
+    E(ldrb_imm, 0, 4, M_FLAGS)
+    E(movs_imm, 1, F_CAND | F_STICKY | F_SHOWN)
+    E(bics_reg, 0, 1)
+    E(strb_imm, 0, 4, M_FLAGS)
+    a.label("mo_n")
+    E(movs_imm, 0, 8)
+    E(pop_list, [4, 5, 6], pc=True)
+    # ---- c_gpmshut(): the menu closed if it is sticky, or its track's button is up (a tap not yet seen: it will not stick); a menu held
+    # open stays; clobbers r0-r3
+    a.label("c_gpmshut")
+    E(push_list, [4, 5], lr=True)
+    E(bl, "c_gpmst")
+    E(cmp_imm, 0, 0)
+    E(b_cond, "ms2_x", "eq")
+    E(mov_reg, 4, 0)
+    E(ldrb_imm, 5, 4, M_TRK)
+    E(cmp_imm, 5, 0)
+    E(b_cond, "ms2_x", "eq")
+    E(ldrb_imm, 1, 4, M_FLAGS)
+    E(lsls_imm, 2, 1, 31 - 3)
+    E(b_cond, "ms2_c", "mi")                                              # sticky: closed
+    E(subs_imm8, 5, 1)
+    E(bl, L["c_spheld"])
+    E(lsrs_reg, 0, 5)
+    E(lsls_imm, 0, 0, 31)
+    E(b_cond, "ms2_x", "ne")                                              # its button held: the menu stays
+    a.label("ms2_c")
+    E(ldrb_imm, 1, 4, M_FLAGS)
+    E(movs_imm, 2, F_STICKY | F_CAND | F_SHOWN)
+    E(bics_reg, 1, 2)
+    E(strb_imm, 1, 4, M_FLAGS)
+    E(movs_imm, 1, 0)
+    E(strb_imm, 1, 4, M_TRK)
+    a.label("ms2_x")
+    E(pop_list, [4, 5], pc=True)
+
+
+def _gn_mact(a, E, L, menu2=False):
     """(multi) c_gpmact(r0 = track, r1 = menu pad 0..3): pads 1-2 the page, pad 3 the Granular page (a slot first), pad 4 the slot on / off"""
     a.label("c_gpmact")
     E(push_list, [4, 5, 6], lr=True)
@@ -557,6 +668,20 @@ def _gn_mact(a, E, L):
     a.label("mm_on")
     E(mov_reg, 0, 4)
     E(bl, "c_gnassign")
+    if menu2:                                                             # (menu2) on: its Granular page (Stock+'s off)
+        E(cmp_imm, 0, NSL)
+        E(b_cond, "mm_x", "hs")
+        E(bl, L["c_spst"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "mm_x", "eq")
+        E(movs_imm, 1, 1)
+        E(lsls_reg, 1, 4)
+        E(ldrb_imm, 2, 0, 0)
+        E(bics_reg, 2, 1)
+        E(strb_imm, 2, 0, 0)
+        E(ldrb_imm, 2, 6, M_GRAN)
+        E(orrs_reg, 2, 1)
+        E(strb_imm, 2, 6, M_GRAN)
     a.label("mm_x")
     E(pop_list, [4, 5, 6], pc=True)
 
@@ -627,11 +752,12 @@ def _gn_dsp(a, E):
     E(b, "gl_gx")
 
 
-def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
+def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False):
     nwx = NW_X + (1 if v2 else 0)
     nk, nwg = NK + (1 if stereo else 0), NW_G + (1 if stereo else 0)           # (stereo, RH47) value 12 = the spread (Shift + K2)
-    tdef, tmul, toff, tidx, tbip = ((DEF + (0,), MUL + (128,), OFFS + (0,), IDX + (G.P_SPRD,), BIP + (0,)) if stereo else
-                                    (DEF, MUL, OFFS, IDX, BIP))
+    bip = BIP_UI if ui else BIP
+    tdef, tmul, toff, tidx, tbip = ((DEF + (0,), MUL + (128,), OFFS + (0,), IDX + (G.P_SPRD,), bip + (0,)) if stereo else
+                                    (DEF, MUL, OFFS, IDX, bip))
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -1035,40 +1161,43 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
         E(movs_imm, 0, 0)
         E(pop_list, [4], pc=True)
 
-        # ---- c_gpmopen() -> r0 = the menu's track while it is open, else 8 (its track's button let go: the menu forgotten); clobbers r1-r3
-        a.label("c_gpmopen")
-        E(push_list, [4, 5, 6], lr=True)
-        E(bl, "c_gpmst")
-        E(cmp_imm, 0, 0)
-        E(b_cond, "mo_n", "eq")
-        E(mov_reg, 4, 0)
-        E(ldrb_imm, 5, 4, M_TRK)
-        E(cmp_imm, 5, 0)
-        E(b_cond, "mo_n", "eq")
-        E(subs_imm8, 5, 1)                                                # r5 = its track
-        E(bl, L["c_spheld"])
-        E(lsrs_reg, 0, 5)
-        E(lsls_imm, 0, 0, 31)
-        E(b_cond, "mo_c", "eq")
-        imm32(0, CI.HAL_TICK)
-        E(ldr_imm, 0, 0, 0)
-        E(ldr_imm, 1, 4, M_TICK)
-        E(subs_reg, 0, 0, 1)
-        E(cmp_imm, 0, HOLD_MS)
-        E(b_cond, "mo_n", "lo")
-        E(bl, L["c_spview"])
-        E(cmp_reg, 0, 5)
-        E(b_cond, "mo_n", "ne")
-        E(pop_list, [4, 5, 6], pc=True)
-        a.label("mo_c")
-        E(movs_imm, 0, 0)
-        E(strb_imm, 0, 4, M_TRK)
-        a.label("mo_n")
-        E(movs_imm, 0, 8)
-        E(pop_list, [4, 5, 6], pc=True)
+        if menu2:
+            _gpmopen2(a, E, L, imm32)
+        else:
+            # ---- c_gpmopen() -> r0 = the menu's track while it is open, else 8 (its track's button let go: the menu forgotten); clobbers r1-r3
+            a.label("c_gpmopen")
+            E(push_list, [4, 5, 6], lr=True)
+            E(bl, "c_gpmst")
+            E(cmp_imm, 0, 0)
+            E(b_cond, "mo_n", "eq")
+            E(mov_reg, 4, 0)
+            E(ldrb_imm, 5, 4, M_TRK)
+            E(cmp_imm, 5, 0)
+            E(b_cond, "mo_n", "eq")
+            E(subs_imm8, 5, 1)                                                # r5 = its track
+            E(bl, L["c_spheld"])
+            E(lsrs_reg, 0, 5)
+            E(lsls_imm, 0, 0, 31)
+            E(b_cond, "mo_c", "eq")
+            imm32(0, CI.HAL_TICK)
+            E(ldr_imm, 0, 0, 0)
+            E(ldr_imm, 1, 4, M_TICK)
+            E(subs_reg, 0, 0, 1)
+            E(cmp_imm, 0, HOLD_MS)
+            E(b_cond, "mo_n", "lo")
+            E(bl, L["c_spview"])
+            E(cmp_reg, 0, 5)
+            E(b_cond, "mo_n", "ne")
+            E(pop_list, [4, 5, 6], pc=True)
+            a.label("mo_c")
+            E(movs_imm, 0, 0)
+            E(strb_imm, 0, 4, M_TRK)
+            a.label("mo_n")
+            E(movs_imm, 0, 8)
+            E(pop_list, [4, 5, 6], pc=True)
 
         if multi:
-            _gn_mact(a, E, L)
+            _gn_mact(a, E, L, menu2)
         # ---- c_gpmact(r0 = track, r1 = menu pad 0..3); clobbers r0-r3
         a.label("c_gpmact" if not multi else "c_gpmact1")
         E(push_list, [4, 5, 6], lr=True)
@@ -1143,8 +1272,16 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
         E(ldr_imm, 2, 0, M_SWAL)
         E(orrs_reg, 2, 1)
         E(str_imm, 2, 0, M_SWAL)
-        E(cmp_imm, 5, MENU_PADS)
-        E(b_cond, "mp_x", "hs")
+        if ui:                                                            # (ui) pads 1-3 the pages, 11 the slot; 4 is the Synth page's
+            E(cmp_imm, 5, 3)
+            E(b_cond, "mp_a", "lo")
+            E(cmp_imm, 5, UI_PAD_ENG)
+            E(b_cond, "mp_x", "ne")
+            E(movs_imm, 5, 3)
+            a.label("mp_a")
+        else:
+            E(cmp_imm, 5, MENU_PADS)
+            E(b_cond, "mp_x", "hs")
         E(mov_reg, 0, 4)
         E(mov_reg, 1, 5)
         E(bl, "c_gpmact")
@@ -1207,7 +1344,13 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
     a.label("c_gpbtn")
     E(push_list, [0, 1, 2, 4, 5, 6, 7], lr=True)
     E(cmp_imm, 1, 8)
-    bc("bn_p", "hs")
+    if menu2:                                                             # (menu2) any other button: the sticky menu closes
+        E(b_cond, "bn_t", "lo")
+        E(bl, "c_gpmshut")
+        E(b, "bn_p")
+        a.label("bn_t")
+    else:
+        bc("bn_p", "hs")
     E(mov_reg, 4, 1)                                                      # r4 = the track of the button
     E(bl, L["c_spheld"])
     E(mov_reg, 6, 0)
@@ -1222,9 +1365,33 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
         E(bl, L["c_spview"])
         E(cmp_imm, 0, 8)
         bc("bn_p", "hs")                                                  # not the track views
+        if menu2:                                                         # (menu2) r0 = the track selected before this press
+            E(mov_reg, 5, 0)
         E(bl, "c_gpmst")
         E(cmp_imm, 0, 0)
         E(b_cond, "bn_s", "eq")
+        if menu2:
+            E(ldrb_imm, 1, 0, M_FLAGS)
+            E(lsls_imm, 2, 1, 31 - 3)                                     # STICKY?
+            E(b_cond, "bn_ns", "pl")
+            E(movs_imm, 2, F_STICKY | F_CAND | F_SHOWN)                   # open: this press closes it
+            E(bics_reg, 1, 2)
+            E(strb_imm, 1, 0, M_FLAGS)
+            E(ldrb_imm, 2, 0, M_TRK)
+            E(movs_imm, 3, 0)
+            E(strb_imm, 3, 0, M_TRK)
+            E(subs_imm8, 2, 1)
+            E(cmp_reg, 2, 4)
+            E(b_cond, "bn_s", "eq")                                       # its own button: closed, nothing more
+            a.label("bn_ns")
+            E(movs_imm, 2, F_CAND | F_SHOWN)
+            E(bics_reg, 1, 2)
+            E(cmp_reg, 5, 4)
+            E(b_cond, "bn_nc", "ne")
+            E(movs_imm, 2, F_CAND)                                        # the selected track's own button: a tap may stick
+            E(orrs_reg, 1, 2)
+            a.label("bn_nc")
+            E(strb_imm, 1, 0, M_FLAGS)
         E(adds_imm8, 4, 1)
         E(strb_imm, 4, 0, M_TRK)                                          # the menu's track + 1, from now
         imm32(1, CI.HAL_TICK)
@@ -1487,14 +1654,31 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
         E(raw, h(0x4007))                                                 # ands r7, r0
         a.label("gl_pg")
         for k in range(3):
-            imm32(1, PAL + PAL_OFF)
-            E(cmp_imm, 7, k)
-            E(b_cond, f"gl_m{k}", "ne")
-            imm32(1, PAL + PAL_ON)
-            a.label(f"gl_m{k}")
-            E(ldrh_imm, 0, 1, 0)
+            if ui:
+                E(movs_imm, 0, UI_PAGES[k][1])
+                E(cmp_imm, 7, k)
+                E(b_cond, f"gl_m{k}", "ne")
+                E(movs_imm, 0, UI_PAGES[k][0])
+                a.label(f"gl_m{k}")
+            else:
+                imm32(1, PAL + PAL_OFF)
+                E(cmp_imm, 7, k)
+                E(b_cond, f"gl_m{k}", "ne")
+                imm32(1, PAL + PAL_ON)
+                a.label(f"gl_m{k}")
+                E(ldrh_imm, 0, 1, 0)
             E(strh_imm, 0, 5, 2 * k)
-        if multi:                                                         # (multi) pad 4: a slot on the track
+        if ui:                                                            # (ui, multi) pad 11: a slot on the track
+            assert multi
+            E(mov_reg, 0, 4)
+            E(bl, "c_gnslot")
+            E(movs_imm, 1, UI_DIM)
+            E(cmp_imm, 0, NSL)
+            E(b_cond, "gl_mu", "hs")
+            E(movs_imm, 1, UI_KNOB)
+            a.label("gl_mu")
+            E(strh_imm, 1, 5, 2 * UI_PAD_ENG)
+        elif multi:                                                         # (multi) pad 4: a slot on the track
             E(mov_reg, 0, 4)
             E(bl, "c_gnslot")
             imm32(1, PAL + PAL_TOFF)
@@ -1509,9 +1693,10 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
             E(cmp_reg, 0, 4)
             E(b_cond, "gl_me", "ne")
             imm32(1, PAL + PAL_TON)
-        a.label("gl_me")
-        E(ldrh_imm, 0, 1, 0)
-        E(strh_imm, 0, 5, 2 * 3)
+        if not ui:
+            a.label("gl_me")
+            E(ldrh_imm, 0, 1, 0)
+            E(strh_imm, 0, 5, 2 * 3)
         a.label("gl_nm")
         imm32(0, CI.CTRL)                                                 # Sample Rec on the screen: pad 23 the de-clicker, pad 24 stereo
         E(ldr_imm, 1, 0, 0x7C)
@@ -1614,6 +1799,17 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
         E(ldrb_reg, 2, 2, 1)
         E(cmp_imm, 2, 0)
         E(b_cond, f"lu_{k}", "eq")
+        if ui and 2 in tbip:                                              # (ui) a toggle: dim below the middle, full from it
+            E(cmp_imm, 2, 2)
+            E(b_cond, f"lb_{k}", "ne")
+            E(movs_imm, 2, T_DIM)
+            E(lsrs_imm, 0, 0, 13)
+            E(b_cond, f"lt_{k}", "eq")
+            E(movs_imm, 2, T_FULL)
+            a.label(f"lt_{k}")
+            E(mov_reg, 0, 2)
+            E(b, f"lw_{k}")
+            a.label(f"lb_{k}")
         E(movw, 2, 8192)                                                  # from the middle: |v - 8192| / 64
         E(subs_reg, 0, 0, 2)
         E(b_cond, f"lq_{k}", "ge")
@@ -1628,14 +1824,14 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
         E(lsrs_imm, 0, 0, 7)
         a.label(f"lw_{k}")
         E(strb_imm, 0, 7, K_VAL + k)
-        imm32(0, COL_KNOB)
+        imm32(0, UI_KNOB if ui else COL_KNOB)
         E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
     imm32(0, CI.HAL_TICK)
     E(ldr_imm, 0, 0, 0)
     E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
     E(b_cond, "gl_x", "pl")
-    E(movs_imm, 0, COL_BLINK)
+    E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
     E(lsls_imm, 1, 4, 1)
     E(adds_reg, 1, 5, 1)
     E(strh_w_imm, 0, 1, 2 * LED_TRK0)
@@ -1645,7 +1841,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=False):
+def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False):
     """Ahead of stockplus (button chain, knob slot, LED calls) and in Sample mode's subview (slots 0 and 8).  The build needs granular0
     (core 0's engine) and pitchmod with loopxf (core 1's crossfade).  v2 (RH45): also the controller's pad press / release entries and
     Sample Rec's slot 0 (ahead of smpcopy, or the stock's without it: nosd); needs rhstate ram2; the stereo word is stereorec's (installed after)."""
@@ -1677,7 +1873,9 @@ def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=Fa
         assert report["granular0"].get("stereo"), "granpage stereo needs granular0 stereo"
     if multi:
         assert report["granular0"].get("multi") and v2 and stereo and note, "granpage multi needs granular0 multi, v2, stereo, note"
-    code, labels = arm_code(base_addr, L, prev, note=note, v2=v2, stereo=stereo, multi=multi)
+    assert multi or not ui
+    assert ui or not menu2
+    code, labels = arm_code(base_addr, L, prev, note=note, v2=v2, stereo=stereo, multi=multi, ui=ui, menu2=menu2)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1692,7 +1890,7 @@ def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=Fa
         rhbuild.patch(img, PP_ENTRY, PP_HEAD, b_w(PP_ENTRY, labels["c_gpmpad"]))
         rhbuild.patch(img, PR_ENTRY, PR_HEAD, b_w(PR_ENTRY, labels["c_gpmrel"]))
         rhbuild.patch_word(img, SREC_VT, prev["srec"] | 1, labels["c_gpsrpad"] | 1)
-    report["granpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), note=note, **({"v2": True} if v2 else {}),
+    report["granpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), note=note, **({"v2": True} if v2 else {}), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}),
                               **({"multi": True} if multi else {}),
                               labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

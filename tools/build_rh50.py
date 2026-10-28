@@ -24,9 +24,10 @@ def build(name=NAME, synth=False, **kw):
         return linein.segs(spl, two=True) + gstereo.segs(li, multi=True)
     b = build_rh46.build(name, g0more=more, g0={"stereo": True, "multi": True}, chain={"stereo": True, "multi": True},
                          gpx={"stereo": True, "multi": True}, **kw)
+    ui = {"ui": True} if kw.get("ui") else {}                         # (RH52: docs/INTERFAZ.md)
     b.add("cue", cue)
-    b.add("linein", linein, two=True)
-    b.add("slink", slink)
+    b.add("linein", linein, two=True, **ui)
+    b.add("slink", slink, **ui)
     return b
 
 

@@ -30,6 +30,8 @@ PAD = 22                                                  # pad 23
 TX, O_TXF, CLOCK_TX = 0x200126B0, 0x18, 0x08
 DIN_IN, USB = 1, 0
 COL_ON, COL_DIM = 0x1E, 0x09
+# ui (RH52; docs/INTERFAZ.md, the user, 2026-10-28: «toggles change brightness if they're on-off»): off = the dim of its own colour
+UI_DIM = 0x1F                                             # dim green
 SETUP_VT, SETUP_MODE = PG.SETUP_VT, PG.SETUP_MODE
 GET, WPTR, COMMIT = CI.PARAM_GET, CI.WPTR, CI.COMMIT
 
@@ -80,7 +82,7 @@ def p2bit(E, imm32, bit):
     E(raw, h(0x4008))                                                     # ands r0, r1
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, ui=False):
     a = Asm(base)
     E = a.emit
 
@@ -146,7 +148,7 @@ def arm_code(base, L, prev):
     E(bl, prev["ledtask"])
     advanced(E, imm32, L, "ul_x")
     p2bit(E, imm32, BIT)
-    E(movs_imm, 1, COL_DIM)
+    E(movs_imm, 1, UI_DIM if ui else COL_DIM)
     E(cmp_imm, 0, 0)
     E(b_cond, "ul_w", "eq")
     E(movs_imm, 1, COL_ON)
@@ -157,7 +159,7 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, ui=False):
     """The DIN In's post (midithru's c_thin in front), the head of the Setup view's slot 0, the head of the LED calls.  Needs midithru, countin."""
     import rhbuild
     BASE = rhbuild.BASE
@@ -167,7 +169,7 @@ def install(img, report, base_addr):
     L = dict(c_ciok=lab("countin", "c_ciok"), c_cinew=lab("countin", "c_cinew"))
     prev = dict(post=rhbuild.bl_target(img, M.POST_CALL), pad=u(SETUP_VT) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    code, labels = arm_code(base_addr, L, prev, ui)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
