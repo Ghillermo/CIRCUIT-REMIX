@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## Alpha 0.07 (2026-10-28) — experimental
+
+> ⚠️ **Experimental: necesita pulirse.** Stock+ en el granular y el sinte solo se ha comprobado en emulación, como casi todo lo de Alpha 0.04-0.06. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
+
+**Español.** Dos versiones nuevas: **Alpha 0.07** (marca `A0.07`) y **Alpha 0.07S** (marca `A0.07S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **Stock+ para todos los sonidos:** la página Stock+ (menú de pista, pad 2) también en una pista **granular** o con **sinte**:
+  - envolvente y LFO de tono sobre el tono de cada grano nuevo / de los osciladores del sinte;
+  - ring mod, pitch follow y el tipo de filtro (24 dB, comb) sobre su sonido;
+  - **K7 = waveshaper:** cantidad (ganancia ×1-×16; en bitcrush, los bits); **Shift + K7 = su tipo:** suave (dorado), duro (rojo anaranjado), plegado (turquesa), bitcrush (lima);
+  - **K8 = LFO** de la posición de los granos (granular) o de la cantidad de FM (sinte); Shift + K8, su profundidad;
+  - el waveshaper se guarda con el proyecto y lo llevan Clear + botón de pista y Duplicate.
+- **El knob de distorsión de la pista** (página stock) ahora también suena en el granular y el sinte, con la misma curva que en un sample.
+- En una pista granular o con sinte la voz de sample, que no suena, ya no gasta Stock+.
+
+**English.** Two new builds: **Alpha 0.07** (marker `A0.07`) and **Alpha 0.07S** (marker `A0.07S`: no project copy, pack delete or sample copy). Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** Stock+ on the granular and the synth has only been checked in emulation, like most of Alpha 0.04-0.06. Expect bugs, noises or hangs: for serious playing, stay on **Alpha 0.03** (still in the installer). **Back up the SD card.**
+
+What's new:
+- **Stock+ for every sound:** the Stock+ page (track menu, pad 2) on **granular** and **synth** tracks too:
+  - the pitch envelope and LFO on each new grain's pitch / the synth's oscillators;
+  - ring mod, pitch follow and the filter type (24 dB, comb) on their sound;
+  - **K7 = waveshaper:** amount (gain x1-x16; for bitcrush, the bits); **Shift + K7 = its type:** soft (gold), hard (red-orange), fold (teal), bitcrush (lime);
+  - **K8 = an LFO** on the grains' position (granular) or the FM amount (synth); Shift + K8, its depth;
+  - the waveshaper is saved with the project and goes along with Clear + track button and Duplicate.
+- **The track's distortion knob** (stock page) now also works on the granular and the synth, with the same curve as on a sample.
+- On a granular or synth track the unheard sample voice no longer spends Stock+.
+
 ## Alpha 0.06 (2026-10-28) — experimental
 
 > ⚠️ **Experimental: necesita pulirse.** La envolvente y la entrada desde los retornos de FX solo se han comprobado en emulación, como casi todo lo de Alpha 0.04 / 0.05. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**

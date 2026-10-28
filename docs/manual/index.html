@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.06 — manual</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.07 — manual</title><style>
 :root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
 :root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
@@ -23,7 +23,7 @@ footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
 p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
 p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
 </style></head><body>
-<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.06</p><div class="bar"></div></header><main>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.07</p><div class="bar"></div></header><main>
 <p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>
 <p class="warn">⚠️ <strong>Alpha 0.06 es experimental:</strong> lo nuevo (la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04 / 0.05) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
 <p>Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.</p>
@@ -76,7 +76,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = los 8 knobs. <strong>▲ / ▼</strong> = los botones de flecha.</li>
 <li><strong>Mantener</strong> un botón = pulsarlo y no soltarlo; <strong>A + B</strong> = B con A mantenido.</li>
 <li><strong>★</strong> = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).</li>
-<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.06)</em> es nuevo o cambia en esta versión.</li>
+<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.07)</em> es nuevo o cambia en esta versión.</li>
 <li>Al final, el <strong><a href="#glosario">glosario</a></strong>: una entrada por función, con su vista y su gesto.</li>
 </ul>
 </section>
@@ -493,7 +493,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <p>Los pads se convierten en el menú de esa pista <em>(Alpha 0.06)</em>:</p>
 <table><thead><tr><th>Pad</th><th>Qué hace</th></tr></thead><tbody>
 <tr><td><strong>1</strong></td><td>página <strong>stock</strong> de los knobs (la del original)</td></tr>
-<tr><td><strong>2</strong></td><td>página <strong><a href="#stockplus">Stock+</a></strong> (con un sample)</td></tr>
+<tr><td><strong>2</strong></td><td>página <strong><a href="#stockplus">Stock+</a></strong> (con un sample; con el granular o el sinte <em>(Alpha 0.07)</em>)</td></tr>
 <tr><td><strong>3</strong></td><td>página <strong><a href="#granular">Granular</a></strong> (con el granular)</td></tr>
 <tr><td><strong>4</strong></td><td>página <strong><a href="#sinte">Sinte</a></strong> (con el sinte)</td></tr>
 <tr><td><strong>5</strong></td><td>página <strong><a href="#envolvente">Envolvente</a></strong> (con el sinte o el granular) <em>(Alpha 0.06)</em></td></tr>
@@ -506,14 +506,14 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </tbody></table>
 <ul>
 <li><strong>Abrirlo:</strong> un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.</li>
-<li>Fila 1, las <strong>páginas</strong> de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Granular y Envolvente; sinte: stock, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. <strong>Mantener</strong> un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.</li>
+<li>Fila 1, las <strong>páginas</strong> de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Stock+, Granular y Envolvente; sinte: stock, Stock+, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. <strong>Mantener</strong> un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.</li>
 <li>Fila 2, debajo, los <strong>conmutadores</strong>: brillante = encendido, tenue = apagado. <strong>El sonido de la pista solo cambia aquí:</strong> sample, granular, sinte o entrada, uno por pista; poner uno quita los otros.</li>
-<li>Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos.</li>
+<li>Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos; también la <strong>distorsión</strong>, con la misma curva que en un sample <em>(Alpha 0.07)</em>.</li>
 </ul>
 <p>En Alpha 0.04 el menú era: 1-3 páginas, 4 granular, 5 / 6 entrada y gate, 7 enlace.</p>
 </section>
 <section class="feat" id="stockplus"><h3><span class="code">2.3</span>Página Stock+</h3>
-<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pad 2, en una pista con un sample (el botón de la pista parpadea en azul cielo)</p></div>
+<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pad 2, en una pista con un sample, el granular o el sinte (el botón de la pista parpadea en azul cielo)</p></div>
 <figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Página Stock+: knobs en azul cielo; K6 en el color de su tipo de filtro.">
 <rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
 <circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
@@ -605,7 +605,98 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
 </svg><figcaption>Página Stock+: knobs en azul cielo; K6 en el color de su tipo de filtro.</figcaption></figure>
-<p>La página Stock+ es por pista y se queda hasta apagar <em>(desde Alpha 0.01; K5-K8 desde Alpha 0.02)</em>. Actúa sobre el sample de la pista.</p>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Página Stock+ de una pista con el sinte: K7, el waveshaper en el color de su tipo (suave, dorado); K8, el LFO de la FM.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<text x="49.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">pitch env.</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<text x="115.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">decay</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<text x="181.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">LFO rate</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<text x="247.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">LFO depth</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<text x="313.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">ring</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#ffffff" stroke-width="4"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<text x="379.0" y="82" font-size="10" fill="#ffffff" text-anchor="middle">follow</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#ffd966" stroke-width="4"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<text x="445.0" y="82" font-size="10" fill="#ffd966" text-anchor="middle">waveshaper</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#14a5fe" stroke-width="4"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<text x="511.0" y="82" font-size="10" fill="#14a5fe" text-anchor="middle">FM</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Página Stock+ de una pista con el sinte: K7, el waveshaper en el color de su tipo (suave, dorado); K8, el LFO de la FM.</figcaption></figure>
+<p>La página Stock+ es por pista y se queda hasta apagar <em>(desde Alpha 0.01; K5-K8 desde Alpha 0.02)</em>. Actúa sobre el sample de la pista; con el granular o el sinte, sobre ellos <em>(Alpha 0.07)</em>.</p>
 <table><thead><tr><th>Knob</th><th>Solo</th><th>Con Shift</th></tr></thead><tbody>
 <tr><td>K1</td><td>★ envolvente de tono: centro = nada; derecha = cada golpe empieza más agudo, izquierda más grave (hasta ±24 semitonos)</td><td>ajuste fino</td></tr>
 <tr><td>K2</td><td>★ lo que tarda en volver a la nota (5 ms - 4 s)</td><td>ajuste fino</td></tr>
@@ -621,6 +712,17 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>Clear + knob:</strong> su valor por defecto (en K5-K8, las dos capas).</li>
 <li><strong>Se guarda con el proyecto.</strong> En proyectos de Alpha 0.04, la mitad a tempo de K3 y K8 va ahora al revés.</li>
 <li><strong>El stretch</strong> reparte el sample en granos de unos 43 ms que se mantienen en fase (WSOLA): a 0,5× suena muy bien; a 0,25× la batería puede sonar con clics.</li>
+</ul>
+<p><strong>Con el granular o el sinte</strong> <em>(Alpha 0.07)</em>: los mismos valores de la pista, sobre su sonido.</p>
+<table><thead><tr><th>Knob</th><th>Granular</th><th>Sinte</th></tr></thead><tbody>
+<tr><td>K1-K4</td><td>la envolvente y el LFO de tono, en el tono de cada grano nuevo</td><td>la envolvente y el LFO de tono, en los dos osciladores</td></tr>
+<tr><td>K5, K6</td><td>ring, pitch follow y el tipo de filtro, sobre su filtro</td><td>lo mismo</td></tr>
+<tr><td>K7</td><td>★ <strong>waveshaper</strong>: cantidad (0 = apagado; la ganancia de ×1 a ×16; en bitcrush, los bits). Shift: su <strong>tipo</strong>, <strong>suave</strong> (dorado), <strong>duro</strong> (rojo anaranjado), <strong>plegado</strong> (turquesa), <strong>bitcrush</strong> (lima)</td><td>lo mismo</td></tr>
+<tr><td>K8</td><td>★ LFO de la <strong>posición</strong> de los granos (Shift: su profundidad)</td><td>★ LFO de la <strong>cantidad de FM</strong> (Shift: su profundidad)</td></tr>
+</tbody></table>
+<ul>
+<li>El LED de K7 va en el color del tipo y brilla según la cantidad; con Shift, a tope. Clear + K7: apagado y suave.</li>
+<li>El waveshaper se guarda con el proyecto y lo llevan Clear + el botón de la pista y Duplicate.</li>
 </ul>
 </section>
 <section class="feat" id="granular"><h3><span class="code">2.4</span>Página Granular</h3>
@@ -1366,6 +1468,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Cuenta atrás</strong></td><td>un compás antes de grabar; Shift + Clear</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>De-clicker de loops</strong></td><td>crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Dinámicas por paso</strong></td><td>velocity y retraso al azar dentro del paso; fila 3 de la probabilidad</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Distorsión en granular y sinte</strong></td><td>el knob de distorsión del original también en ellos</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.07</td></tr>
 <tr><td><strong>Enlace estéreo</strong></td><td>una pista y la siguiente como un sonido estéreo; menú, pad 9</td><td><a href="#entrada">2.7 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Entrada de línea</strong></td><td>la entrada de audio como sonido de una pista; menú, pads 13 / 14</td><td><a href="#entrada">2.7 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Envolvente de tono</strong></td><td>Stock+, K1 / K2</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
@@ -1390,7 +1493,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Nivel a 100 / 0</strong></td><td>Shift + knob en los niveles del Mixer</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Nudge</strong></td><td>el primer paso pasa a ser el 1; pad 26 de Pattern Settings</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Órdenes fractal / deconstruido</strong></td><td>pads 27 / 28 de Pattern Settings</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Página Stock+</strong></td><td>ocho knobs más por pista; menú, pad 2</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Página Stock+</strong></td><td>ocho knobs más por pista; menú, pad 2; desde 0.07 también en el granular y el sinte</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Program Change</strong></td><td>canales de escucha y salida; Setup, pads 29 / 30</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Repetir la escena</strong></td><td>la escena actual 1-8 veces; Mixer, Shift + pads 9-16</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Reset de knobs de pista</strong></td><td>Clear + botón de la pista</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.0</td></tr>
@@ -1405,5 +1508,6 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Thru: Out 2 / Merge / Filter</strong></td><td>Duplicate en Advanced Setup</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Tipo de filtro (24 dB, comb)</strong></td><td>Stock+, Shift + K6</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Umbral del compresor</strong></td><td>K5 de la vista Sidechain</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Waveshaper</strong></td><td>suave, duro, plegado o bitcrush en el granular y el sinte; Stock+, K7 (Shift: el tipo)</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.07</td></tr>
 </tbody></table></section>
 <footer>Circuit Remix — MIT. Sin código de Novation.</footer></main></body></html>

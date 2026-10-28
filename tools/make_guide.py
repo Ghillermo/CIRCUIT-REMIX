@@ -14,13 +14,14 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "Alpha 0.06"
+VERSION = "Alpha 0.07"
 OUT = ROOT / "public" / "docs" if (ROOT / "public").is_dir() else ROOT / "docs"     # (the development tree / the public one)
 
 # ---------------------------------------------------------------------------------------------------- colours (the LEDs' RGB, docs/INTERFAZ.md)
 C = dict(white="#ffffff", grey="#5a5a5a", sky="#14a5fe", lilac="#ffa2ff", mint="#8affd0", amber="#ffaf2f", steel="#5e84cc", red="#ff2020",
          yellow="#ffff19", green="#22ee44", orange="#fc9108", peach="#ff8682", cream="#e7ff9e", pink="#ff74be", magenta="#c63ac6",
-         cyan="#44ddff", blue="#2f7bff", track="#ff4e13", rose="#ff4c7b")
+         cyan="#44ddff", blue="#2f7bff", track="#ff4e13", rose="#ff4c7b", gold="#ffd966", redorange="#ff5008", teal="#00ffb5",
+         lime="#c7ff66")
 DIM = 0.32
 
 
@@ -91,8 +92,10 @@ def view(vid, part, es, en, figs=()):
     V.append(dict(id=vid, part=part, es=es, en=en, figs=list(figs)))
 
 
-A = "*(Alpha 0.06)*"
-A_EN = "*(Alpha 0.06)*"
+A = "*(Alpha 0.07)*"
+A_EN = "*(Alpha 0.07)*"
+A6 = "*(Alpha 0.06)*"
+A6_EN = "*(Alpha 0.06)*"
 A5 = "*(desde Alpha 0.05)*"
 A5_EN = "*(since Alpha 0.05)*"
 
@@ -104,7 +107,7 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado {A} es nuevo o cambia en esta versión.
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado {A6} es nuevo o cambia en esta versión.
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 """), ("How to read this manual", "—", """
 Each chapter is a view of the device: how you get there, and what its pads, knobs and buttons do with Circuit Remix. Everything else works as in Novation's original firmware (see its manual); the new gestures are combinations that did nothing in the original or repeated the plain gesture.
@@ -113,7 +116,7 @@ Each chapter is a view of the device: how you get there, and what its pads, knob
 - **K1-K8** = the 8 knobs. **▲ / ▼** = the arrow buttons.
 - **Hold** a button = press it and keep it down; **A + B** = B with A held.
 - **★** = exclusive to Circuit Remix (not in CIRCUIT-HACKS).
-- **(since Alpha 0.0x)** = the release that brought the function. Marked {A}: new or changed in this release.
+- **(since Alpha 0.0x)** = the release that brought the function. Marked {A6}: new or changed in this release.
 - At the end, the **[glossary](#glosario)**: one entry per function, with its view and its gesture.
 """))
 
@@ -236,26 +239,26 @@ MENU_FIG = dict(pads={1: ("white", "stock", "stock"), 2: ("sky", "Stock+", "Stoc
                       4: ("mint", "Sinte", "Synth", True), 9: ("steel", "enlace", "link", True), 11: ("lilac", "gran.\non/off", "gran.\non/off", True),
                       12: ("mint", "sinte\non/off", "synth\non/off", True), 13: ("amber", "entrada", "line in", True), 14: ("amber", "gate", "gate", True)})
 view("menu", "2", ("El menú de pista", "toca el botón de la pista elegida (el menú se queda abierto hasta que eliges algo o lo vuelves a tocar), o mantén el botón de cualquier pista (el menú solo mientras lo mantienes)", f"""
-Los pads se convierten en el menú de esa pista {A}:
+Los pads se convierten en el menú de esa pista {A6}:
 
 | Pad | Qué hace |
 |---|---|
 | **1** | página **stock** de los knobs (la del original) |
-| **2** | página **[Stock+](#stockplus)** (con un sample) |
+| **2** | página **[Stock+](#stockplus)** (con un sample; con el granular o el sinte {A}) |
 | **3** | página **[Granular](#granular)** (con el granular) |
 | **4** | página **[Sinte](#sinte)** (con el sinte) |
-| **5** | página **[Envolvente](#envolvente)** (con el sinte o el granular) {A} |
+| **5** | página **[Envolvente](#envolvente)** (con el sinte o el granular) {A6} |
 | **9** | ★ **[enlace estéreo](#entrada)** con la pista siguiente, sí / no |
 | **11** | el **granular** de la pista, sí / no (hasta 4 pistas); encendido, su página |
 | **12** | ★ el **sinte** de la pista, sí / no (hasta 4 pistas); encendido, su página |
 | **13** | ★ la **[entrada de línea](#entrada)** como sonido de la pista, sí / no |
 | **14** | el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas, por el VCA y el filtro de la pista (oscuro si la pista no es de entrada) |
-| **15** | la fuente de la entrada: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón) {A} |
+| **15** | la fuente de la entrada: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón) {A6} |
 
 - **Abrirlo:** un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.
-- Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Granular y Envolvente; sinte: stock, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
+- Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Stock+, Granular y Envolvente; sinte: stock, Stock+, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
 - Fila 2, debajo, los **conmutadores**: brillante = encendido, tenue = apagado. **El sonido de la pista solo cambia aquí:** sample, granular, sinte o entrada, uno por pista; poner uno quita los otros.
-- Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos.
+- Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos; también la **distorsión**, con la misma curva que en un sample {A}.
 
 En Alpha 0.04 el menú era: 1-3 páginas, 4 granular, 5 / 6 entrada y gate, 7 enlace.
 """, [fig("El menú de una pista con un sample, en la página stock.", "The menu of a track with a sample, on the stock page.",
@@ -266,32 +269,32 @@ En Alpha 0.04 el menú era: 1-3 páginas, 4 granular, 5 / 6 entrada y gate, 7 en
           pads={1: ("white", "stock", "stock", True), 4: ("mint", "Sinte", "Synth"), 5: ("rose", "Envolv.", "Envelope", True), 9: ("steel", "enlace", "link", True),
                 11: ("lilac", "granular", "granular", True), 12: ("mint", "sinte", "synth"), 13: ("amber", "entrada", "line in", True)})]),
      ("The track menu", "tap the selected track's button (the menu stays open until you pick something or tap again), or hold any track's button (the menu only while held)", f"""
-The pads become that track's menu {A_EN}:
+The pads become that track's menu {A6_EN}:
 
 | Pad | What it does |
 |---|---|
 | **1** | the **stock** knob page (the original's) |
-| **2** | the **[Stock+](#stockplus)** page (with a sample) |
+| **2** | the **[Stock+](#stockplus)** page (with a sample; with the granular or the synth {A_EN}) |
 | **3** | the **[Granular](#granular)** page (with the granular) |
 | **4** | the **[Synth](#sinte)** page (with the synth) |
-| **5** | the **[Envelope](#envolvente)** page (with the synth or the granular) {A_EN} |
+| **5** | the **[Envelope](#envolvente)** page (with the synth or the granular) {A6_EN} |
 | **9** | ★ **[stereo link](#entrada)** with the next track, on / off |
 | **11** | the track's **granular**, on / off (up to 4 tracks); switched on, its page |
 | **12** | ★ the track's **synth**, on / off (up to 4 tracks); switched on, its page |
 | **13** | ★ the **[line input](#entrada)** as the track's sound, on / off |
 | **14** | the input's gate: dim = always sounds, bright = only with its notes, through the track's VCA and filter (dark if the track isn't an input track) |
-| **15** | the input's source: the inputs (amber) → the reverb return (cream) → the delay return (peach) {A_EN} |
+| **15** | the input's source: the inputs (amber) → the reverb return (cream) → the delay return (peach) {A6_EN} |
 
 - **Opening it:** a tap on the button of the track already selected leaves it open; it closes when you let go of a menu pad, tap the button again or press any other button. Holding a track's button (¼ s) opens it only while held, like the original's view buttons.
-- Row 1, the track's **pages**: only those of its sound (sample: stock and Stock+; granular: stock, Granular and Envelope; synth: stock, Synth and Envelope; input: stock); the others dark. Bright = the one shown. **Holding** a page pad (½ s or more) shows it only until you let go, then the previous one returns.
+- Row 1, the track's **pages**: only those of its sound (sample: stock and Stock+; granular: stock, Stock+, Granular and Envelope; synth: stock, Stock+, Synth and Envelope; input: stock); the others dark. Bright = the one shown. **Holding** a page pad (½ s or more) shows it only until you let go, then the previous one returns.
 - Row 2, below, the **toggles**: bright = on, dim = off. **The track's sound only changes here:** sample, granular, synth or input, one per track; setting one removes the others.
-- With the granular or the synth, the stock page leaves the original's knobs (filter, envelope, pitch, level…) acting on them.
+- With the granular or the synth, the stock page leaves the original's knobs (filter, envelope, pitch, level…) acting on them; the **distortion** too, with the same curve as on a sample {A_EN}.
 
 In Alpha 0.04 the menu was: 1-3 pages, 4 granular, 5 / 6 input and gate, 7 link.
 """))
 
-view("stockplus", "2", ("Página Stock+", "menú de pista, pad 2, en una pista con un sample (el botón de la pista parpadea en azul cielo)", f"""
-La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8 desde Alpha 0.02)*. Actúa sobre el sample de la pista.
+view("stockplus", "2", ("Página Stock+", "menú de pista, pad 2, en una pista con un sample, el granular o el sinte (el botón de la pista parpadea en azul cielo)", f"""
+La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8 desde Alpha 0.02)*. Actúa sobre el sample de la pista; con el granular o el sinte, sobre ellos {A}.
 
 | Knob | Solo | Con Shift |
 |---|---|---|
@@ -308,11 +311,28 @@ La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8
 - **Clear + knob:** su valor por defecto (en K5-K8, las dos capas).
 - **Se guarda con el proyecto.** En proyectos de Alpha 0.04, la mitad a tempo de K3 y K8 va ahora al revés.
 - **El stretch** reparte el sample en granos de unos 43 ms que se mantienen en fase (WSOLA): a 0,5× suena muy bien; a 0,25× la batería puede sonar con clics.
+
+**Con el granular o el sinte** {A}: los mismos valores de la pista, sobre su sonido.
+
+| Knob | Granular | Sinte |
+|---|---|---|
+| K1-K4 | la envolvente y el LFO de tono, en el tono de cada grano nuevo | la envolvente y el LFO de tono, en los dos osciladores |
+| K5, K6 | ring, pitch follow y el tipo de filtro, sobre su filtro | lo mismo |
+| K7 | ★ **waveshaper**: cantidad (0 = apagado; la ganancia de ×1 a ×16; en bitcrush, los bits). Shift: su **tipo**, **suave** (dorado), **duro** (rojo anaranjado), **plegado** (turquesa), **bitcrush** (lima) | lo mismo |
+| K8 | ★ LFO de la **posición** de los granos (Shift: su profundidad) | ★ LFO de la **cantidad de FM** (Shift: su profundidad) |
+
+- El LED de K7 va en el color del tipo y brilla según la cantidad; con Shift, a tope. Clear + K7: apagado y suave.
+- El waveshaper se guarda con el proyecto y lo llevan Clear + el botón de la pista y Duplicate.
 """, [fig("Página Stock+: knobs en azul cielo; K6 en el color de su tipo de filtro.", "Stock+ page: knobs in sky blue; K6 in its filter type's colour.",
           knobs={1: ("env. tono", "pitch env.", "", "sky"), 2: ("caída", "decay", "", "sky"), 3: ("LFO vel.", "LFO rate", "", "sky"),
                  4: ("LFO prof.", "LFO depth", "", "sky"), 5: ("ring", "ring", "", "sky"), 6: ("follow", "follow", "", "white"),
-                 7: ("stretch", "stretch", "", "sky"), 8: ("scan", "scan", "", "sky")})]), ("Stock+ page", "track menu, pad 2, on a track with a sample (the track's button blinks sky blue)", f"""
-The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8 since Alpha 0.02)*. It acts on the track's sample.
+                 7: ("stretch", "stretch", "", "sky"), 8: ("scan", "scan", "", "sky")}),
+      fig("Página Stock+ de una pista con el sinte: K7, el waveshaper en el color de su tipo (suave, dorado); K8, el LFO de la FM.",
+          "Stock+ page of a synth track: K7, the waveshaper in its type's colour (soft, gold); K8, the FM's LFO.",
+          knobs={1: ("env. tono", "pitch env.", "", "sky"), 2: ("caída", "decay", "", "sky"), 3: ("LFO vel.", "LFO rate", "", "sky"),
+                 4: ("LFO prof.", "LFO depth", "", "sky"), 5: ("ring", "ring", "", "sky"), 6: ("follow", "follow", "", "white"),
+                 7: ("waveshaper", "waveshaper", "", "gold"), 8: ("FM", "FM", "", "sky")})]), ("Stock+ page", "track menu, pad 2, on a track with a sample, the granular or the synth (the track's button blinks sky blue)", f"""
+The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8 since Alpha 0.02)*. It acts on the track's sample; with the granular or the synth, on them {A_EN}.
 
 | Knob | Alone | With Shift |
 |---|---|---|
@@ -329,6 +349,18 @@ The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8
 - **Clear + knob:** its default (on K5-K8, both layers).
 - **Saved with the project.** In Alpha 0.04 projects, the synced half of K3 and K8 now runs the other way.
 - **The stretch** splits the sample into ~43 ms grains kept in phase (WSOLA): at 0.5× it sounds very good; at 0.25× drums may click.
+
+**With the granular or the synth** {A_EN}: the track's same values, on its sound.
+
+| Knob | Granular | Synth |
+|---|---|---|
+| K1-K4 | the pitch envelope and LFO, on each new grain's pitch | the pitch envelope and LFO, on both oscillators |
+| K5, K6 | ring, pitch follow and the filter type, on its filter | the same |
+| K7 | ★ **waveshaper**: amount (0 = off; the gain from ×1 to ×16; for bitcrush, the bits). Shift: its **type**, **soft** (gold), **hard** (red-orange), **fold** (teal), **bitcrush** (lime) | the same |
+| K8 | ★ an LFO on the grains' **position** (Shift: its depth) | ★ an LFO on the **FM amount** (Shift: its depth) |
+
+- K7's LED is in the type's colour, as bright as the amount; with Shift, fully. Clear + K7: off and soft.
+- The waveshaper is saved with the project and goes along with Clear + the track's button and Duplicate.
 """))
 
 view("granular", "2", ("Página Granular", "menú de pista, pad 11 (pone el granular y su página) o pad 3 (su página) (el botón de la pista parpadea en lila)", f"""
@@ -408,7 +440,7 @@ view("sinte", "2", ("Página Sinte", "menú de pista, pad 12 (pone el sinte y su
 """))
 
 view("envolvente", "2", ("Página Envolvente", "menú de pista, pad 5, en una pista con el sinte o el granular (el botón de la pista parpadea en rosa)", f"""
-★ La envolvente del sinte y del granular, según el **modo de reproducción** de la pista (Sample mode, pads 25 / 26 / 27) {A}:
+★ La envolvente del sinte y del granular, según el **modo de reproducción** de la pista (Sample mode, pads 25 / 26 / 27) {A6}:
 
 | Knob | Qué hace |
 |---|---|
@@ -424,7 +456,7 @@ view("envolvente", "2", ("Página Envolvente", "menú de pista, pad 5, en una pi
 """, [fig("Página Envolvente: K1-K4 en rosa, K5-K8 apagados.", "Envelope page: K1-K4 in rose, K5-K8 off.",
           knobs={1: ("inicio", "start", "", "rose"), 2: ("longitud", "length", "", "rose"), 3: ("pendiente", "slope", "", "rose"),
                  4: ("→ filtro", "→ filter", "", "rose")})]), ("Envelope page", "track menu, pad 5, on a synth or granular track (the track's button blinks rose)", f"""
-★ The synth's and the granular's envelope, by the track's **play mode** (Sample mode, pads 25 / 26 / 27) {A_EN}:
+★ The synth's and the granular's envelope, by the track's **play mode** (Sample mode, pads 25 / 26 / 27) {A6_EN}:
 
 | Knob | What it does |
 |---|---|
@@ -760,7 +792,7 @@ GLOSSARY = [
     ("Nivel a 100 / 0", "Level to 100 / 0", "Shift + knob en los niveles del Mixer", "Shift + knob on the Mixer's levels", "mixer", "0.0"),
     ("Nudge", "Nudge", "el primer paso pasa a ser el 1; pad 26 de Pattern Settings", "the first step becomes step 1; Pattern Settings pad 26", "patternsettings", "0.0"),
     ("Órdenes fractal / deconstruido", "Fractal / deconstructed orders", "pads 27 / 28 de Pattern Settings", "Pattern Settings pads 27 / 28", "patternsettings", "0.0"),
-    ("Página Stock+", "Stock+ page", "ocho knobs más por pista; menú, pad 2", "eight more knobs per track; menu, pad 2", "stockplus", "0.01"),
+    ("Página Stock+", "Stock+ page", "ocho knobs más por pista; menú, pad 2; desde 0.07 también en el granular y el sinte", "eight more knobs per track; menu, pad 2; since 0.07 on the granular and the synth too", "stockplus", "0.01"),
     ("Program Change", "Program Change", "canales de escucha y salida; Setup, pads 29 / 30", "listen and send channels; Setup, pads 29 / 30", "setup", "0.0"),
     ("Repetir la escena", "Repeat the scene", "la escena actual 1-8 veces; Mixer, Shift + pads 9-16", "the current scene 1-8 times; Mixer, Shift + pads 9-16", "mixer", "0.0"),
     ("Reset de knobs de pista", "Track knobs reset", "Clear + botón de la pista", "Clear + the track's button", "pista", "0.0"),
@@ -773,6 +805,8 @@ GLOSSARY = [
     ("Teclado externo al arpegiador", "External keyboard into the arpeggiator", "Advanced Setup, pad 22", "Advanced Setup, pad 22", "setup", "0.04"),
     ("Thru: Out 2 / Merge / Filter", "Thru: Out 2 / Merge / Filter", "Duplicate en Advanced Setup", "Duplicate in Advanced Setup", "setup", "0.0"),
     ("Tipo de filtro (24 dB, comb)", "Filter type (24 dB, comb)", "Stock+, Shift + K6", "Stock+, Shift + K6", "stockplus", "0.02"),
+    ("Waveshaper", "Waveshaper", "suave, duro, plegado o bitcrush en el granular y el sinte; Stock+, K7 (Shift: el tipo)", "soft, hard, fold or bitcrush on the granular and the synth; Stock+, K7 (Shift: the type)", "stockplus", "0.07"),
+    ("Distorsión en granular y sinte", "Distortion on granular and synth", "el knob de distorsión del original también en ellos", "the original's distortion knob on them too", "menu", "0.07"),
     ("Umbral del compresor", "Compressor threshold", "K5 de la vista Sidechain", "Sidechain view K5", "fx", "0.01"),
     ("Envíos de FX en los knobs", "FX sends on the knobs", "▼ / ▲ en la vista FX", "▼ / ▲ in the FX view", "fx", "0.0"),
 ]
@@ -807,7 +841,7 @@ def part_name(p, lang): return next(x for x in PARTS if x[0] == p)[1 if lang == 
 
 def texts(v, lang):
     t = v[lang]
-    return t[0], t[1], t[2].strip("\n").replace("{A}", A if lang == "es" else A_EN)
+    return t[0], t[1], t[2].strip("\n").replace("{A6}", A if lang == "es" else A_EN)
 
 
 def glossary_md(lang, link):

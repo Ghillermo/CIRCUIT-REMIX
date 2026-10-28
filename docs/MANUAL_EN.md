@@ -1,4 +1,4 @@
-# Circuit Remix Alpha 0.06 — manual
+# Circuit Remix Alpha 0.07 — manual
 
 [Español](MANUAL.md) · [illustrated version](manual/en.html)
 
@@ -68,7 +68,7 @@ Each chapter is a view of the device: how you get there, and what its pads, knob
 - **K1-K8** = the 8 knobs. **▲ / ▼** = the arrow buttons.
 - **Hold** a button = press it and keep it down; **A + B** = B with A held.
 - **★** = exclusive to Circuit Remix (not in CIRCUIT-HACKS).
-- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.06)*: new or changed in this release.
+- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.07)*: new or changed in this release.
 - At the end, the **[glossary](#glosario)**: one entry per function, with its view and its gesture.
 
 <a id="colores"></a>
@@ -152,7 +152,7 @@ The pads become that track's menu *(Alpha 0.06)*:
 | Pad | What it does |
 |---|---|
 | **1** | the **stock** knob page (the original's) |
-| **2** | the **[Stock+](#stockplus)** page (with a sample) |
+| **2** | the **[Stock+](#stockplus)** page (with a sample; with the granular or the synth *(Alpha 0.07)*) |
 | **3** | the **[Granular](#granular)** page (with the granular) |
 | **4** | the **[Synth](#sinte)** page (with the synth) |
 | **5** | the **[Envelope](#envolvente)** page (with the synth or the granular) *(Alpha 0.06)* |
@@ -164,18 +164,18 @@ The pads become that track's menu *(Alpha 0.06)*:
 | **15** | the input's source: the inputs (amber) → the reverb return (cream) → the delay return (peach) *(Alpha 0.06)* |
 
 - **Opening it:** a tap on the button of the track already selected leaves it open; it closes when you let go of a menu pad, tap the button again or press any other button. Holding a track's button (¼ s) opens it only while held, like the original's view buttons.
-- Row 1, the track's **pages**: only those of its sound (sample: stock and Stock+; granular: stock, Granular and Envelope; synth: stock, Synth and Envelope; input: stock); the others dark. Bright = the one shown. **Holding** a page pad (½ s or more) shows it only until you let go, then the previous one returns.
+- Row 1, the track's **pages**: only those of its sound (sample: stock and Stock+; granular: stock, Stock+, Granular and Envelope; synth: stock, Stock+, Synth and Envelope; input: stock); the others dark. Bright = the one shown. **Holding** a page pad (½ s or more) shows it only until you let go, then the previous one returns.
 - Row 2, below, the **toggles**: bright = on, dim = off. **The track's sound only changes here:** sample, granular, synth or input, one per track; setting one removes the others.
-- With the granular or the synth, the stock page leaves the original's knobs (filter, envelope, pitch, level…) acting on them.
+- With the granular or the synth, the stock page leaves the original's knobs (filter, envelope, pitch, level…) acting on them; the **distortion** too, with the same curve as on a sample *(Alpha 0.07)*.
 
 In Alpha 0.04 the menu was: 1-3 pages, 4 granular, 5 / 6 input and gate, 7 link.
 
 <a id="stockplus"></a>
 ### 2.3 Stock+ page
 
-*How to get there:* track menu, pad 2, on a track with a sample (the track's button blinks sky blue)
+*How to get there:* track menu, pad 2, on a track with a sample, the granular or the synth (the track's button blinks sky blue)
 
-The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8 since Alpha 0.02)*. It acts on the track's sample.
+The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8 since Alpha 0.02)*. It acts on the track's sample; with the granular or the synth, on them *(Alpha 0.07)*.
 
 | Knob | Alone | With Shift |
 |---|---|---|
@@ -192,6 +192,18 @@ The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8
 - **Clear + knob:** its default (on K5-K8, both layers).
 - **Saved with the project.** In Alpha 0.04 projects, the synced half of K3 and K8 now runs the other way.
 - **The stretch** splits the sample into ~43 ms grains kept in phase (WSOLA): at 0.5× it sounds very good; at 0.25× drums may click.
+
+**With the granular or the synth** *(Alpha 0.07)*: the track's same values, on its sound.
+
+| Knob | Granular | Synth |
+|---|---|---|
+| K1-K4 | the pitch envelope and LFO, on each new grain's pitch | the pitch envelope and LFO, on both oscillators |
+| K5, K6 | ring, pitch follow and the filter type, on its filter | the same |
+| K7 | ★ **waveshaper**: amount (0 = off; the gain from ×1 to ×16; for bitcrush, the bits). Shift: its **type**, **soft** (gold), **hard** (red-orange), **fold** (teal), **bitcrush** (lime) | the same |
+| K8 | ★ an LFO on the grains' **position** (Shift: its depth) | ★ an LFO on the **FM amount** (Shift: its depth) |
+
+- K7's LED is in the type's colour, as bright as the amount; with Shift, fully. Clear + K7: off and soft.
+- The waveshaper is saved with the project and goes along with Clear + the track's button and Duplicate.
 
 <a id="granular"></a>
 ### 2.4 Granular page
@@ -460,6 +472,7 @@ The new knobs move the original's parameters with their usual MIDI (Circuit Rhyt
 | **Count-in** | a bar before recording; Shift + Clear | [1.1 Transport, metronome and quantize](#transporte) | Alpha 0.0 |
 | **Cue mode** | mix on the left, cue on the right; Mixer, pan, Shift + knob | [5.1 Mixer](#mixer) | Alpha 0.04 |
 | **Delete a pack** | Clear + pack twice in Packs | [6.1 Projects and Packs](#projects) | Alpha 0.01 |
+| **Distortion on granular and synth** | the original's distortion knob on them too | [2.2 The track menu](#menu) | Alpha 0.07 |
 | **Envelope by play mode** | start, length, slope and → filter of the synth and the granular; menu, pad 5 | [2.6 Envelope page](#envolvente) | Alpha 0.06 |
 | **External keyboard into the arpeggiator** | Advanced Setup, pad 22 | [6.2 Setup and Advanced Setup](#setup) | Alpha 0.04 |
 | **Filter type (24 dB, comb)** | Stock+, Shift + K6 | [2.3 Stock+ page](#stockplus) | Alpha 0.02 |
@@ -496,7 +509,7 @@ The new knobs move the original's parameters with their usual MIDI (Circuit Rhyt
 | **Sidechain on the knobs** | Sidechain view K1-K4 | [5.2 FX and Sidechain](#fx) | Alpha 0.0 |
 | **Stereo link** | a track and the next as one stereo sound; menu, pad 9 | [2.7 Line input and stereo link](#entrada) | Alpha 0.04 |
 | **Stereo recording** | L and R into two slots; Sample Rec, pad 24 | [4.2 Sample Rec](#samplerec) | Alpha 0.04 |
-| **Stock+ page** | eight more knobs per track; menu, pad 2 | [2.3 Stock+ page](#stockplus) | Alpha 0.01 |
+| **Stock+ page** | eight more knobs per track; menu, pad 2; since 0.07 on the granular and the synth too | [2.3 Stock+ page](#stockplus) | Alpha 0.01 |
 | **Stretch** | slower or faster without changing pitch; Stock+ K7, Sample mode pads 9 / 10 | [2.3 Stock+ page](#stockplus) | Alpha 0.02 |
 | **Synth** | two oscillators with FM on up to 4 tracks; menu, pads 12 / 4 | [2.5 Synth page](#sinte) | Alpha 0.05 |
 | **Thru: Out 2 / Merge / Filter** | Duplicate in Advanced Setup | [6.2 Setup and Advanced Setup](#setup) | Alpha 0.0 |
@@ -504,3 +517,4 @@ The new knobs move the original's parameters with their usual MIDI (Circuit Rhyt
 | **Track menu** | tap the selected track's button (stays open) or hold a track's button | [2.2 The track menu](#menu) | Alpha 0.04 |
 | **USB merge** | DIN In also over USB; Advanced Setup, pad 23 | [6.2 Setup and Advanced Setup](#setup) | Alpha 0.04 |
 | **Velocity marks** | on a marked step automation returns to the knob; Shift + step | [3.1 Velocity and Micro Step](#velocity) | Alpha 0.04 |
+| **Waveshaper** | soft, hard, fold or bitcrush on the granular and the synth; Stock+, K7 (Shift: the type) | [2.3 Stock+ page](#stockplus) | Alpha 0.07 |
