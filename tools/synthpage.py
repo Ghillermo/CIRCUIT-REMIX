@@ -67,6 +67,11 @@ PAGE_HOLD = 500
 # its page (granular / synth; the line input: stock), off: stock; the sticky menu (granpage menu2) closes when a menu pad is let go
 SND_SAMPLE, SND_GRAN, SND_SYNTH, SND_LINE = 0, 1, 2, 3
 PAGE_SND = (None, SND_SAMPLE, SND_GRAN, SND_SYNTH)     # the page pads 1-4: the sound each needs (None = any)
+# env (RH54; tools/envpage.py has the page): the menu's pad 5 = the Envelope page, for a granular or synth track (its bit t in the menu's
+# byte + 3, M_ENV); a page pad 1-4, a sound switched (pads 11-13) or the Synth page set takes it off; held, as the others (pagehold's bit 3);
+# py_sound also as c_sysnd for envpage; the synth's length (the release's value) 64 by default (~200 ms: one-shot is percussive now)
+UI_PAD_ENV, M_ENV = 4, 3
+LEN_DEF = 64
 UI_KNOB, UI_BLINK, UI_DIM = 0x4F, 0x4F, 0x50
 UI_WAVES = (0x55, 0x2F, 0x1E, 0x01)
 T_DIM = GP.T_DIM
@@ -126,7 +131,7 @@ def model_block(slots):
     return bytes(blk)
 
 
-def _pad_ui(a, E, bc, L, prev, menu2=False):
+def _pad_ui(a, E, bc, L, prev, menu2=False, env=False):
     """(ui) c_sypad: pad 4 the Synth page (the synth put on the track first), pad 12 the synth on / off; pads 1-3 leave our page; pads 3 / 11 /
     13 (granular page, granular on, the line input) take the synth off the track first, then theirs; a page pad's press remembered (pagehold),
     c_syrel: held past PAGE_HOLD, the track's pages back at its release"""
@@ -143,19 +148,59 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
     E(cmp_imm, 0, 8)
     bc("pd_p", "hs")
     E(mov_reg, 4, 0)                                                      # r4 = the menu's track
-    E(cmp_imm, 5, UI_PAD_PAGE)
+    E(cmp_imm, 5, UI_PAD_ENV if env else UI_PAD_PAGE)
     E(b_cond, "pd_ns", "hi")
     if menu2:                                                             # (menu2) a page of another sound: nothing (swallowed)
         E(cmp_imm, 5, 0)
         E(b_cond, "pd_ok", "eq")
         E(bl, "py_sound")
+        if env:                                                           # (env) pad 5: a granular or synth track
+            E(cmp_imm, 5, UI_PAD_ENV)
+            E(b_cond, "pd_ne", "ne")
+            E(cmp_imm, 0, SND_GRAN)
+            E(b_cond, "pd_ok", "eq")
+            E(cmp_imm, 0, SND_SYNTH)
+            E(b_cond, "pd_ok", "eq")
+            E(b, "pd_no")
+            a.label("pd_ne")
         E(adds_imm8, 0, 1)
         E(cmp_reg, 0, 5)
         E(b_cond, "pd_ok", "eq")
+        a.label("pd_no")
         E(bl, "py_sw")
         E(b, "pd_x")
         a.label("pd_ok")
     E(bl, "py_snap")                                                      # a page pad: the pages as they are, its press
+    if env:                                                               # (env) pad 5: the Envelope page, the others off
+        E(cmp_imm, 5, UI_PAD_ENV)
+        E(b_cond, "pd_ev", "ne")
+        E(bl, "py_sw")
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, 0)
+        E(bl, "c_sysetpg")
+        E(bl, L["c_spst"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "pv_g", "eq")
+        E(movs_imm, 1, 1)
+        E(lsls_reg, 1, 4)
+        E(ldrb_imm, 2, 0, 0)
+        E(bics_reg, 2, 1)
+        E(strb_imm, 2, 0, 0)
+        a.label("pv_g")
+        E(bl, L["c_gpmst"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "pd_x", "eq")
+        E(movs_imm, 1, 1)
+        E(lsls_reg, 1, 4)
+        E(ldrb_imm, 2, 0, GP.M_GRAN)
+        E(bics_reg, 2, 1)
+        E(strb_imm, 2, 0, GP.M_GRAN)
+        E(ldrb_imm, 2, 0, M_ENV)
+        E(orrs_reg, 2, 1)
+        E(strb_imm, 2, 0, M_ENV)
+        E(b, "pd_x")
+        a.label("pd_ev")
+        E(bl, "py_envoff")                                                # pads 1-4: the Envelope page off
     a.label("pd_ns")
     E(cmp_imm, 5, UI_PAD_PAGE)
     bc("pd_page", "eq")
@@ -177,6 +222,8 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
     a.label("pd_dr")
     E(mov_reg, 0, 4)                                                      # the synth off the track, then theirs
     E(bl, "c_sydrop")
+    if env:
+        E(bl, "py_envoff")
     if menu2:                                                             # (menu2) and Stock+'s page off (the sound changes)
         E(bl, L["c_spst"])
         E(cmp_imm, 0, 0)
@@ -201,6 +248,8 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
     E(cmp_imm, 0, NSL)
     E(b_cond, "pd_x", "hs")                                               # none free: nothing
     a.label("pd_pgon")
+    if env:
+        E(bl, "py_envoff")
     E(mov_reg, 0, 4)                                                      # the Synth page: Stock+'s and Granular's off
     E(movs_imm, 1, 1)
     E(bl, "c_sysetpg")
@@ -225,6 +274,8 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
     E(pop_list, [0, 1, 2, 3, 4, 5, 6], pc=True)
     a.label("pd_tog")
     E(bl, "py_sw")
+    if env:
+        E(bl, "py_envoff")
     E(mov_reg, 0, 4)
     E(bl, "c_syslot")
     E(cmp_imm, 0, NSL)
@@ -238,6 +289,26 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
         E(cmp_imm, 0, NSL)
         bc("pd_pgon", "lo")
     E(b, "pd_x")
+    if env:
+        # py_envoff (r4 = track): its Envelope page off; clobbers r0-r3
+        a.label("py_envoff")
+        E(push_list, [4], lr=True)
+        E(bl, L["c_gpmst"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "eo_x", "eq")
+        E(movs_imm, 1, 1)
+        E(lsls_reg, 1, 4)
+        E(ldrb_imm, 2, 0, M_ENV)
+        E(bics_reg, 2, 1)
+        E(strb_imm, 2, 0, M_ENV)
+        a.label("eo_x")
+        E(pop_list, [4], pc=True)
+        # c_sysnd(r0 = track) -> r0 = its sound (py_sound for the other modules); clobbers r1-r3
+        a.label("c_sysnd")
+        E(push_list, [4], lr=True)
+        E(mov_reg, 4, 0)
+        E(bl, "py_sound")
+        E(pop_list, [4], pc=True)
     if menu2:
         # py_sound (r4 = track) -> r0 = its sound: SND_SAMPLE, SND_GRAN, SND_SYNTH, SND_LINE; clobbers r1-r3
         a.label("py_sound")
@@ -283,7 +354,8 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
     E(strb_imm, 5, 6, 0)
     E(strb_imm, 4, 6, 1)
     E(movs_imm, 5, 0)
-    for n, (get, off) in enumerate(((L["c_spst"], 0), (L["c_gpmst"], GP.M_GRAN), ("c_syram", R_PAGE))):
+    for n, (get, off) in enumerate(((L["c_spst"], 0), (L["c_gpmst"], GP.M_GRAN), ("c_syram", R_PAGE))
+                                   + (((L["c_gpmst"], M_ENV),) if env else ())):
         E(bl, get)
         E(cmp_imm, 0, 0)
         E(b_cond, f"sn_{n}", "eq")
@@ -324,7 +396,8 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
     E(cmp_reg, 0, 1)
     bc("rl_p", "lo")                                                      # a tap: the page stays
     E(ldrb_imm, 6, 5, 1)                                                  # r6 = its track
-    for n, (get, off) in enumerate(((L["c_spst"], 0), (L["c_gpmst"], GP.M_GRAN), ("c_syram", R_PAGE))):
+    for n, (get, off) in enumerate(((L["c_spst"], 0), (L["c_gpmst"], GP.M_GRAN), ("c_syram", R_PAGE))
+                                   + (((L["c_gpmst"], M_ENV),) if env else ())):
         E(bl, get)
         E(cmp_imm, 0, 0)
         E(b_cond, f"rs_{n}", "eq")
@@ -390,7 +463,7 @@ def _pad_ui(a, E, bc, L, prev, menu2=False):
     E(pop_list, [5], pc=True)
 
 
-def arm_code(base, L, prev, ui=False, menu2=False):
+def arm_code(base, L, prev, ui=False, menu2=False, env=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -407,7 +480,8 @@ def arm_code(base, L, prev, ui=False, menu2=False):
         a.label(n)
 
     t_def = base
-    E(raw, bytes(DEF) + bytes(STEP) + bytes(BIP_UI if ui else BIP) + bytes(ORDER))
+    dft = DEF[:K_REL] + (LEN_DEF,) + DEF[K_REL + 1:] if env else DEF
+    E(raw, bytes(dft) + bytes(STEP) + bytes(BIP_UI if ui else BIP) + bytes(ORDER))
     t_step, t_bip, t_order = t_def + 16, t_def + 32, t_def + 48
     t_gld = t_def + 64
     E(raw, b"".join(x.to_bytes(4, "little") for x in glide_t()))
@@ -834,7 +908,7 @@ def arm_code(base, L, prev, ui=False, menu2=False):
     E(pop_list, [4, 5], pc=True)
 
     if ui:
-        _pad_ui(a, E, bc, L, prev, menu2)
+        _pad_ui(a, E, bc, L, prev, menu2, env)
     else:
         # ---- c_sypad (the controller's pad press, slink's head after it: r0 = ctrl, r1 = pad, r2 = velocity): the menu open, pad 8 is ours;
         # pads 1-3 leave our page; pads 3-5 take the synth off the track first
@@ -1203,7 +1277,7 @@ def arm_code(base, L, prev, ui=False, menu2=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, ui=False, menu2=False):
+def install(img, report, base_addr, ui=False, menu2=False, env=False):
     """The controller's pad press (in front of slink's), the container's knob slot (in front of granpage's), the head of the LED calls, the
     note-off's one-shot test.  Needs granpage multi, linein two, slink, stockplus, kbright, cthresh, rhrec, rhstate ram2, and synth0 on core 0."""
     import rhbuild
@@ -1226,7 +1300,8 @@ def install(img, report, base_addr, ui=False, menu2=False):
         assert rhbuild.bw_target(img, GP.PR_ENTRY) == prev["rel"]
     assert ui or not menu2
     assert not menu2 or report["granpage"].get("menu2"), "synthpage menu2 needs granpage's"
-    code_, labels = arm_code(base_addr, L, prev, ui, menu2)
+    assert menu2 or not env
+    code_, labels = arm_code(base_addr, L, prev, ui, menu2, env)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1237,6 +1312,6 @@ def install(img, report, base_addr, ui=False, menu2=False):
     rhbuild.patch(img, NOFF_AT, NOFF_HEAD, bl(NOFF_AT, labels["c_synoff"]))
     if ui:
         rhbuild.patch(img, GP.PR_ENTRY, f"b.w #{prev['rel']:#x}", b_w(GP.PR_ENTRY, labels["c_syrel"]))
-    report["synthpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}),
+    report["synthpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code_

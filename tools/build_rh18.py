@@ -26,7 +26,7 @@ import trkcopy  # noqa: E402
 NAME = "RH18"
 
 
-def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True, dsp=False, scniter=False, bpm0=False, rh30=False, rh31=False, ram2=False, ui=False):
+def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True, dsp=False, scniter=False, bpm0=False, rh30=False, rh31=False, ram2=False, ui=False, tcram=False):
     b = build_rh01.build(name, diag=diag, dsp=dsp, ram2=ram2)
     b.add("countin", countin, v2=True, **({"bpm0": True} if bpm0 else {}))
     b.add("quant", quant, v2=True)
@@ -43,7 +43,7 @@ def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag
     b.add("drumarp", drumarp, notes=True, **({"rec": True} if arp_rec else {}), **({"single": True} if arp1 else {}), **({"bpm0": True} if bpm0 else {}),
           **({"ui": True} if ui else {}))
     b.add("cscale", cscale)
-    b.add("trkcopy", trkcopy)
+    b.add("trkcopy", trkcopy, **({"ram": True} if tcram else {}))   # (RH54: the photos in RAM)
     b.add("dqfix", dqfix)
     return b
 

@@ -12,7 +12,8 @@ NAME = "RH51"
 
 def build(name=NAME, **kw):
     b = build_rh50.build(name, synth=True, **kw)
-    b.add("synthpage", synthpage, **({"ui": True} if kw.get("ui") else {}), **({"menu2": True} if kw.get("menu2") else {}))
+    b.add("synthpage", synthpage, **({"ui": True} if kw.get("ui") else {}), **({"menu2": True} if kw.get("menu2") else {}),
+          **({"env": True} if kw.get("rh54") else {}))
     return b
 
 

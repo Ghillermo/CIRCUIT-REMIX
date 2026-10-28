@@ -1,8 +1,8 @@
-# Circuit Remix Alpha 0.05 — manual
+# Circuit Remix Alpha 0.06 — manual
 
 [English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)
 
-> ⚠️ **Alpha 0.05 es experimental:** lo nuevo (el sinte y la interfaz de Alpha 0.05, y casi todo lo de Alpha 0.04) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**
+> ⚠️ **Alpha 0.06 es experimental:** lo nuevo (la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04 / 0.05) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**
 
 Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.
 
@@ -25,8 +25,9 @@ Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista
 - [2.3 Página Stock+](#stockplus)
 - [2.4 Página Granular](#granular)
 - [2.5 Página Sinte](#sinte)
-- [2.6 Entrada de línea y enlace estéreo](#entrada)
-- [2.7 Vista Note](#note)
+- [2.6 Página Envolvente](#envolvente)
+- [2.7 Entrada de línea y enlace estéreo](#entrada)
+- [2.8 Vista Note](#note)
 
 **3. Pasos y patrón**
 
@@ -67,13 +68,13 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.05)* es nuevo o cambia en esta versión.
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.06)* es nuevo o cambia en esta versión.
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 
 <a id="colores"></a>
 ### 0.2 El código de colores
 
-Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas *(Alpha 0.05)*:
+Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas *(desde Alpha 0.05)*:
 
 | Regla | Qué ves |
 |---|---|
@@ -94,6 +95,7 @@ Cada página de knobs de una pista tiene su color, el mismo en sus knobs, en el 
 | Stock+ | azul cielo |
 | Granular | lila |
 | Sinte | menta |
+| Envolvente | rosa |
 
 <a id="instalar"></a>
 ### 0.3 Instalar y volver al original
@@ -102,7 +104,7 @@ Cada página de knobs de una pista tiene su color, el mismo en sus knobs, en el 
 2. Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.
 3. Elige la versión y envíala al aparato por USB.
 
-**Versiones S** (A0.05S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
+**Versiones S** (A0.06S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
 
 **Volver al firmware oficial:** mantén **Sample Rec + Samples + Note** al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.
 
@@ -145,7 +147,7 @@ Pulsar el botón sin mantenerlo elige la pista, como en el original. Desde el Mi
 
 *Cómo se llega:* toca el botón de la pista elegida (el menú se queda abierto hasta que eliges algo o lo vuelves a tocar), o mantén el botón de cualquier pista (el menú solo mientras lo mantienes)
 
-Los pads se convierten en el menú de esa pista *(Alpha 0.05)*:
+Los pads se convierten en el menú de esa pista *(Alpha 0.06)*:
 
 | Pad | Qué hace |
 |---|---|
@@ -153,14 +155,16 @@ Los pads se convierten en el menú de esa pista *(Alpha 0.05)*:
 | **2** | página **[Stock+](#stockplus)** (con un sample) |
 | **3** | página **[Granular](#granular)** (con el granular) |
 | **4** | página **[Sinte](#sinte)** (con el sinte) |
+| **5** | página **[Envolvente](#envolvente)** (con el sinte o el granular) *(Alpha 0.06)* |
 | **9** | ★ **[enlace estéreo](#entrada)** con la pista siguiente, sí / no |
 | **11** | el **granular** de la pista, sí / no (hasta 4 pistas); encendido, su página |
 | **12** | ★ el **sinte** de la pista, sí / no (hasta 4 pistas); encendido, su página |
 | **13** | ★ la **[entrada de línea](#entrada)** como sonido de la pista, sí / no |
-| **14** | el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas (oscuro si la pista no es de entrada) |
+| **14** | el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas, por el VCA y el filtro de la pista (oscuro si la pista no es de entrada) |
+| **15** | la fuente de la entrada: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón) *(Alpha 0.06)* |
 
 - **Abrirlo:** un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.
-- Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock y Granular; sinte: stock y Sinte; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
+- Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Granular y Envolvente; sinte: stock, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
 - Fila 2, debajo, los **conmutadores**: brillante = encendido, tenue = apagado. **El sonido de la pista solo cambia aquí:** sample, granular, sinte o entrada, uno por pista; poner uno quita los otros.
 - Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos.
 
@@ -177,12 +181,12 @@ La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8
 |---|---|---|
 | K1 | ★ envolvente de tono: centro = nada; derecha = cada golpe empieza más agudo, izquierda más grave (hasta ±24 semitonos) | ajuste fino |
 | K2 | ★ lo que tarda en volver a la nota (5 ms - 4 s) | ajuste fino |
-| K3 | ★ velocidad del LFO de tono: centro = apagado; derecha = libre (0,05-30 Hz); izquierda = a tempo, de 8 compases junto al centro a 1/16T en el extremo *(Alpha 0.05)* | ajuste fino |
+| K3 | ★ velocidad del LFO de tono: centro = apagado; derecha = libre (0,05-30 Hz); izquierda = a tempo, de 8 compases junto al centro a 1/16T en el extremo *(desde Alpha 0.05)* | ajuste fino |
 | K4 | ★ profundidad del LFO de tono (0-24 semitonos) | ajuste fino |
 | K5 | ★ cantidad del ring mod | ★ su frecuencia (20 Hz-5 kHz) |
 | K6 | ★ pitch follow: el corte del paso bajo sigue a la nota | ★ tipo de filtro sobre los knobs de filtro del original: **stock** (blanco), **24 dB** (naranja), **comb** (lavanda) |
 | K7 | ★ **stretch**: más lento (izquierda, hasta 0,25×) o más rápido (derecha, hasta 4×) sin cambiar el tono; centro = el original | ★ bitcrush |
-| K8 | ★ velocidad del scan (mueve el inicio de cada nota; en un loop, el inicio del loop en cada vuelta): centro = quieto; derecha = libre (0,05-20 Hz); izquierda = a tempo, más rápido hacia el extremo *(Alpha 0.05)* | ★ su profundidad |
+| K8 | ★ velocidad del scan (mueve el inicio de cada nota; en un loop, el inicio del loop en cada vuelta): centro = quieto; derecha = libre (0,05-20 Hz); izquierda = a tempo, más rápido hacia el extremo *(desde Alpha 0.05)* | ★ su profundidad |
 
 - **LEDs:** azul cielo con el brillo según el valor (K1, K3, K7 y K8: la distancia al centro); K6 en el color de su tipo de filtro. Con Shift, K5-K8 enseñan su segunda capa.
 - **Clear + knob:** su valor por defecto (en K5-K8, las dos capas).
@@ -205,7 +209,7 @@ El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del ma
 | K5 | altura (centro = la nota; ±24 semitonos) | altura fina |
 | K6 | dispersión de la posición | zona (qué parte del sample) |
 | K7 | dispersión de la altura | probabilidad de reverso |
-| K8 | ventana (rectángulo → triángulo → percusiva) | gate, encendido / apagado: tenue = siempre suena (drone), brillante = lo abren las notas *(Alpha 0.05)* |
+| K8 | ventana (rectángulo → triángulo → percusiva) | gate, encendido / apagado: tenue = siempre suena (drone), brillante = lo abren las notas *(desde Alpha 0.05)* |
 
 Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro). Clear + knob = por defecto. Se guarda con el proyecto.
 
@@ -214,7 +218,7 @@ Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro)
 
 *Cómo se llega:* menú de pista, pad 12 (pone el sinte y su página) o pad 4 (su página) (el botón de la pista parpadea en menta)
 
-★ Un sinte monofónico de dos osciladores en el DSP del master, como sonido de cualquier pista *(Alpha 0.05)*. **Hasta 4 pistas con sinte.** Las notas le llegan como a un sample (pads, vista Note, secuencia, MIDI).
+★ Un sinte monofónico de dos osciladores en el DSP del master, como sonido de cualquier pista *(desde Alpha 0.05)*. **Hasta 4 pistas con sinte.** Las notas le llegan como a un sample (pads, vista Note, secuencia, MIDI).
 
 | Knob | Solo | Con Shift |
 |---|---|---|
@@ -232,21 +236,41 @@ Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro)
 - **LEDs:** menta con el brillo según el valor (K3, K4, Shift + K4, Shift + K7: la distancia al centro); K1 / K2 en el color de su forma de onda.
 - Clear + knob = por defecto. **Se guarda con el proyecto.**
 
-<a id="entrada"></a>
-### 2.6 Entrada de línea y enlace estéreo
+<a id="envolvente"></a>
+### 2.6 Página Envolvente
 
-*Cómo se llega:* menú de pista, pads 13 / 14 y 9
+*Cómo se llega:* menú de pista, pad 5, en una pista con el sinte o el granular (el botón de la pista parpadea en rosa)
+
+★ La envolvente del sinte y del granular, según el **modo de reproducción** de la pista (Sample mode, pads 25 / 26 / 27) *(Alpha 0.06)*:
+
+| Knob | Qué hace |
+|---|---|
+| K1 | **inicio**: el ataque, de instantáneo a 2 s |
+| K2 | **longitud**: en **one-shot**, la caída (percusiva; soltar la nota no cuenta); en **gated**, el release al soltar (arriba mientras dura la nota); en **loop**, cuánto se mantiene (lo que dure más, la nota o este tiempo; luego un release corto). De 5 ms a 8 s |
+| K3 | **pendiente**, desde el centro: centro = lineal; derecha = exponencial (cae antes); izquierda = más redonda (aguanta) |
+| K4 | **envolvente → paso bajo**, desde el centro |
+| K5-K8 | nada (oscuros) |
+
+- **El sinte:** K1, K2 y K4 son sus valores de siempre (K2 = el release de Shift + K6, K4 = Shift + K7 de su página).
+- **El granular:** con su gate encendido (Shift + K8), las notas abren y cierran la envolvente, que es su VCA; los granos corren siempre. Con el gate apagado, suena siempre, como antes.
+- Rosa con el brillo según el valor (K3 / K4: la distancia al centro). Clear + knob = por defecto. **Se guarda con el proyecto.**
+
+<a id="entrada"></a>
+### 2.7 Entrada de línea y enlace estéreo
+
+*Cómo se llega:* menú de pista, pads 13 / 14 / 15 y 9
 
 **Entrada de línea** (pad 13; desde Alpha 0.04): la entrada de audio suena como el sonido de la pista, con su nivel, panorama, envíos, filtro y envolvente.
 - Una pista de entrada: L + R. Dos: la de número menor es L, la mayor R. En una tercera, sale la primera puesta.
-- **Pad 14, el gate:** tenue = siempre suena; brillante = solo mientras suenan sus notas.
+- **Pad 14, el gate:** tenue = siempre suena; brillante = solo mientras suenan sus notas, por el VCA y el filtro de la pista (paso bajo, paso alto, resonancia; el filtro desde Alpha 0.06).
+- **Pad 15, la fuente** (Alpha 0.06): las entradas (ámbar) → el **retorno de reverb** (crema) → el **de delay** (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms). Ojo: mandar esa pista a su propia reverb o delay realimenta.
 
 **Enlace estéreo** (pad 9; desde Alpha 0.04): la pista (izquierda, su sample) y la siguiente (derecha, el sample siguiente) suenan juntas con los parámetros y las notas de la primera. Pad 9 en cualquiera de las dos = deshacer. En la pista 8 sola, oscuro. Sin enlazar quedan el LFO y el scan libres de Stock+ y el WSOLA del stretch.
 
 Las dos se guardan con el proyecto.
 
 <a id="note"></a>
-### 2.7 Vista Note
+### 2.8 Vista Note
 
 *Cómo se llega:* botón Note
 
@@ -268,7 +292,7 @@ Al soltar Shift, el teclado toca la escala: una iteración por fila (dos si tien
 
 | Vista | Gesto | Qué hace |
 |---|---|---|
-| Velocity | **Shift + paso** | marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista *(Alpha 0.05)* *(desde Alpha 0.04)* |
+| Velocity | **Shift + paso** | marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista *(desde Alpha 0.05)* *(desde Alpha 0.04)* |
 | Micro Step | **pad 31** | longitud fija: apagada → el selector en los pads 17-32 (1-16 pasos; elegir una la enciende); encendida → apagada (naranja brillante / tenue) *(desde Alpha 0.04)* |
 | Micro Step | **pad 32** | gate por pulsación: el golpe dura lo que mantienes el pad del paso; mantener un paso vacío 300 ms o más también lo crea (verde brillante / tenue) *(desde Alpha 0.04)* |
 
@@ -412,7 +436,7 @@ Todo se guarda en los ajustes del aparato, salvo el modo GM, que va con el proye
 
 | Dónde | Qué |
 |---|---|
-| **Con el proyecto** | Stock+, Granular, Sinte (ajustes y pistas), entrada de línea, enlace estéreo, de-clicker por pista, escala propia, reglas de cadena, dinámicas / mutación / frecuencia por paso, marcas de Velocity, Micro Step, modo GM, reverb / delay / sidechain |
+| **Con el proyecto** | Stock+, Granular, Sinte (ajustes y pistas), Envolvente, la fuente de la entrada, entrada de línea, enlace estéreo, de-clicker por pista, escala propia, reglas de cadena, dinámicas / mutación / frecuencia por paso, marcas de Velocity, Micro Step, modo GM, reverb / delay / sidechain |
 | **Ajustes del aparato** | canales de Program Change, modo del Thru, teclado al arpegiador, fusión USB, resonancia del filtro master, compresor |
 | **Hasta apagar** | la página de knobs de cada pista, el modo cue, el metrónomo / cuenta atrás, Sample Rec pads 23 / 24 |
 
@@ -428,7 +452,7 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 
 | Función | Qué es / gesto | Capítulo | Desde |
 |---|---|---|---|
-| **Arpegiador de notas** | arpegia las teclas mantenidas en la vista Note | [2.7 Vista Note](#note) | Alpha 0.0 |
+| **Arpegiador de notas** | arpegia las teclas mantenidas en la vista Note | [2.8 Vista Note](#note) | Alpha 0.0 |
 | **Arpegiador de samples** | arpegia los pads de sample mantenidos; Shift + pad 25 de Pattern Settings lo enciende | [2.1 El botón de pista](#pista) | Alpha 0.0 |
 | **Bitcrush** | Stock+, Shift + K7 | [2.3 Página Stock+](#stockplus) | Alpha 0.02 |
 | **Borrar un pack** | Clear + pack dos veces en Packs | [6.1 Projects y Packs](#projects) | Alpha 0.01 |
@@ -441,11 +465,12 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Cuenta atrás** | un compás antes de grabar; Shift + Clear | [1.1 Transporte, metrónomo y cuantizar](#transporte) | Alpha 0.0 |
 | **De-clicker de loops** | crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec | [4.1 Sample mode](#samplemode) | Alpha 0.04 |
 | **Dinámicas por paso** | velocity y retraso al azar dentro del paso; fila 3 de la probabilidad | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
-| **Enlace estéreo** | una pista y la siguiente como un sonido estéreo; menú, pad 9 | [2.6 Entrada de línea y enlace estéreo](#entrada) | Alpha 0.04 |
-| **Entrada de línea** | la entrada de audio como sonido de una pista; menú, pads 13 / 14 | [2.6 Entrada de línea y enlace estéreo](#entrada) | Alpha 0.04 |
+| **Enlace estéreo** | una pista y la siguiente como un sonido estéreo; menú, pad 9 | [2.7 Entrada de línea y enlace estéreo](#entrada) | Alpha 0.04 |
+| **Entrada de línea** | la entrada de audio como sonido de una pista; menú, pads 13 / 14 | [2.7 Entrada de línea y enlace estéreo](#entrada) | Alpha 0.04 |
 | **Envolvente de tono** | Stock+, K1 / K2 | [2.3 Página Stock+](#stockplus) | Alpha 0.01 |
+| **Envolvente por modo** | inicio, longitud, pendiente y → filtro del sinte y el granular; menú, pad 5 | [2.6 Página Envolvente](#envolvente) | Alpha 0.06 |
 | **Envíos de FX en los knobs** | ▼ / ▲ en la vista FX | [5.2 FX y Sidechain](#fx) | Alpha 0.0 |
-| **Escala propia** | una escala por pista; Shift en la vista Note | [2.7 Vista Note](#note) | Alpha 0.0 |
+| **Escala propia** | una escala por pista; Shift en la vista Note | [2.8 Vista Note](#note) | Alpha 0.0 |
 | **Fixed Recording con reloj externo** | la duración al tempo del reloj MIDI que llega | [4.2 Sample Rec](#samplerec) | Alpha 0.02 |
 | **Frecuencia por paso** | el paso suena una de cada n pasadas | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
 | **Fusión USB** | el DIN In también por USB; Advanced Setup, pad 23 | [6.2 Setup y Advanced Setup](#setup) | Alpha 0.04 |
@@ -469,6 +494,7 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Repetir la escena** | la escena actual 1-8 veces; Mixer, Shift + pads 9-16 | [5.1 Mixer](#mixer) | Alpha 0.0 |
 | **Reset de knobs de pista** | Clear + botón de la pista | [2.1 El botón de pista](#pista) | Alpha 0.0 |
 | **Resonancia master** | Shift + ▲ / ▼ en la vista FX | [5.2 FX y Sidechain](#fx) | Alpha 0.0 |
+| **Retornos de FX como fuente** | la reverb o el delay como sonido de una pista de entrada; menú, pad 15 | [2.7 Entrada de línea y enlace estéreo](#entrada) | Alpha 0.06 |
 | **Ring mod** | Stock+, K5 (Shift: la frecuencia) | [2.3 Página Stock+](#stockplus) | Alpha 0.02 |
 | **Scan** | mueve el inicio de cada nota o del loop; Stock+, K8 | [2.3 Página Stock+](#stockplus) | Alpha 0.02 |
 | **Sidechain por knobs** | K1-K4 de la vista Sidechain | [5.2 FX y Sidechain](#fx) | Alpha 0.0 |

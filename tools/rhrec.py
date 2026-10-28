@@ -41,11 +41,21 @@ OFF = {                                    # module -> (offset, length) in the t
 }
 
 
+# (RH54) with trkcopy's photo in RAM (trkcopy ram, rhstate OFF2 «trkphoto»), its 212 B of the tail hold these (the builds before: the photo,
+# rewritten at each load; a project of theirs gives these blocks a bad mark: their defaults)
+REUSE = (328, 212)
+OFF54 = {
+    "envelope": (328, 22),                 # (RH54) "E", a check byte, the synth slots' slope (4 B), the granular slots' start, length, slope, env -> filter (4 x 4 B)
+}
+
+
 def check_layout():
     used = sorted(OFF.values())
     for (a, n), (b2, _) in zip(used, used[1:]):
         assert a + n <= b2, f"rhrec.OFF overlaps at {b2}"
     assert used[-1][0] + used[-1][1] <= FREE_LEN
+    for a, n in OFF54.values():
+        assert REUSE[0] <= a and a + n <= REUSE[0] + REUSE[1]
 
 
 def arm_code(base):

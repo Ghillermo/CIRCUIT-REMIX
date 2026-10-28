@@ -752,12 +752,13 @@ def _gn_dsp(a, E):
     E(b, "gl_gx")
 
 
-def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False):
+def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False):
     nwx = NW_X + (1 if v2 else 0)
     nk, nwg = NK + (1 if stereo else 0), NW_G + (1 if stereo else 0)           # (stereo, RH47) value 12 = the spread (Shift + K2)
     bip = BIP_UI if ui else BIP
-    tdef, tmul, toff, tidx, tbip = ((DEF + (0,), MUL + (128,), OFFS + (0,), IDX + (G.P_SPRD,), bip + (0,)) if stereo else
-                                    (DEF, MUL, OFFS, IDX, bip))
+    mul = MUL[:11] + (0,) if env else MUL                                  # (env, RH54: the engine's gate always 0, the envelope gates; envpage)
+    tdef, tmul, toff, tidx, tbip = ((DEF + (0,), mul + (128,), OFFS + (0,), IDX + (G.P_SPRD,), bip + (0,)) if stereo else
+                                    (DEF, mul, OFFS, IDX, bip))
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -1841,7 +1842,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     return a.assemble()
 
 
-def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False):
+def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False):
     """Ahead of stockplus (button chain, knob slot, LED calls) and in Sample mode's subview (slots 0 and 8).  The build needs granular0
     (core 0's engine) and pitchmod with loopxf (core 1's crossfade).  v2 (RH45): also the controller's pad press / release entries and
     Sample Rec's slot 0 (ahead of smpcopy, or the stock's without it: nosd); needs rhstate ram2; the stereo word is stereorec's (installed after)."""
@@ -1875,7 +1876,8 @@ def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=Fa
         assert report["granular0"].get("multi") and v2 and stereo and note, "granpage multi needs granular0 multi, v2, stereo, note"
     assert multi or not ui
     assert ui or not menu2
-    code, labels = arm_code(base_addr, L, prev, note=note, v2=v2, stereo=stereo, multi=multi, ui=ui, menu2=menu2)
+    assert multi or not env
+    code, labels = arm_code(base_addr, L, prev, note=note, v2=v2, stereo=stereo, multi=multi, ui=ui, menu2=menu2, env=env)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1890,7 +1892,7 @@ def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=Fa
         rhbuild.patch(img, PP_ENTRY, PP_HEAD, b_w(PP_ENTRY, labels["c_gpmpad"]))
         rhbuild.patch(img, PR_ENTRY, PR_HEAD, b_w(PR_ENTRY, labels["c_gpmrel"]))
         rhbuild.patch_word(img, SREC_VT, prev["srec"] | 1, labels["c_gpsrpad"] | 1)
-    report["granpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), note=note, **({"v2": True} if v2 else {}), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}),
+    report["granpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), note=note, **({"v2": True} if v2 else {}), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}),
                               **({"multi": True} if multi else {}),
                               labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code
