@@ -5,7 +5,7 @@ style manual, group chapters per view when possible and add a glossary per funct
                                        the pads and knobs in colour); in the development tree under public/
 
 Every chapter: (id, part, {es, en: title, how to get there, detail in a small markdown: ### | tables | - lists, 1. lists, **bold**, `code`},
-figures).  The glossary: one entry per function, linked to its chapter.  The colours follow docs/INTERFAZ.md (RH52-RH54 / Alpha 0.05-0.06).
+figures).  The glossary: one entry per function, linked to its chapter.  The colours follow docs/INTERFAZ.md (RH52-RH55 / Alpha 0.05-0.07).
 """
 from __future__ import annotations
 
@@ -130,7 +130,7 @@ Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas {A5}:
 | Frecuencias (LFO, scan) | centro = parado; a la derecha libre, más rápido hacia el extremo; a la izquierda a tempo, divisiones más rápidas hacia el extremo |
 | Adelante / atrás (scan del granular) | centro = parado; a la derecha hacia delante, a la izquierda hacia atrás, más rápido hacia los extremos |
 | Encendido / apagado | el mismo color, brillante / tenue |
-| Modos | un color por modo (las formas de onda del sinte, el tipo de filtro de Stock+, el metrónomo) |
+| Modos | un color por modo (las formas de onda del sinte, el tipo de filtro y el de waveshaper de Stock+, el metrónomo) |
 | Opciones que se eligen entre sí | en la misma fila; la elegida brillante, las demás tenues |
 | Abrir un menú o una página | un toque lo deja abierto; mantenerlo lo muestra hasta soltar |
 
@@ -155,7 +155,7 @@ Since Alpha 0.05 everything new follows fixed rules {A5_EN}:
 | Frequencies (LFO, scan) | centre = stopped; right = free running, faster towards the end; left = synced to the tempo, faster divisions towards the end |
 | Forward / backward (the granular scan) | centre = stopped; right forward, left backward, faster towards the ends |
 | On / off | the same colour, bright / dim |
-| Modes | a colour per mode (the synth's waveforms, Stock+'s filter type, the metronome) |
+| Modes | a colour per mode (the synth's waveforms, Stock+'s filter and waveshaper types, the metronome) |
 | Options you pick one of | on the same row; the chosen one bright, the others dim |
 | Opening a menu or a page | a tap keeps it open; holding shows it until you let go |
 
@@ -175,7 +175,7 @@ view("instalar", "0", ("Instalar y volver al original", "—", """
 2. Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.
 3. Elige la versión y envíala al aparato por USB.
 
-**Versiones S** (A0.06S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
+**Versiones S** (A0.07S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
 
 **Volver al firmware oficial:** mantén **Sample Rec + Samples + Note** al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.
 """), ("Install and go back to the original", "—", """
@@ -183,7 +183,7 @@ view("instalar", "0", ("Instalar y volver al original", "—", """
 2. Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.
 3. Pick the version and send it to the device over USB.
 
-**S versions** (A0.06S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
+**S versions** (A0.07S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
 
 **Back to the official firmware:** hold **Sample Rec + Samples + Note** while powering on (Novation's bootloader mode) and send the official one with the installer ("Official") or with Novation Components. Always back up your SD card.
 """))
@@ -321,6 +321,7 @@ La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8
 | K7 | ★ **waveshaper**: cantidad (0 = apagado; la ganancia de ×1 a ×16; en bitcrush, los bits). Shift: su **tipo**, **suave** (dorado), **duro** (rojo anaranjado), **plegado** (turquesa), **bitcrush** (lima) | lo mismo |
 | K8 | ★ LFO de la **posición** de los granos (Shift: su profundidad) | ★ LFO de la **cantidad de FM** (Shift: su profundidad) |
 
+- **Tipo de filtro** (Shift + K6): con **24 dB** su filtro pasa dos veces; con **comb**, sus filtros se abren y suena un comb afinado por el knob de paso bajo de la pista (más el follow; en el sinte, más la envolvente → filtro), con la resonancia como realimentación.
 - El LED de K7 va en el color del tipo y brilla según la cantidad; con Shift, a tope. Clear + K7: apagado y suave.
 - El waveshaper se guarda con el proyecto y lo llevan Clear + el botón de la pista y Duplicate.
 """, [fig("Página Stock+: knobs en azul cielo; K6 en el color de su tipo de filtro.", "Stock+ page: knobs in sky blue; K6 in its filter type's colour.",
@@ -359,12 +360,13 @@ The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8
 | K7 | ★ **waveshaper**: amount (0 = off; the gain from ×1 to ×16; for bitcrush, the bits). Shift: its **type**, **soft** (gold), **hard** (red-orange), **fold** (teal), **bitcrush** (lime) | the same |
 | K8 | ★ an LFO on the grains' **position** (Shift: its depth) | ★ an LFO on the **FM amount** (Shift: its depth) |
 
+- **Filter type** (Shift + K6): with **24 dB** its filter runs twice; with **comb** its filters open and a comb plays, tuned by the track's low-pass knob (plus the follow; on the synth, plus envelope → filter), with the resonance as feedback.
 - K7's LED is in the type's colour, as bright as the amount; with Shift, fully. Clear + K7: off and soft.
 - The waveshaper is saved with the project and goes along with Clear + the track's button and Duplicate.
 """))
 
 view("granular", "2", ("Página Granular", "menú de pista, pad 11 (pone el granular y su página) o pad 3 (su página) (el botón de la pista parpadea en lila)", f"""
-El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master *(desde Alpha 0.04)*. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él. **Hasta 4 pistas granulares**, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).
+El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master *(desde Alpha 0.04)*. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él; también la distorsión {A}. **Hasta 4 pistas granulares**, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).
 
 | Knob | Solo | Con Shift |
 |---|---|---|
@@ -382,7 +384,7 @@ Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro)
           knobs={1: ("tamaño", "size", "", "lilac"), 2: ("densidad", "density", "", "lilac"), 3: ("posición", "position", "", "lilac"),
                  4: ("scan", "scan", "", "lilac"), 5: ("altura", "pitch", "", "lilac"), 6: ("disp. pos.", "pos. spray", "", "lilac"),
                  7: ("disp. alt.", "pitch spray", "", "lilac"), 8: ("ventana", "window", "", "lilac")})]), ("Granular page", "track menu, pad 11 (puts the granular on, with its page) or pad 3 (its page) (the track's button blinks lilac)", f"""
-The CIRCUIT-HACKS granular engine on the track's sample, on the master DSP *(since Alpha 0.04)*. It follows the note (Note view, keyboard and MIDI). The track's filter knobs (high-pass, low-pass, resonance) and envelope act on it. **Up to 4 granular tracks**, each with its own settings; the 16 grains are shared (16 with one track, 7 each with two, 4 with three, 2 with four).
+The CIRCUIT-HACKS granular engine on the track's sample, on the master DSP *(since Alpha 0.04)*. It follows the note (Note view, keyboard and MIDI). The track's filter knobs (high-pass, low-pass, resonance) and envelope act on it; the distortion too {A_EN}. **Up to 4 granular tracks**, each with its own settings; the 16 grains are shared (16 with one track, 7 each with two, 4 with three, 2 with four).
 
 | Knob | Alone | With Shift |
 |---|---|---|
@@ -412,7 +414,7 @@ view("sinte", "2", ("Página Sinte", "menú de pista, pad 12 (pone el sinte y su
 | K7 | FM (OSC 2 modula a OSC 1) | envolvente → paso bajo (desde el centro) |
 | K8 | ancho del pulso (50 % → 2 %) | — |
 
-- **Los knobs del original** de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, nivel, panorama, envíos, sidechain y mute.
+- **Los knobs del original** de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, distorsión {A}, nivel, panorama, envíos, sidechain y mute.
 - **Note-off:** una pista con sinte recibe el note-off aunque esté en one-shot, para que suene el release.
 - **LEDs:** menta con el brillo según el valor (K3, K4, Shift + K4, Shift + K7: la distancia al centro); K1 / K2 en el color de su forma de onda.
 - Clear + knob = por defecto. **Se guarda con el proyecto.**
@@ -433,7 +435,7 @@ view("sinte", "2", ("Página Sinte", "menú de pista, pad 12 (pone el sinte y su
 | K7 | FM (OSC 2 modulates OSC 1) | envelope → low-pass (from the centre) |
 | K8 | pulse width (50 % → 2 %) | — |
 
-- **The original's knobs** of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, level, pan, sends, sidechain and mute.
+- **The original's knobs** of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, distortion {A_EN}, level, pan, sends, sidechain and mute.
 - **Note-off:** a synth track gets the note-off even in one-shot mode, so the release sounds.
 - **LEDs:** mint with the value as brightness (K3, K4, Shift + K4, Shift + K7: the distance from the centre); K1 / K2 in their waveform's colour.
 - Clear + knob = default. **Saved with the project.**
@@ -515,7 +517,7 @@ When you let go of Shift, the keyboard plays the scale: one iteration per row (t
 view("velocity", "3", ("Velocity y Micro Step", "botón Velocity; Micro Step = Shift + Gate", f"""
 | Vista | Gesto | Qué hace |
 |---|---|---|
-| Velocity | **Shift + paso** | marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista {A5} *(desde Alpha 0.04)* |
+| Velocity | **Shift + paso** | marca el paso *(desde Alpha 0.04)*: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista {A5} |
 | Micro Step | **pad 31** | longitud fija: apagada → el selector en los pads 17-32 (1-16 pasos; elegir una la enciende); encendida → apagada (naranja brillante / tenue) *(desde Alpha 0.04)* |
 | Micro Step | **pad 32** | gate por pulsación: el golpe dura lo que mantienes el pad del paso; mantener un paso vacío 300 ms o más también lo crea (verde brillante / tenue) *(desde Alpha 0.04)* |
 
@@ -525,7 +527,7 @@ Encender uno de los dos de Micro Step apaga el otro. Con cualquiera, un golpe in
      ("Velocity and Micro Step", "the Velocity button; Micro Step = Shift + Gate", f"""
 | View | Gesture | What it does |
 |---|---|---|
-| Velocity | **Shift + step** | marks the step: when it plays, automation is silent there and automated parameters go back to their knob's position. With Shift, the marked steps in red; the others as the view draws them {A5_EN} *(since Alpha 0.04)* |
+| Velocity | **Shift + step** | marks the step *(since Alpha 0.04)*: when it plays, automation is silent there and automated parameters go back to their knob's position. With Shift, the marked steps in red; the others as the view draws them {A5_EN} |
 | Micro Step | **pad 31** | fixed length: off → the selector on pads 17-32 (1-16 steps; picking one switches it on); on → off (orange bright / dim) *(since Alpha 0.04)* |
 | Micro Step | **pad 32** | gate by press: the hit lasts as long as you hold the step's pad; holding an empty step 300 ms or more also creates it (green bright / dim) *(since Alpha 0.04)* |
 
@@ -814,13 +816,13 @@ GLOSSARY = [
 UI = dict(es=dict(title=f"Circuit Remix {VERSION} — manual", how="Cómo se llega:", toc="Índice", glossary="Glosario de funciones",
                   gl_cols=("Función", "Qué es / gesto", "Capítulo", "Desde"), other='[English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)',
                   other_html='<p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>',
-                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.06 es experimental:** lo nuevo (la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04 / 0.05) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**",
+                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.07 es experimental:** lo nuevo (Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**",
                   intro="Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.", md="MANUAL.md", html="index.html", lang="es",
                   footer="Circuit Remix — MIT. Sin código de Novation."),
           en=dict(title=f"Circuit Remix {VERSION} — manual", how="How to get there:", toc="Contents", glossary="Glossary of functions",
                   gl_cols=("Function", "What it is / gesture", "Chapter", "Since"), other='[Español](MANUAL.md) · [illustrated version](manual/en.html)',
                   other_html='<p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>',
-                  cover="Manual by views", warn="> ⚠️ **Alpha 0.06 is experimental:** what's new (the envelope, the line input from the FX returns, and most of Alpha 0.04 / 0.05) has mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**",
+                  cover="Manual by views", warn="> ⚠️ **Alpha 0.07 is experimental:** what's new (Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**",
                   intro="Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.", md="MANUAL_EN.md", html="en.html", lang="en",
                   footer="Circuit Remix — MIT. No Novation code."))
 

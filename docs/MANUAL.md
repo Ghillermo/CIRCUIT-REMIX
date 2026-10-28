@@ -2,7 +2,7 @@
 
 [English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)
 
-> ⚠️ **Alpha 0.06 es experimental:** lo nuevo (la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04 / 0.05) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**
+> ⚠️ **Alpha 0.07 es experimental:** lo nuevo (Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**
 
 Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.
 
@@ -83,7 +83,7 @@ Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas *(desde Alpha 0.05)*:
 | Frecuencias (LFO, scan) | centro = parado; a la derecha libre, más rápido hacia el extremo; a la izquierda a tempo, divisiones más rápidas hacia el extremo |
 | Adelante / atrás (scan del granular) | centro = parado; a la derecha hacia delante, a la izquierda hacia atrás, más rápido hacia los extremos |
 | Encendido / apagado | el mismo color, brillante / tenue |
-| Modos | un color por modo (las formas de onda del sinte, el tipo de filtro de Stock+, el metrónomo) |
+| Modos | un color por modo (las formas de onda del sinte, el tipo de filtro y el de waveshaper de Stock+, el metrónomo) |
 | Opciones que se eligen entre sí | en la misma fila; la elegida brillante, las demás tenues |
 | Abrir un menú o una página | un toque lo deja abierto; mantenerlo lo muestra hasta soltar |
 
@@ -104,7 +104,7 @@ Cada página de knobs de una pista tiene su color, el mismo en sus knobs, en el 
 2. Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.
 3. Elige la versión y envíala al aparato por USB.
 
-**Versiones S** (A0.06S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
+**Versiones S** (A0.07S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
 
 **Volver al firmware oficial:** mantén **Sample Rec + Samples + Note** al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.
 
@@ -202,6 +202,7 @@ La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8
 | K7 | ★ **waveshaper**: cantidad (0 = apagado; la ganancia de ×1 a ×16; en bitcrush, los bits). Shift: su **tipo**, **suave** (dorado), **duro** (rojo anaranjado), **plegado** (turquesa), **bitcrush** (lima) | lo mismo |
 | K8 | ★ LFO de la **posición** de los granos (Shift: su profundidad) | ★ LFO de la **cantidad de FM** (Shift: su profundidad) |
 
+- **Tipo de filtro** (Shift + K6): con **24 dB** su filtro pasa dos veces; con **comb**, sus filtros se abren y suena un comb afinado por el knob de paso bajo de la pista (más el follow; en el sinte, más la envolvente → filtro), con la resonancia como realimentación.
 - El LED de K7 va en el color del tipo y brilla según la cantidad; con Shift, a tope. Clear + K7: apagado y suave.
 - El waveshaper se guarda con el proyecto y lo llevan Clear + el botón de la pista y Duplicate.
 
@@ -210,7 +211,7 @@ La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8
 
 *Cómo se llega:* menú de pista, pad 11 (pone el granular y su página) o pad 3 (su página) (el botón de la pista parpadea en lila)
 
-El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master *(desde Alpha 0.04)*. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él. **Hasta 4 pistas granulares**, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).
+El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master *(desde Alpha 0.04)*. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él; también la distorsión *(Alpha 0.07)*. **Hasta 4 pistas granulares**, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).
 
 | Knob | Solo | Con Shift |
 |---|---|---|
@@ -243,7 +244,7 @@ Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro)
 | K7 | FM (OSC 2 modula a OSC 1) | envolvente → paso bajo (desde el centro) |
 | K8 | ancho del pulso (50 % → 2 %) | — |
 
-- **Los knobs del original** de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, nivel, panorama, envíos, sidechain y mute.
+- **Los knobs del original** de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, distorsión *(Alpha 0.07)*, nivel, panorama, envíos, sidechain y mute.
 - **Note-off:** una pista con sinte recibe el note-off aunque esté en one-shot, para que suene el release.
 - **LEDs:** menta con el brillo según el valor (K3, K4, Shift + K4, Shift + K7: la distancia al centro); K1 / K2 en el color de su forma de onda.
 - Clear + knob = por defecto. **Se guarda con el proyecto.**
@@ -304,7 +305,7 @@ Al soltar Shift, el teclado toca la escala: una iteración por fila (dos si tien
 
 | Vista | Gesto | Qué hace |
 |---|---|---|
-| Velocity | **Shift + paso** | marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista *(desde Alpha 0.05)* *(desde Alpha 0.04)* |
+| Velocity | **Shift + paso** | marca el paso *(desde Alpha 0.04)*: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista *(desde Alpha 0.05)* |
 | Micro Step | **pad 31** | longitud fija: apagada → el selector en los pads 17-32 (1-16 pasos; elegir una la enciende); encendida → apagada (naranja brillante / tenue) *(desde Alpha 0.04)* |
 | Micro Step | **pad 32** | gate por pulsación: el golpe dura lo que mantienes el pad del paso; mantener un paso vacío 300 ms o más también lo crea (verde brillante / tenue) *(desde Alpha 0.04)* |
 

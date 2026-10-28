@@ -25,7 +25,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </style></head><body>
 <header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.07</p><div class="bar"></div></header><main>
 <p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.06 is experimental:</strong> what&#x27;s new (the envelope, the line input from the FX returns, and most of Alpha 0.04 / 0.05) has mostly been checked in emulation. For serious playing, Alpha 0.03. <strong>Back up your SD card.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.07 is experimental:</strong> what&#x27;s new (Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. <strong>Back up your SD card.</strong></p>
 <p>Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.</p>
 <nav class="toc"><h2>Contents</h2>
 <h3>0. Introduction</h3><ol>
@@ -175,7 +175,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>Frequencies (LFO, scan)</td><td>centre = stopped; right = free running, faster towards the end; left = synced to the tempo, faster divisions towards the end</td></tr>
 <tr><td>Forward / backward (the granular scan)</td><td>centre = stopped; right forward, left backward, faster towards the ends</td></tr>
 <tr><td>On / off</td><td>the same colour, bright / dim</td></tr>
-<tr><td>Modes</td><td>a colour per mode (the synth&#x27;s waveforms, Stock+&#x27;s filter type, the metronome)</td></tr>
+<tr><td>Modes</td><td>a colour per mode (the synth&#x27;s waveforms, Stock+&#x27;s filter and waveshaper types, the metronome)</td></tr>
 <tr><td>Options you pick one of</td><td>on the same row; the chosen one bright, the others dim</td></tr>
 <tr><td>Opening a menu or a page</td><td>a tap keeps it open; holding shows it until you let go</td></tr>
 </tbody></table>
@@ -194,7 +194,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.</li>
 <li>Pick the version and send it to the device over USB.</li>
 </ol>
-<p><strong>S versions</strong> (A0.06S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.</p>
+<p><strong>S versions</strong> (A0.07S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.</p>
 <p><strong>Back to the official firmware:</strong> hold <strong>Sample Rec + Samples + Note</strong> while powering on (Novation&#x27;s bootloader mode) and send the official one with the installer (&quot;Official&quot;) or with Novation Components. Always back up your SD card.</p>
 </section>
 <h2 class="group">1. In any view</h2>
@@ -721,6 +721,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>K8</td><td>★ an LFO on the grains&#x27; <strong>position</strong> (Shift: its depth)</td><td>★ an LFO on the <strong>FM amount</strong> (Shift: its depth)</td></tr>
 </tbody></table>
 <ul>
+<li><strong>Filter type</strong> (Shift + K6): with <strong>24 dB</strong> its filter runs twice; with <strong>comb</strong> its filters open and a comb plays, tuned by the track&#x27;s low-pass knob (plus the follow; on the synth, plus envelope → filter), with the resonance as feedback.</li>
 <li>K7&#x27;s LED is in the type&#x27;s colour, as bright as the amount; with Shift, fully. Clear + K7: off and soft.</li>
 <li>The waveshaper is saved with the project and goes along with Clear + the track&#x27;s button and Duplicate.</li>
 </ul>
@@ -818,7 +819,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
 </svg><figcaption>Granular page: knobs in lilac.</figcaption></figure>
-<p>The CIRCUIT-HACKS granular engine on the track&#x27;s sample, on the master DSP <em>(since Alpha 0.04)</em>. It follows the note (Note view, keyboard and MIDI). The track&#x27;s filter knobs (high-pass, low-pass, resonance) and envelope act on it. <strong>Up to 4 granular tracks</strong>, each with its own settings; the 16 grains are shared (16 with one track, 7 each with two, 4 with three, 2 with four).</p>
+<p>The CIRCUIT-HACKS granular engine on the track&#x27;s sample, on the master DSP <em>(since Alpha 0.04)</em>. It follows the note (Note view, keyboard and MIDI). The track&#x27;s filter knobs (high-pass, low-pass, resonance) and envelope act on it; the distortion too <em>(Alpha 0.07)</em>. <strong>Up to 4 granular tracks</strong>, each with its own settings; the 16 grains are shared (16 with one track, 7 each with two, 4 with three, 2 with four).</p>
 <table><thead><tr><th>Knob</th><th>Alone</th><th>With Shift</th></tr></thead><tbody>
 <tr><td>K1</td><td>grain size (5-500 ms)</td><td>fine</td></tr>
 <tr><td>K2</td><td>density (1-16 grains)</td><td>★ stereo spread (0 = mono)</td></tr>
@@ -936,7 +937,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>K8</td><td>pulse width (50 % → 2 %)</td><td>—</td></tr>
 </tbody></table>
 <ul>
-<li><strong>The original&#x27;s knobs</strong> of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, level, pan, sends, sidechain and mute.</li>
+<li><strong>The original&#x27;s knobs</strong> of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, distortion <em>(Alpha 0.07)</em>, level, pan, sends, sidechain and mute.</li>
 <li><strong>Note-off:</strong> a synth track gets the note-off even in one-shot mode, so the release sounds.</li>
 <li><strong>LEDs:</strong> mint with the value as brightness (K3, K4, Shift + K4, Shift + K7: the distance from the centre); K1 / K2 in their waveform&#x27;s colour.</li>
 <li>Clear + knob = default. <strong>Saved with the project.</strong></li>
@@ -1158,7 +1159,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="98.0" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Gate</text>
 </svg><figcaption>Micro Step: pad 31 fixed length, pad 32 gate by press (off: dim).</figcaption></figure>
 <table><thead><tr><th>View</th><th>Gesture</th><th>What it does</th></tr></thead><tbody>
-<tr><td>Velocity</td><td><strong>Shift + step</strong></td><td>marks the step: when it plays, automation is silent there and automated parameters go back to their knob&#x27;s position. With Shift, the marked steps in red; the others as the view draws them <em>(since Alpha 0.05)</em> <em>(since Alpha 0.04)</em></td></tr>
+<tr><td>Velocity</td><td><strong>Shift + step</strong></td><td>marks the step <em>(since Alpha 0.04)</em>: when it plays, automation is silent there and automated parameters go back to their knob&#x27;s position. With Shift, the marked steps in red; the others as the view draws them <em>(since Alpha 0.05)</em></td></tr>
 <tr><td>Micro Step</td><td><strong>pad 31</strong></td><td>fixed length: off → the selector on pads 17-32 (1-16 steps; picking one switches it on); on → off (orange bright / dim) <em>(since Alpha 0.04)</em></td></tr>
 <tr><td>Micro Step</td><td><strong>pad 32</strong></td><td>gate by press: the hit lasts as long as you hold the step&#x27;s pad; holding an empty step 300 ms or more also creates it (green bright / dim) <em>(since Alpha 0.04)</em></td></tr>
 </tbody></table>
