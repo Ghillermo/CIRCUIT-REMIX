@@ -54,6 +54,9 @@ R_MASK, R_SEEN = 0, 1
 OQ = rhstate.OFF2["qfull"][0]
 O_TH = rhstate.OFF["cthresh"][0] + 1
 PAD_LINK = 6                                          # the menu's pad 7
+# ui (RH52; docs/INTERFAZ.md): the menu's pad 9 (the row under the pages, under stock), steel blue: bright = linked (either track of the
+# pair), dim = not, dark on track 8 alone
+UI_PAD_LINK, UI_COL, UI_DIM = 8, 0x16, 0x17
 PAL, PAL_ON, PAL_TON, PAL_TOFF = GP.PAL, GP.PAL_ON, GP.PAL_TON, GP.PAL_TOFF
 PP_ENTRY, M_SWAL = GP.PP_ENTRY, GP.M_SWAL
 WAIT_MS = 3
@@ -76,7 +79,8 @@ def sane(m):
     return m & ~(m << 1) & 0xFF
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, ui=False):
+    pad = UI_PAD_LINK if ui else PAD_LINK
     a = Asm(base)
     E = a.emit
 
@@ -320,7 +324,7 @@ def arm_code(base, L, prev):
 
     # ---- c_slpad (the controller's pad press, linein's head after it): the menu open, pad 7 is ours
     a.label("c_slpad")
-    E(cmp_imm, 1, PAD_LINK)
+    E(cmp_imm, 1, pad)
     E(b_cond, "pd_s", "ne")
     E(push_list, [0, 1, 2, 3, 4, 5, 6], lr=True)
     E(bl, L["c_gpmopen"])
@@ -328,7 +332,11 @@ def arm_code(base, L, prev):
     E(b_cond, "pd_p", "hs")
     E(mov_reg, 4, 0)                                                      # r4 = the menu's track
     E(bl, L["c_gpmst"])                                                   # its release swallowed by the menu's
-    E(movs_imm, 1, 1 << PAD_LINK)
+    if pad < 8:
+        E(movs_imm, 1, 1 << pad)
+    else:
+        E(movs_imm, 1, 1)
+        E(lsls_imm, 1, 1, pad)
     E(ldr_imm, 2, 0, M_SWAL)
     E(orrs_reg, 2, 1)
     E(str_imm, 2, 0, M_SWAL)
@@ -423,32 +431,44 @@ def arm_code(base, L, prev):
     E(bl, "c_slget")
     E(movs_imm, 2, 1)
     E(lsls_reg, 2, 4)
-    imm32(1, PAL + PAL_TOFF)
-    E(lsrs_imm, 3, 2, 1)
-    E(tst_reg, 0, 3)
-    E(b_cond, "ll_nf", "eq")
-    imm32(1, PAL + PAL_ON)                                                # a follower
-    E(b, "ll_c")
-    a.label("ll_nf")
-    E(tst_reg, 0, 2)
-    E(b_cond, "ll_nl", "eq")
-    imm32(1, PAL + PAL_TON)                                               # a leader
-    E(b, "ll_c")
-    a.label("ll_nl")
-    E(cmp_imm, 4, 7)
-    E(b_cond, "ll_c", "ne")
-    E(movs_imm, 0, 0)                                                     # track 8 alone: dark
-    E(b, "ll_w")
-    a.label("ll_c")
-    E(raw, h(0x8808))                                                     # ldrh r0, [r1]
+    if ui:                                                                # (ui) linked either way: bright; not: dim
+        E(lsrs_imm, 3, 2, 1)
+        E(orrs_reg, 3, 2)
+        E(mov_reg, 1, 0)
+        E(movs_imm, 0, UI_COL)
+        E(tst_reg, 1, 3)
+        E(b_cond, "ll_w", "ne")
+        E(movs_imm, 0, UI_DIM)
+        E(cmp_imm, 4, 7)
+        E(b_cond, "ll_w", "ne")
+        E(movs_imm, 0, 0)                                                 # track 8 alone: dark
+    else:
+        imm32(1, PAL + PAL_TOFF)
+        E(lsrs_imm, 3, 2, 1)
+        E(tst_reg, 0, 3)
+        E(b_cond, "ll_nf", "eq")
+        imm32(1, PAL + PAL_ON)                                            # a follower
+        E(b, "ll_c")
+        a.label("ll_nf")
+        E(tst_reg, 0, 2)
+        E(b_cond, "ll_nl", "eq")
+        imm32(1, PAL + PAL_TON)                                           # a leader
+        E(b, "ll_c")
+        a.label("ll_nl")
+        E(cmp_imm, 4, 7)
+        E(b_cond, "ll_c", "ne")
+        E(movs_imm, 0, 0)                                                 # track 8 alone: dark
+        E(b, "ll_w")
+        a.label("ll_c")
+        E(raw, h(0x8808))                                                 # ldrh r0, [r1]
     a.label("ll_w")
-    E(strh_imm, 0, 5, 2 * PAD_LINK)
+    E(strh_imm, 0, 5, 2 * pad)
     a.label("ll_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, ui=False):
     """The flusher's bl (in front of cue's), the queue's head (in front of qfull's), the controller's pad press (in front of linein's), the
     head of the LED calls.  Needs granpage v2, linein, cue, qfull, cthresh, rhrec, rhstate ram2."""
     import rhbuild
@@ -461,7 +481,7 @@ def install(img, report, base_addr):
                 ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert prev["param"] == lab("cue", "c_cuparam") and prev["queue"] == lab("qfull", "c_qfw") and prev["pad"] == lab("linein", "c_lipad")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code_, labels = arm_code(base_addr, L, prev)
+    code_, labels = arm_code(base_addr, L, prev, ui)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
@@ -470,5 +490,5 @@ def install(img, report, base_addr):
     rhbuild.patch(img, PP_ENTRY, f"b.w #{prev['pad']:#x}", b_w(PP_ENTRY, labels["c_slpad"]))
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_slled"]))
-    report["slink"] = dict(prev={k: hex(v) for k, v in prev.items()}, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["slink"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"ui": True} if ui else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code_

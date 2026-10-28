@@ -26,7 +26,7 @@ import trkcopy  # noqa: E402
 NAME = "RH18"
 
 
-def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True, dsp=False, scniter=False, bpm0=False, rh30=False, rh31=False, ram2=False):
+def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag=True, dsp=False, scniter=False, bpm0=False, rh30=False, rh31=False, ram2=False, ui=False):
     b = build_rh01.build(name, diag=diag, dsp=dsp, ram2=ram2)
     b.add("countin", countin, v2=True, **({"bpm0": True} if bpm0 else {}))
     b.add("quant", quant, v2=True)
@@ -40,7 +40,8 @@ def build(name=NAME, arp_rec=False, bright=False, arp1=False, fxcols=False, diag
     b.add("patchain", patchain, **({"iterled": True} if scniter else {}))
     b.add("sckn", sckn, **({"bright": True} if bright else {}))
     b.add("fxkeys", fxkeys, **({"bright": True} if bright else {}), **({"cols": True} if fxcols else {}), **({"viewset": True} if rh30 else {}))
-    b.add("drumarp", drumarp, notes=True, **({"rec": True} if arp_rec else {}), **({"single": True} if arp1 else {}), **({"bpm0": True} if bpm0 else {}))
+    b.add("drumarp", drumarp, notes=True, **({"rec": True} if arp_rec else {}), **({"single": True} if arp1 else {}), **({"bpm0": True} if bpm0 else {}),
+          **({"ui": True} if ui else {}))
     b.add("cscale", cscale)
     b.add("trkcopy", trkcopy)
     b.add("dqfix", dqfix)

@@ -46,6 +46,8 @@ PAD = 21                                                  # Setup pad 22
 SETUP_VT = PG.SETUP_VT
 KNOB_SLOT = SETUP_VT + 16
 COL_ON, COL_DIM = UM.COL_ON, UM.COL_DIM
+# ui (RH52; docs/INTERFAZ.md, the user, 2026-10-28: «toggles change brightness if they're on-off»): off = the dim of its own colour
+UI_DIM = 0x1F                                             # dim green
 COL_TRK = 0x149                                           # + t: the Mixer's colour of each track
 MARK0, MARK1, CHECK = 0x47, 0x4D, 0x6B                    # "GM"
 BLK, BLK_LEN = rhrec.OFF["gmmode"]
@@ -61,7 +63,7 @@ def strb_reg(rt, rn, rm): return h(0x5400 | rm << 6 | rn << 3 | rt)
 def ldrsb_reg(rt, rn, rm): return h(0x5600 | rm << 6 | rn << 3 | rt)
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, ui=False):
     a = Asm(base)
     E = a.emit
 
@@ -431,7 +433,7 @@ def arm_code(base, L, prev):
     E(b_cond, "gl_x", "eq")
     E(bl, "c_gmis")
     E(mov_reg, 6, 0)
-    E(movs_imm, 1, COL_DIM)
+    E(movs_imm, 1, UI_DIM if ui else COL_DIM)
     E(cmp_imm, 6, 0)
     E(b_cond, "gl_p", "eq")
     E(movs_imm, 1, COL_ON)
@@ -454,7 +456,7 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, ui=False):
     """The transmitter's slots 0 / 1, the receive thunk's branch, the Setup view's slots 0 / 4, the head of the LED calls.  Needs pgmch, rhrec,
     rhstate ram2."""
     import rhbuild
@@ -465,7 +467,7 @@ def install(img, report, base_addr):
     prev = dict(on=u(TX_VT) & ~1, off=u(TX_VT + 4) & ~1, pad=u(SETUP_VT) & ~1, knob=u(KNOB_SLOT) & ~1,
                 ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    code, labels = arm_code(base_addr, L, prev, ui)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])

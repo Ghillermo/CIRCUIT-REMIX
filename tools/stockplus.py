@@ -122,21 +122,33 @@ DEFU8 = DEFU[:K8] + (8192,) + DEFU[K8 + 1:]           # (k8sync) the defaults as
 # middle: synced; the default, the middle, is now off).
 K3 = 2
 K3_MIDPH = 0x400000                                   # a quarter cycle: pitchmod's triangle at 0, rising
+# ui (RH52; docs/INTERFAZ.md, the user, 2026-10-28): the page in its own colour (sky blue: the knobs, the track's button blinking, the menu's
+# pad 2), K6's filter types in colours of their own (stock white, 24 dB orange, comb lavender: not the FX view's delay / reverb), and the
+# synced half of K3 / K8 the other way round: the clock's divisions faster towards the left end (8 bars by the middle, 1/16T at the end),
+# as the free half gets faster towards the right end (the tables in reverse order, the same code)
+UI_KNOB, UI_BLINK, UI_DIM = 0x10, 0x10, 0x11
+UI_TYPES = (0x151, 0x41, 0x64)
 
 
-def k8_index(v):
+def div_index(d, ui=False):
+    """the synced half: the division's index (into DIVS / KQ / PHQ) for d = v - X7 <= -DEAD"""
+    i = min(15, (-d - DEAD) >> DIV_SHIFT)
+    return 15 - i if ui else i
+
+
+def k8_index(v, ui=False):
     """(k8sync) K8's value -> None (the middle), ("free", x) or ("sync", the division's index)"""
     d = v - X7
     if abs(d) < DEAD:
         return None
     if d > 0:
         return ("free", d << 1)
-    return ("sync", min(15, (-d - DEAD) >> DIV_SHIFT))
+    return ("sync", div_index(d, ui))
 
 
-def k8_rate(v, bpm):
+def k8_rate(v, bpm, ui=False):
     """(k8sync) SCANR for K8's value v at bpm (the ARM's: BPM < 30 counts as 120, as countin)"""
-    k = k8_index(v)
+    k = k8_index(v, ui=ui)
     if k is None:
         return 0
     if k[0] == "free":
@@ -147,7 +159,7 @@ def k8_rate(v, bpm):
     return (bpm * KQ[k[1]] >> 8) & 0xFFFFFFFF
 
 
-def k3_rate(v, bpm):
+def k3_rate(v, bpm, ui=False):
     """(k3sync) R for K3's value v at bpm: 0 in the middle, the rate table right of it, BPM x KQ[i] >> 8 left of it"""
     d = v - X7
     if abs(d) < DEAD:
@@ -157,21 +169,21 @@ def k3_rate(v, bpm):
         i, f = x >> 7, x & 127
         return tab[i] + ((tab[i + 1] - tab[i]) * f >> 7)
     bpm = bpm if bpm >= 30 else 120
-    return (bpm * KQ[min(15, (-d - DEAD) >> DIV_SHIFT)] >> 8) & 0xFFFFFFFF
+    return (bpm * KQ[div_index(d, ui)] >> 8) & 0xFFFFFFFF
 
 
-def k3_phase(v, tick):
+def k3_phase(v, tick, ui=False):
     """(k3sync) the LFO's phase the LED task writes for K3's value v at the global tick (None: not synced)"""
     d = v - X7
     if d > -DEAD:
         return None
-    i = min(15, (-d - DEAD) >> DIV_SHIFT)
+    i = div_index(d, ui)
     return ((tick % DIVS[i]) * PHQ[i] + K3_MIDPH) & 0xFFFFFF
 
 
-def k8_phase(v, tick):
+def k8_phase(v, tick, ui=False):
     """(k8sync) the phase the LED task writes for K8's value v at the global tick (None: not synced)"""
-    k = k8_index(v)
+    k = k8_index(v, ui=ui)
     if k is None or k[0] != "sync":
         return None
     return ((tick % DIVS[k[1]]) * PHQ[k[1]]) & 0xFFFFFF
@@ -244,7 +256,7 @@ def words(v):
     return [((v[0] - 8192) * A_SCALE) & 0xFFFFFF, interp(decay_table(), v[1]), interp(rate_table(), v[2]), v[3] * L_SCALE]
 
 
-def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False):
+def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False, ui=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -280,12 +292,13 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         E(raw, b"".join(v.to_bytes(2, "little") for v in DEF2))
         if k6swap:
             t_cols = t_def2 + 2 * len(DEF2)
-            E(raw, b"".join(v.to_bytes(2, "little") for v in COL_TYPES))
+            E(raw, b"".join(v.to_bytes(2, "little") for v in (UI_TYPES if ui else COL_TYPES)))
         if k8sync:
             assert k6swap
             t_divs = (t_cols + 2 * len(COL_TYPES) + 3) & ~3
             E(raw, bytes(t_divs - t_cols - 2 * len(COL_TYPES)))
-            E(raw, b"".join(x.to_bytes(4, "little") for x in DIVS + KQ + PHQ))
+            rv = (lambda t: t[::-1]) if ui else (lambda t: t)              # (ui: the synced half the other way round)
+            E(raw, b"".join(x.to_bytes(4, "little") for x in rv(DIVS) + rv(KQ) + rv(PHQ)))
             t_kq, t_phq = t_divs + 4 * len(DIVS), t_divs + 8 * len(DIVS)
 
     # ---- c_spst() -> r0 = our state (rhstate), 0 without our RAM; clobbers r1-r3
@@ -1376,7 +1389,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
             E(movs_imm, 0, 127)
             a.label(f"lk_c{k}")
         E(strb_imm, 0, 7, K_VAL + k)
-        imm32(0, COL_KNOB)
+        imm32(0, UI_KNOB if ui else COL_KNOB)
         E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
     if not v2:
@@ -1387,7 +1400,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
     E(ldr_imm, 0, 0, 0)
     E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
     E(b_cond, "ld_x", "pl")
-    E(movs_imm, 0, COL_BLINK)
+    E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
     E(lsls_imm, 1, 4, 1)
     E(adds_reg, 1, 5, 1)
     E(strh_w_imm, 0, 1, 2 * LED_TRK0)
@@ -1397,7 +1410,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
     return a.assemble()
 
 
-def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False):
+def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False, ui=False):
     """Append the code; the head of the button chain, the head of the container's knob slot, the LED task calls (outermost).  pitchmod's
     core 1 code (tools/pitchmod.py, without dspload) must be in the build too, with the same shift."""
     global YB
@@ -1417,7 +1430,8 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False,
     assert k6swap or not k8sync
     assert v2 or not fitflag
     assert k8sync or not k3sync
-    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync, fitflag=fitflag, k3sync=k3sync)
+    assert k8sync or not ui
+    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync, fitflag=fitflag, k3sync=k3sync, ui=ui)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1427,6 +1441,6 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False,
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_spled"]))
     report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync,
                                **({"fitflag": True, "t_spd": hex(base_addr + 8 * 129 + 2 * NPAR + 4 * 129)} if fitflag else {}),
-                               **({"k3sync": True} if k3sync else {}),
+                               **({"k3sync": True} if k3sync else {}), **({"ui": True} if ui else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code
