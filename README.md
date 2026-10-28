@@ -1,6 +1,6 @@
 # Circuit Remix
 
-Help me pay for tools and mantain this and CIRCUIT HACKS project: https://PayPal.me/ghillermo
+Help me pay for tools and mantain this project and CIRCUIT HACKS: https://PayPal.me/ghillermo
 
 Contributors:
 
