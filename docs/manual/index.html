@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.05 — manual</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.06 — manual</title><style>
 :root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
 :root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
@@ -23,9 +23,9 @@ footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
 p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
 p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
 </style></head><body>
-<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.05</p><div class="bar"></div></header><main>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.06</p><div class="bar"></div></header><main>
 <p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.05 es experimental:</strong> lo nuevo (el sinte y la interfaz de Alpha 0.05, y casi todo lo de Alpha 0.04) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.06 es experimental:</strong> lo nuevo (la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04 / 0.05) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
 <p>Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.</p>
 <nav class="toc"><h2>Índice</h2>
 <h3>0. Introducción</h3><ol>
@@ -42,8 +42,9 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><a href="#stockplus">2.3 Página Stock+</a></li>
 <li><a href="#granular">2.4 Página Granular</a></li>
 <li><a href="#sinte">2.5 Página Sinte</a></li>
-<li><a href="#entrada">2.6 Entrada de línea y enlace estéreo</a></li>
-<li><a href="#note">2.7 Vista Note</a></li>
+<li><a href="#envolvente">2.6 Página Envolvente</a></li>
+<li><a href="#entrada">2.7 Entrada de línea y enlace estéreo</a></li>
+<li><a href="#note">2.8 Vista Note</a></li>
 </ol>
 <h3>3. Pasos y patrón</h3><ol>
 <li><a href="#velocity">3.1 Velocity y Micro Step</a></li>
@@ -75,7 +76,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = los 8 knobs. <strong>▲ / ▼</strong> = los botones de flecha.</li>
 <li><strong>Mantener</strong> un botón = pulsarlo y no soltarlo; <strong>A + B</strong> = B con A mantenido.</li>
 <li><strong>★</strong> = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).</li>
-<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.05)</em> es nuevo o cambia en esta versión.</li>
+<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.06)</em> es nuevo o cambia en esta versión.</li>
 <li>Al final, el <strong><a href="#glosario">glosario</a></strong>: una entrada por función, con su vista y su gesto.</li>
 </ul>
 </section>
@@ -167,7 +168,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
 </svg><figcaption>Las páginas de knobs en el menú de pista: brillante = la que se ve.</figcaption></figure>
-<p>Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas <em>(Alpha 0.05)</em>:</p>
+<p>Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas <em>(desde Alpha 0.05)</em>:</p>
 <table><thead><tr><th>Regla</th><th>Qué ves</th></tr></thead><tbody>
 <tr><td>El brillo es el valor</td><td>en una página de knobs, todos los knobs del mismo color; cuanto más brillo, más valor</td></tr>
 <tr><td>Knobs con centro</td><td>el centro (el cero) oscuro; más brillo hacia los dos extremos</td></tr>
@@ -184,6 +185,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>Stock+</td><td>azul cielo</td></tr>
 <tr><td>Granular</td><td>lila</td></tr>
 <tr><td>Sinte</td><td>menta</td></tr>
+<tr><td>Envolvente</td><td>rosa</td></tr>
 </tbody></table>
 </section>
 <section class="feat" id="instalar"><h3><span class="code">0.3</span>Instalar y volver al original</h3>
@@ -192,7 +194,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.</li>
 <li>Elige la versión y envíala al aparato por USB.</li>
 </ol>
-<p><strong>Versiones S</strong> (A0.05S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.</p>
+<p><strong>Versiones S</strong> (A0.06S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.</p>
 <p><strong>Volver al firmware oficial:</strong> mantén <strong>Sample Rec + Samples + Note</strong> al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.</p>
 </section>
 <h2 class="group">1. En cualquier vista</h2>
@@ -426,7 +428,8 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <rect x="218" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.95" stroke="#000"/>
 <text x="247.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">Sinte</text>
 <text x="222" y="150" font-size="8" fill="#7d838a">4</text>
-<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#ff4c7b" fill-opacity="0.32" stroke="#000"/>
+<text x="313.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Envolv.</text>
 <text x="288" y="150" font-size="8" fill="#7d838a">5</text>
 <rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="354" y="150" font-size="8" fill="#7d838a">6</text>
@@ -487,21 +490,23 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
 </svg><figcaption>El menú de una pista con el sinte, en su página.</figcaption></figure>
-<p>Los pads se convierten en el menú de esa pista <em>(Alpha 0.05)</em>:</p>
+<p>Los pads se convierten en el menú de esa pista <em>(Alpha 0.06)</em>:</p>
 <table><thead><tr><th>Pad</th><th>Qué hace</th></tr></thead><tbody>
 <tr><td><strong>1</strong></td><td>página <strong>stock</strong> de los knobs (la del original)</td></tr>
 <tr><td><strong>2</strong></td><td>página <strong><a href="#stockplus">Stock+</a></strong> (con un sample)</td></tr>
 <tr><td><strong>3</strong></td><td>página <strong><a href="#granular">Granular</a></strong> (con el granular)</td></tr>
 <tr><td><strong>4</strong></td><td>página <strong><a href="#sinte">Sinte</a></strong> (con el sinte)</td></tr>
+<tr><td><strong>5</strong></td><td>página <strong><a href="#envolvente">Envolvente</a></strong> (con el sinte o el granular) <em>(Alpha 0.06)</em></td></tr>
 <tr><td><strong>9</strong></td><td>★ <strong><a href="#entrada">enlace estéreo</a></strong> con la pista siguiente, sí / no</td></tr>
 <tr><td><strong>11</strong></td><td>el <strong>granular</strong> de la pista, sí / no (hasta 4 pistas); encendido, su página</td></tr>
 <tr><td><strong>12</strong></td><td>★ el <strong>sinte</strong> de la pista, sí / no (hasta 4 pistas); encendido, su página</td></tr>
 <tr><td><strong>13</strong></td><td>★ la <strong><a href="#entrada">entrada de línea</a></strong> como sonido de la pista, sí / no</td></tr>
-<tr><td><strong>14</strong></td><td>el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas (oscuro si la pista no es de entrada)</td></tr>
+<tr><td><strong>14</strong></td><td>el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas, por el VCA y el filtro de la pista (oscuro si la pista no es de entrada)</td></tr>
+<tr><td><strong>15</strong></td><td>la fuente de la entrada: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón) <em>(Alpha 0.06)</em></td></tr>
 </tbody></table>
 <ul>
 <li><strong>Abrirlo:</strong> un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.</li>
-<li>Fila 1, las <strong>páginas</strong> de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock y Granular; sinte: stock y Sinte; entrada: stock); las demás, oscuras. Brillante = la que se ve. <strong>Mantener</strong> un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.</li>
+<li>Fila 1, las <strong>páginas</strong> de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Granular y Envolvente; sinte: stock, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. <strong>Mantener</strong> un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.</li>
 <li>Fila 2, debajo, los <strong>conmutadores</strong>: brillante = encendido, tenue = apagado. <strong>El sonido de la pista solo cambia aquí:</strong> sample, granular, sinte o entrada, uno por pista; poner uno quita los otros.</li>
 <li>Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos.</li>
 </ul>
@@ -604,12 +609,12 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <table><thead><tr><th>Knob</th><th>Solo</th><th>Con Shift</th></tr></thead><tbody>
 <tr><td>K1</td><td>★ envolvente de tono: centro = nada; derecha = cada golpe empieza más agudo, izquierda más grave (hasta ±24 semitonos)</td><td>ajuste fino</td></tr>
 <tr><td>K2</td><td>★ lo que tarda en volver a la nota (5 ms - 4 s)</td><td>ajuste fino</td></tr>
-<tr><td>K3</td><td>★ velocidad del LFO de tono: centro = apagado; derecha = libre (0,05-30 Hz); izquierda = a tempo, de 8 compases junto al centro a 1/16T en el extremo <em>(Alpha 0.05)</em></td><td>ajuste fino</td></tr>
+<tr><td>K3</td><td>★ velocidad del LFO de tono: centro = apagado; derecha = libre (0,05-30 Hz); izquierda = a tempo, de 8 compases junto al centro a 1/16T en el extremo <em>(desde Alpha 0.05)</em></td><td>ajuste fino</td></tr>
 <tr><td>K4</td><td>★ profundidad del LFO de tono (0-24 semitonos)</td><td>ajuste fino</td></tr>
 <tr><td>K5</td><td>★ cantidad del ring mod</td><td>★ su frecuencia (20 Hz-5 kHz)</td></tr>
 <tr><td>K6</td><td>★ pitch follow: el corte del paso bajo sigue a la nota</td><td>★ tipo de filtro sobre los knobs de filtro del original: <strong>stock</strong> (blanco), <strong>24 dB</strong> (naranja), <strong>comb</strong> (lavanda)</td></tr>
 <tr><td>K7</td><td>★ <strong>stretch</strong>: más lento (izquierda, hasta 0,25×) o más rápido (derecha, hasta 4×) sin cambiar el tono; centro = el original</td><td>★ bitcrush</td></tr>
-<tr><td>K8</td><td>★ velocidad del scan (mueve el inicio de cada nota; en un loop, el inicio del loop en cada vuelta): centro = quieto; derecha = libre (0,05-20 Hz); izquierda = a tempo, más rápido hacia el extremo <em>(Alpha 0.05)</em></td><td>★ su profundidad</td></tr>
+<tr><td>K8</td><td>★ velocidad del scan (mueve el inicio de cada nota; en un loop, el inicio del loop en cada vuelta): centro = quieto; derecha = libre (0,05-20 Hz); izquierda = a tempo, más rápido hacia el extremo <em>(desde Alpha 0.05)</em></td><td>★ su profundidad</td></tr>
 </tbody></table>
 <ul>
 <li><strong>LEDs:</strong> azul cielo con el brillo según el valor (K1, K3, K7 y K8: la distancia al centro); K6 en el color de su tipo de filtro. Con Shift, K5-K8 enseñan su segunda capa.</li>
@@ -720,7 +725,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>K5</td><td>altura (centro = la nota; ±24 semitonos)</td><td>altura fina</td></tr>
 <tr><td>K6</td><td>dispersión de la posición</td><td>zona (qué parte del sample)</td></tr>
 <tr><td>K7</td><td>dispersión de la altura</td><td>probabilidad de reverso</td></tr>
-<tr><td>K8</td><td>ventana (rectángulo → triángulo → percusiva)</td><td>gate, encendido / apagado: tenue = siempre suena (drone), brillante = lo abren las notas <em>(Alpha 0.05)</em></td></tr>
+<tr><td>K8</td><td>ventana (rectángulo → triángulo → percusiva)</td><td>gate, encendido / apagado: tenue = siempre suena (drone), brillante = lo abren las notas <em>(desde Alpha 0.05)</em></td></tr>
 </tbody></table>
 <p>Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro). Clear + knob = por defecto. Se guarda con el proyecto.</p>
 </section>
@@ -817,7 +822,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
 </svg><figcaption>Página Sinte: K1 / K2 en el color de la forma de onda, el resto en menta.</figcaption></figure>
-<p>★ Un sinte monofónico de dos osciladores en el DSP del master, como sonido de cualquier pista <em>(Alpha 0.05)</em>. <strong>Hasta 4 pistas con sinte.</strong> Las notas le llegan como a un sample (pads, vista Note, secuencia, MIDI).</p>
+<p>★ Un sinte monofónico de dos osciladores en el DSP del master, como sonido de cualquier pista <em>(desde Alpha 0.05)</em>. <strong>Hasta 4 pistas con sinte.</strong> Las notas le llegan como a un sample (pads, vista Note, secuencia, MIDI).</p>
 <table><thead><tr><th>Knob</th><th>Solo</th><th>Con Shift</th></tr></thead><tbody>
 <tr><td>K1</td><td>forma de onda de OSC 1: sierra (rojo), pulso (amarillo), triángulo (verde), seno (blanco)</td><td>ruido</td></tr>
 <tr><td>K2</td><td>forma de onda de OSC 2 (los mismos colores)</td><td>sync, encendido / apagado (mitad derecha = encendido)</td></tr>
@@ -835,17 +840,121 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Clear + knob = por defecto. <strong>Se guarda con el proyecto.</strong></li>
 </ul>
 </section>
-<section class="feat" id="entrada"><h3><span class="code">2.6</span>Entrada de línea y enlace estéreo</h3>
-<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pads 13 / 14 y 9</p></div>
+<section class="feat" id="envolvente"><h3><span class="code">2.6</span>Página Envolvente</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pad 5, en una pista con el sinte o el granular (el botón de la pista parpadea en rosa)</p></div>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Página Envolvente: K1-K4 en rosa, K5-K8 apagados.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#ff4c7b" stroke-width="4"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<text x="49.0" y="82" font-size="10" fill="#ff4c7b" text-anchor="middle">start</text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#ff4c7b" stroke-width="4"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<text x="115.0" y="82" font-size="10" fill="#ff4c7b" text-anchor="middle">length</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#ff4c7b" stroke-width="4"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<text x="181.0" y="82" font-size="10" fill="#ff4c7b" text-anchor="middle">slope</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#ff4c7b" stroke-width="4"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<text x="247.0" y="82" font-size="10" fill="#ff4c7b" text-anchor="middle">→ filter</text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Página Envolvente: K1-K4 en rosa, K5-K8 apagados.</figcaption></figure>
+<p>★ La envolvente del sinte y del granular, según el <strong>modo de reproducción</strong> de la pista (Sample mode, pads 25 / 26 / 27) <em>(Alpha 0.06)</em>:</p>
+<table><thead><tr><th>Knob</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td>K1</td><td><strong>inicio</strong>: el ataque, de instantáneo a 2 s</td></tr>
+<tr><td>K2</td><td><strong>longitud</strong>: en <strong>one-shot</strong>, la caída (percusiva; soltar la nota no cuenta); en <strong>gated</strong>, el release al soltar (arriba mientras dura la nota); en <strong>loop</strong>, cuánto se mantiene (lo que dure más, la nota o este tiempo; luego un release corto). De 5 ms a 8 s</td></tr>
+<tr><td>K3</td><td><strong>pendiente</strong>, desde el centro: centro = lineal; derecha = exponencial (cae antes); izquierda = más redonda (aguanta)</td></tr>
+<tr><td>K4</td><td><strong>envolvente → paso bajo</strong>, desde el centro</td></tr>
+<tr><td>K5-K8</td><td>nada (oscuros)</td></tr>
+</tbody></table>
+<ul>
+<li><strong>El sinte:</strong> K1, K2 y K4 son sus valores de siempre (K2 = el release de Shift + K6, K4 = Shift + K7 de su página).</li>
+<li><strong>El granular:</strong> con su gate encendido (Shift + K8), las notas abren y cierran la envolvente, que es su VCA; los granos corren siempre. Con el gate apagado, suena siempre, como antes.</li>
+<li>Rosa con el brillo según el valor (K3 / K4: la distancia al centro). Clear + knob = por defecto. <strong>Se guarda con el proyecto.</strong></li>
+</ul>
+</section>
+<section class="feat" id="entrada"><h3><span class="code">2.7</span>Entrada de línea y enlace estéreo</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pads 13 / 14 / 15 y 9</p></div>
 <p><strong>Entrada de línea</strong> (pad 13; desde Alpha 0.04): la entrada de audio suena como el sonido de la pista, con su nivel, panorama, envíos, filtro y envolvente.</p>
 <ul>
 <li>Una pista de entrada: L + R. Dos: la de número menor es L, la mayor R. En una tercera, sale la primera puesta.</li>
-<li><strong>Pad 14, el gate:</strong> tenue = siempre suena; brillante = solo mientras suenan sus notas.</li>
+<li><strong>Pad 14, el gate:</strong> tenue = siempre suena; brillante = solo mientras suenan sus notas, por el VCA y el filtro de la pista (paso bajo, paso alto, resonancia; el filtro desde Alpha 0.06).</li>
+<li><strong>Pad 15, la fuente</strong> (Alpha 0.06): las entradas (ámbar) → el <strong>retorno de reverb</strong> (crema) → el <strong>de delay</strong> (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms). Ojo: mandar esa pista a su propia reverb o delay realimenta.</li>
 </ul>
 <p><strong>Enlace estéreo</strong> (pad 9; desde Alpha 0.04): la pista (izquierda, su sample) y la siguiente (derecha, el sample siguiente) suenan juntas con los parámetros y las notas de la primera. Pad 9 en cualquiera de las dos = deshacer. En la pista 8 sola, oscuro. Sin enlazar quedan el LFO y el scan libres de Stock+ y el WSOLA del stretch.</p>
 <p>Las dos se guardan con el proyecto.</p>
 </section>
-<section class="feat" id="note"><h3><span class="code">2.7</span>Vista Note</h3>
+<section class="feat" id="note"><h3><span class="code">2.8</span>Vista Note</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> botón Note</p></div>
 <table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
 <tr><td><strong>Teclas mantenidas</strong> (arpegiador encendido)</td><td>★ arpegio de las notas mantenidas sobre el sample de la pista; con Record y Play se graba <em>(desde Alpha 0.0)</em></td></tr>
@@ -947,7 +1056,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="98.0" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Gate</text>
 </svg><figcaption>Micro Step: pad 31 longitud fija, pad 32 gate por pulsación (apagados: tenues).</figcaption></figure>
 <table><thead><tr><th>Vista</th><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
-<tr><td>Velocity</td><td><strong>Shift + paso</strong></td><td>marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista <em>(Alpha 0.05)</em> <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td>Velocity</td><td><strong>Shift + paso</strong></td><td>marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista <em>(desde Alpha 0.05)</em> <em>(desde Alpha 0.04)</em></td></tr>
 <tr><td>Micro Step</td><td><strong>pad 31</strong></td><td>longitud fija: apagada → el selector en los pads 17-32 (1-16 pasos; elegir una la enciende); encendida → apagada (naranja brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
 <tr><td>Micro Step</td><td><strong>pad 32</strong></td><td>gate por pulsación: el golpe dura lo que mantienes el pad del paso; mantener un paso vacío 300 ms o más también lo crea (verde brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
 </tbody></table>
@@ -1234,7 +1343,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <h2 class="group">A. Apéndice</h2>
 <section class="feat" id="guardado"><h3><span class="code">A.1</span>Qué se guarda y dónde</h3>
 <table><thead><tr><th>Dónde</th><th>Qué</th></tr></thead><tbody>
-<tr><td><strong>Con el proyecto</strong></td><td>Stock+, Granular, Sinte (ajustes y pistas), entrada de línea, enlace estéreo, de-clicker por pista, escala propia, reglas de cadena, dinámicas / mutación / frecuencia por paso, marcas de Velocity, Micro Step, modo GM, reverb / delay / sidechain</td></tr>
+<tr><td><strong>Con el proyecto</strong></td><td>Stock+, Granular, Sinte (ajustes y pistas), Envolvente, la fuente de la entrada, entrada de línea, enlace estéreo, de-clicker por pista, escala propia, reglas de cadena, dinámicas / mutación / frecuencia por paso, marcas de Velocity, Micro Step, modo GM, reverb / delay / sidechain</td></tr>
 <tr><td><strong>Ajustes del aparato</strong></td><td>canales de Program Change, modo del Thru, teclado al arpegiador, fusión USB, resonancia del filtro master, compresor</td></tr>
 <tr><td><strong>Hasta apagar</strong></td><td>la página de knobs de cada pista, el modo cue, el metrónomo / cuenta atrás, Sample Rec pads 23 / 24</td></tr>
 </tbody></table>
@@ -1244,7 +1353,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <p>Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía del programador del Circuit Rhythm): sidechain NRPN 1:1-1:4 (canal de la pista); reverb NRPN 1:18-1:20; delay NRPN 1:6-1:11; resonancia master CC 71; compresor NRPN 1:22-1:26. Las páginas Stock+, Granular y Sinte aún no tienen MIDI.</p>
 </section>
 <h2 class="group" id="glosario">Glosario de funciones</h2><section class="feat"><table><thead><tr><th>Función</th><th>Qué es / gesto</th><th>Capítulo</th><th>Desde</th></tr></thead><tbody>
-<tr><td><strong>Arpegiador de notas</strong></td><td>arpegia las teclas mantenidas en la vista Note</td><td><a href="#note">2.7 Vista Note</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Arpegiador de notas</strong></td><td>arpegia las teclas mantenidas en la vista Note</td><td><a href="#note">2.8 Vista Note</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Arpegiador de samples</strong></td><td>arpegia los pads de sample mantenidos; Shift + pad 25 de Pattern Settings lo enciende</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Bitcrush</strong></td><td>Stock+, Shift + K7</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Borrar un pack</strong></td><td>Clear + pack dos veces en Packs</td><td><a href="#projects">6.1 Projects y Packs</a></td><td>Alpha 0.01</td></tr>
@@ -1257,11 +1366,12 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Cuenta atrás</strong></td><td>un compás antes de grabar; Shift + Clear</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>De-clicker de loops</strong></td><td>crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Dinámicas por paso</strong></td><td>velocity y retraso al azar dentro del paso; fila 3 de la probabilidad</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Enlace estéreo</strong></td><td>una pista y la siguiente como un sonido estéreo; menú, pad 9</td><td><a href="#entrada">2.6 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
-<tr><td><strong>Entrada de línea</strong></td><td>la entrada de audio como sonido de una pista; menú, pads 13 / 14</td><td><a href="#entrada">2.6 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Enlace estéreo</strong></td><td>una pista y la siguiente como un sonido estéreo; menú, pad 9</td><td><a href="#entrada">2.7 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Entrada de línea</strong></td><td>la entrada de audio como sonido de una pista; menú, pads 13 / 14</td><td><a href="#entrada">2.7 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Envolvente de tono</strong></td><td>Stock+, K1 / K2</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Envolvente por modo</strong></td><td>inicio, longitud, pendiente y → filtro del sinte y el granular; menú, pad 5</td><td><a href="#envolvente">2.6 Página Envolvente</a></td><td>Alpha 0.06</td></tr>
 <tr><td><strong>Envíos de FX en los knobs</strong></td><td>▼ / ▲ en la vista FX</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Escala propia</strong></td><td>una escala por pista; Shift en la vista Note</td><td><a href="#note">2.7 Vista Note</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Escala propia</strong></td><td>una escala por pista; Shift en la vista Note</td><td><a href="#note">2.8 Vista Note</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Fixed Recording con reloj externo</strong></td><td>la duración al tempo del reloj MIDI que llega</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Frecuencia por paso</strong></td><td>el paso suena una de cada n pasadas</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Fusión USB</strong></td><td>el DIN In también por USB; Advanced Setup, pad 23</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
@@ -1285,6 +1395,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Repetir la escena</strong></td><td>la escena actual 1-8 veces; Mixer, Shift + pads 9-16</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Reset de knobs de pista</strong></td><td>Clear + botón de la pista</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Resonancia master</strong></td><td>Shift + ▲ / ▼ en la vista FX</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Retornos de FX como fuente</strong></td><td>la reverb o el delay como sonido de una pista de entrada; menú, pad 15</td><td><a href="#entrada">2.7 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.06</td></tr>
 <tr><td><strong>Ring mod</strong></td><td>Stock+, K5 (Shift: la frecuencia)</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Scan</strong></td><td>mueve el inicio de cada nota o del loop; Stock+, K8</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Sidechain por knobs</strong></td><td>K1-K4 de la vista Sidechain</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>

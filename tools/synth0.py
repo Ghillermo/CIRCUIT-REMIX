@@ -54,6 +54,21 @@ P_MIN, P_MAX = K_LO << 16, ((K_HI - 1) << 16) | 0xFFFF
 FS = 48000.0
 LCG_A, LCG_C = 1664525 & 0xFFFFFF, 1013904223 & 0xFFFFFF
 KNOB_PU = 0x3333                                       # the stock's pitch knob: a fifth of a semitone a step
+# env2 (RH54; the user, 2026-10-28: «add start length for envelope controls (percussive env for one shot.  Unitary sustain: atk/release for
+# gated, atk/sustain for loop), slope for env to amp and dist for env to filt»; the loop's: «Attack + sustain time»; the slope «From the
+# centre»): the envelope by the track's play mode (C_MODE, the ARM's: 0 one-shot, 1 gated, 2 loop), linear segments shaped by the slope:
+#   * one-shot: up by C_ATK a block, then down by C_DEC (percussive; the note-off ignored);
+#   * gated: up by C_ATK, held at the top while the note is held, then down by C_DEC (the note-off during the attack: down from there);
+#   * loop: up by C_ATK, held for C_HOLD blocks and while the note is held, whichever ends later, then down by C_RQ (a short release);
+#   * the shape: out = e + C_SLP (e^2 - e) (C_SLP -1 .. 1: right = exponential, left = rounder), S_ENV = out (the VCA x velocity, the
+#     filter's C_EF), S_VCA = out x velocity.
+# The same blocks for the granular slots (GE0 + $40 g: the controls C_TRK, C_KEY, C_EF and these, written by the ARM): the queue's notes
+# open and close them, granchain's env option takes S_VCA as the VCA and C_EF x S_ENV on the low-pass.
+(C_ATK, C_DEC, C_HOLD, C_MODE, C_SLP, C_RQ) = range(48, 54)
+(S_LIN, S_HC, S_GATE, S_VCA) = range(54, 58)
+SUS = 4
+M_ONESHOT, M_GATED, M_LOOP = 0, 1, 2
+GE0, GE_N = 0x1C00, 4                                  # core 0 Y (free in the RH builds: latdiag's place in RD24 only)
 
 
 def frac(x):
@@ -81,7 +96,7 @@ def tables():
     return t
 
 
-def items(tab_at, entry):
+def items(tab_at, entry, env2=False):
     L = []
 
     def e(*s):
@@ -106,6 +121,9 @@ def items(tab_at, entry):
     e(("jsr", "sy_q"))
     for s in range(NSLOT):
         e(f"move #>${Y0 + SN * s:x},r6", "nop", ("jsr", "sy_slot"))
+    if env2:
+        for g in range(GE_N):
+            e(f"move #>${GE0 + SN * g:x},r6", "nop", ("jsr", "ge_slot"))
     for k in range(7):
         e(f"move {y(SAVE + k)},r{k}", ("words", [0x05F060 | k, SAVE + 7 + k]))
     e(("jmp", entry))
@@ -120,6 +138,9 @@ def items(tab_at, entry):
       "move y:(r1)+,y0", "move y:(r1),y1")
     for s in range(NSLOT):
         e(f"move #>${Y0 + SN * s:x},r6", "nop", ("jsr", "q_slot"))
+    if env2:                                                            # (env2) the granular slots' envelopes too
+        for g in range(GE_N):
+            e(f"move #>${GE0 + SN * g:x},r6", "nop", ("jsr", "q_slot"))
     e(("jmp", "q_lp"), ("label", "q_done"), "rts")
     # q_slot (r6 = the slot; y0 = w0, y1 = w1; keeps x1)
     e(("label", "q_slot"), f"move {ys(C_KEY)},a", f"move #>${KEY:x},x0", "cmp x0,a", ("jcc", "ne", "q_r"),
@@ -133,11 +154,18 @@ def items(tab_at, entry):
       f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "eq", "q_snap"),
       f"move {ys(C_GLD)},a", f"move #>${ONE:x},x0", "cmp x0,a", ("jcc", "lt", "q_att"),
       ("label", "q_snap"), f"move y1,{ys(S_PIT)}",
-      ("label", "q_att"), "clr a", f"move a,{ys(S_STG)}", "rts",
-      ("label", "q_off"), "move #>$800000,x0", "cmp x0,b", ("jcc", "ne", "q_r"),
-      f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "eq", "q_r"),
-      f"move #>${REL:x},a", f"move a,{ys(S_STG)}",
-      ("label", "q_r"), "rts")
+      ("label", "q_att"), "clr a", f"move a,{ys(S_STG)}")
+    if env2:                                                            # (env2) the note held: the gate
+        e(f"move #>${ONE:x},a", f"move a,{ys(S_GATE)}", "rts",
+          ("label", "q_off"), "move #>$800000,x0", "cmp x0,b", ("jcc", "ne", "q_r"),
+          "clr a", f"move a,{ys(S_GATE)}",
+          ("label", "q_r"), "rts")
+    else:
+        e("rts",
+          ("label", "q_off"), "move #>$800000,x0", "cmp x0,b", ("jcc", "ne", "q_r"),
+          f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "eq", "q_r"),
+          f"move #>${REL:x},a", f"move a,{ys(S_STG)}",
+          ("label", "q_r"), "rts")
 
     # ================================================================ sy_slot (r6): one slot's block
     e(("label", "sy_slot"), f"move {ys(C_KEY)},a", f"move #>${KEY:x},x0", "cmp x0,a", ("jcc", "ne", "s_r"),
@@ -158,7 +186,7 @@ def items(tab_at, entry):
       f"lua (r6+${S_INC1:x}),r4", ("jsr", "s_inc"),
       f"move {y(G_T1)},a", f"move {ys(C_P2)},x0", "add x0,a", f"lua (r6+${S_INC2:x}),r4", ("jsr", "s_inc"),
       f"move {ys(S_INC1)},a", "asr a", f"move a,{ys(S_INCS)}",
-      ("jsr", "s_env"),
+      ("jsr", "s_env2" if env2 else "s_env"),
       # resting and silent: zeros, and nothing more
       f"move {ys(S_BUF)},r0", f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "ne", "s_play"),
       f"move {ys(S_EC)},a", "tst a", ("jcc", "ne", "s_play"),
@@ -250,6 +278,7 @@ def items(tab_at, entry):
     e(("label", "s_init"), f"move {ys(S_MAG)},a", f"move #>${MAGIC:x},x0", "cmp x0,a", ("jcc", "eq", "i_r"),
       "clr a", f"lua (r6+${S_PH1:x}),r1", "nop", f"do #${S_INCS - S_PH1 + 1:x},${{s_z:x}}", "move a,y:(r1)+", ("label", "s_z"),
       f"move #>${IDLE:x},a", f"move a,{ys(S_STG)}", "move #>$1,a", f"move a,{ys(S_NZ)}", "move #>$ff,a", f"move a,{ys(S_T)}",
+      *(["clr a"] + [f"move a,{ys(o)}" for o in (S_LIN, S_HC, S_GATE, S_VCA)] if env2 else []),
       f"move x0,{ys(S_MAG)}",
       ("label", "i_r"), "rts")
     # ================================================================ s_inc: a = the pitch (a semitone = $10000) -> y:(r4)+ = inc, 1 / inc's
@@ -304,10 +333,46 @@ def items(tab_at, entry):
       ("label", "e_fl"), f"move #>${FLOOR:x},y0", "cmp y0,a", ("jcc", "ge", "e_st"), "clr a", f"move #>${IDLE:x},b", f"move b,{ys(S_STG)}",
       ("label", "e_st"), f"move a,{ys(S_ENV)}",
       "move a,x0", f"move {ys(S_VEL)},y0", "mpy y0,x0,a", f"move {ys(S_EC)},b", "sub b,a", "asr #5,a,a", f"move a,{ys(S_ES)}", "rts")
+    if env2:
+        # ============================================================ s_env2 (r6): the envelope by the play mode, shaped (env2 above)
+        e(("label", "s_env2"), f"move {ys(S_STG)},b",
+          f"move #>${ATT:x},x0", "cmp x0,b", ("jcc", "ne", "e2_d"),
+          f"move {ys(S_LIN)},a", f"move {ys(C_ATK)},x0", "add x0,a", f"move #>${ONE:x},x0", "cmp x0,a", ("jcc", "lt", "e2_a1"),
+          f"move #>${ONE:x},a", f"move a,{ys(S_LIN)}",
+          f"move {ys(C_MODE)},b", "tst b", f"move #>${DEC:x},b", ("jcc", "eq", "e2_stg"),      # the top: one-shot down, else held
+          f"move {ys(C_HOLD)},x0", f"move x0,{ys(S_HC)}", f"move #>${SUS:x},b",
+          ("label", "e2_stg"), f"move b,{ys(S_STG)}", ("jmp", "e2_sh"),
+          ("label", "e2_a1"), f"move a,{ys(S_LIN)}",
+          f"move {ys(C_MODE)},b", f"move #>${M_GATED:x},x0", "cmp x0,b", ("jcc", "ne", "e2_sh"),   # gated, let go in the attack: down
+          f"move {ys(S_GATE)},b", "tst b", ("jcc", "ne", "e2_sh"),
+          f"move #>${REL:x},b", f"move b,{ys(S_STG)}", ("jmp", "e2_sh"),
+          ("label", "e2_d"), f"move #>${SUS:x},x0", "cmp x0,b", ("jcc", "eq", "e2_s"),
+          f"move #>${IDLE:x},x0", "cmp x0,b", ("jcc", "eq", "e2_i"),
+          f"move {ys(C_DEC)},x0",                                                              # DEC / REL: down
+          f"move #>${REL:x},y0", "cmp y0,b", ("jcc", "ne", "e2_dn"),
+          f"move {ys(C_MODE)},a", f"move #>${M_LOOP:x},y0", "cmp y0,a", ("jcc", "ne", "e2_dn"), f"move {ys(C_RQ)},x0",
+          ("label", "e2_dn"), f"move {ys(S_LIN)},a", "sub x0,a", ("jcc", "gt", "e2_dw"),
+          "clr a", f"move #>${IDLE:x},b", f"move b,{ys(S_STG)}",
+          ("label", "e2_dw"), f"move a,{ys(S_LIN)}", ("jmp", "e2_sh"),
+          ("label", "e2_s"),                                                                   # held: the loop's time, then the note
+          f"move {ys(C_MODE)},a", f"move #>${M_LOOP:x},y0", "cmp y0,a", ("jcc", "ne", "e2_sg"),
+          f"move {ys(S_HC)},a", "tst a", ("jcc", "le", "e2_sg"), "sub #>$1,a", f"move a,{ys(S_HC)}", ("jmp", "e2_sh"),
+          ("label", "e2_sg"), f"move {ys(S_GATE)},a", "tst a", ("jcc", "ne", "e2_sh"),
+          f"move #>${REL:x},b", f"move b,{ys(S_STG)}", ("jmp", "e2_sh"),
+          ("label", "e2_i"), "clr a", f"move a,{ys(S_LIN)}",
+          ("label", "e2_sh"), f"move {ys(S_LIN)},x0", "mpy x0,x0,a", f"move {ys(S_LIN)},b", "sub b,a", "move a,x1",
+          f"move {ys(C_SLP)},y0", "mac x1,y0,b", f"move b,{ys(S_ENV)}",
+          "move b,x0", f"move {ys(S_VEL)},y0", "mpy y0,x0,a", f"move a,{ys(S_VCA)}",
+          f"move {ys(S_EC)},b", "sub b,a", "asr #5,a,a", f"move a,{ys(S_ES)}", "rts")
+        # ============================================================ ge_slot (r6): a granular slot's envelope (its block, no sound)
+        e(("label", "ge_slot"), f"move {ys(C_KEY)},a", f"move #>${KEY:x},x0", "cmp x0,a", ("jcc", "ne", "ge_r"),
+          f"move {ys(C_TRK)},a", "tst a", ("jcc", "eq", "ge_r"),
+          ("jsr", "s_init"), ("jsr", "s_env2"),
+          ("label", "ge_r"), "rts")
     return L
 
 
-def code(entry):
+def code(entry, env2=False):
     """-> (the code's words at P:AT, labels, the tables' words at P:TAB, the tables' addresses)"""
     tb = tables()
     names = ("WT", "INCT", "ENVT", "F2", "Q2")
@@ -316,7 +381,7 @@ def code(entry):
     for k in names:
         tab_at[k] = at
         at += sizes[k]
-    w, labels = C0.asm_at(items(tab_at, entry), AT)
+    w, labels = C0.asm_at(items(tab_at, entry, env2), AT)
     assert AT + len(w) <= 0x2600, hex(AT + len(w))                 # (stsplit at $2600)
     tw = [labels[n] for n in ("w_saw", "w_pul", "w_tri", "w_sin", "w_sawn", "w_puln", "w_tri", "w_sin")]
     tw += tb["INCT"] + tb["ENVT"] + tb["F2"] + tb["Q2"]
@@ -324,9 +389,9 @@ def code(entry):
     return w, labels, tw, tab_at
 
 
-def segs(entry):
+def segs(entry, env2=False):
     """for granular0's extra, before gstereo's (GST calls SY, SY goes on to `entry`, the line input's LI)"""
-    w, labels, tw, _ = code(entry)
+    w, labels, tw, _ = code(entry, env2)
     return [(AT, w), (TAB, tw)]
 
 
@@ -349,9 +414,11 @@ class Model:
     """SY's blocks: ctl[s] = slot s's 16 control words; par[t] = track t's parameter words (6, 9, $B-$D read); msgs = the queue's 16
     pairs (w0, w1), widx = the ARM's write index -> {track: its 32 samples} (y:$FFFFD0 = 0, as in dsptool)"""
 
-    def __init__(self):
+    def __init__(self, env2=False):
         self.tab = tables()
         self.g = dict(qkey=0, qrd=0)
+        self.env2 = env2
+        self.ge = [dict() for _ in range(GE_N)]                    # (env2) the granular slots' envelopes
         self.st = [dict(mag=0) for _ in range(NSLOT)]
 
     def inc(self, P):
@@ -371,11 +438,13 @@ class Model:
         if g["qkey"] != QMAGIC:
             g["qrd"], g["qkey"] = widx & 15, QMAGIC
             return
+        blocks = [(ctl[s], self.st[s]) for s in range(NSLOT)]
+        if self.env2:
+            blocks += [(self.gctl[k], self.ge[k]) for k in range(GE_N)]
         while g["qrd"] != widx & 15:
             w0, w1 = msgs[g["qrd"]]
             g["qrd"] = (g["qrd"] + 1) & 15
-            for s in range(NSLOT):
-                c, st = ctl[s], self.st[s]
+            for c, st in blocks:
                 if c[C_KEY] != KEY or c[C_TRK] == 0 or (w0 & 7) + 1 != c[C_TRK]:
                     continue
                 self.init(st)
@@ -387,6 +456,10 @@ class Model:
                     if st.get("stg") == IDLE or s24(c[C_GLD]) >= ONE:
                         st["pit"] = s24(w1)
                     st["stg"] = ATT
+                    if self.env2:
+                        st["gate"] = ONE
+                elif typ == 0x800000 and self.env2:
+                    st["gate"] = 0
                 elif typ == 0x800000 and st.get("stg") != IDLE:
                     st["stg"] = REL
 
@@ -395,16 +468,61 @@ class Model:
         if st.get("mag") != MAGIC:
             st.clear()
             st.update(mag=MAGIC, ph1=0, ph2=0, phs=0, nz=1, pit=0, tgt=0, stg=IDLE, env=0, vel=0, ec=0, es=0, t=0xFF,
-                      ll=0, lb=0, hl=0, hb=0, fl=0, fh=0, lon=0, hon=0, tfl=0, tfh=0)
+                      ll=0, lb=0, hl=0, hb=0, fl=0, fh=0, lon=0, hon=0, tfl=0, tfh=0, lin=0, hc=0, gate=0, vca=0)
 
-    def block(self, ctl, par, msgs=(), widx=0):
+    def block(self, ctl, par, msgs=(), widx=0, gctl=None):
+        """(env2) gctl = the granular slots' envelope blocks' control words (64 a block, as the slots')"""
+        self.gctl = gctl or [[0] * SN for _ in range(GE_N)]
         self.queue(ctl, msgs, widx)
         out = {}
         for s in range(NSLOT):
             r = self.slot(s, ctl[s], par)
             if r is not None:
                 out[r[0]] = r[1]
+        if self.env2:
+            for k in range(GE_N):
+                c, st = self.gctl[k], self.ge[k]
+                if c[C_KEY] == KEY and c[C_TRK] != 0:
+                    self.init(st)
+                    self.env2_step(st, c)
         return out
+
+    def env2_step(self, st, c):
+        """(env2) s_env2: the envelope by the play mode, its shape, the VCA's target and step"""
+        stg, lin, mode = st["stg"], st["lin"], s24(c[C_MODE])
+        if stg == ATT:
+            a = lin + s24(c[C_ATK])
+            if a >= ONE:
+                lin = ONE
+                if mode == 0:
+                    stg = DEC
+                else:
+                    st["hc"], stg = s24(c[C_HOLD]), SUS
+            else:
+                lin = a
+                if mode == M_GATED and st["gate"] == 0:
+                    stg = REL
+        elif stg == SUS:
+            if mode == M_LOOP and st["hc"] > 0:
+                st["hc"] -= 1
+            elif st["gate"] == 0:
+                stg = REL
+        elif stg == IDLE:
+            lin = 0
+        else:
+            d = s24(c[C_RQ]) if stg == REL and mode == M_LOOP else s24(c[C_DEC])
+            a = lin - d
+            if a > 0:
+                lin = a
+            else:
+                lin, stg = 0, IDLE
+        st["lin"], st["stg"] = lin, stg
+        x1 = _sat(_mpy(lin, lin) - (lin << 24))
+        b = (lin << 24) + _mpy(x1, c[C_SLP])
+        st["env"] = _sat(b)
+        a = _mpy(st["env"], st["vel"])
+        st["vca"] = _sat(a)
+        st["es"] = _sat((a - (st["ec"] << 24)) >> 5)
 
     def slot(self, s, c, par):
         st = self.st[s]
@@ -495,6 +613,9 @@ class Model:
         return out
 
     def env(self, st, c, p):
+        if self.env2:
+            self.env2_step(st, c)
+            return
         n = p[P_ENV] & 0x7F
         x0 = self.tab["ENVT"][n]
         if st["stg"] == ATT:

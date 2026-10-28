@@ -40,8 +40,18 @@ CURVE_AT, CURVE_N = 0x2A4E, 129                    # core 1's X: the stock's cut
 # Y0 + 2 .. and back around c_blk; c_blk takes the slot's track, buffer and side out from CIN_T / CIN_BUF / CIN_SB; CMAG2 = the slots'
 # states made once.  At P:AT_M.
 AT_M = 0x3700
+AT_E = 0x3B00                                      # (RH54, env) the chain with the envelope: bigger than AT_M's room (gstereo at $3A00); free to $3FDF
+
+
+def place(multi=False, env=False):
+    """where the chain goes (granular0's post jumps there)"""
+    return AT_E if env else AT_M if multi else AT
 CHY, CH_N, NST = 0x1980, 0x20, 20
 CIN_T, CIN_BUF, CIN_SB, CMAG2 = range(Y0 + 22, Y0 + 26)
+# (RH54, env; needs multi and synth0 env2) a slot whose envelope block (synth0.GE0 + $40 k: its key, its track = the slot's) is on takes
+# the envelope instead of the voice's: the VCA's target = its S_VCA (envelope x velocity), the low-pass index + C_EF x S_ENV (as the
+# synth's); CIN_GE = that block (0 = the voice's VCA, as before)
+CIN_GE = Y0 + 26
 
 
 def stock_curve():
@@ -68,7 +78,7 @@ def tables():
     return dict(F2=[frac(f2_of(c)) for c in stock_curve()], Q2=[frac(q_of(r) / 2) for r in range(128)])
 
 
-def items(tab_at, gr, stereo=False, multi=False):
+def items(tab_at, gr, stereo=False, multi=False, env=False):
     L = []
 
     def e(*s):
@@ -90,6 +100,7 @@ def items(tab_at, gr, stereo=False, multi=False):
               ("jcc", "eq", f"c_n{k}"),
               f"move y:>${v + G0.V_T:x},x0", f"move x0,{yv(CIN_T)}", f"move y:>${v + G0.V_BUF:x},x0", f"move x0,{yv(CIN_BUF)}",
               f"move #>${G0.SBY + 0x20 * k:x},x0", f"move x0,{yv(CIN_SB)}",
+              *(_ge_pick(k, v, G0) if env else []),
               f"move #>${CHY + CH_N * k:x},r0", f"move #>${C_T:x},r1", "nop", f"do #${NST:x},${{c_i{k}:x}}", "move y:(r0)+,x0",
               "move x0,y:(r1)+", ("label", f"c_i{k}"),
               ("jsr", "c_blk"),
@@ -115,9 +126,11 @@ def items(tab_at, gr, stereo=False, multi=False):
     e("tfr a,b", "asl #4,b,b", f"add #>${EX.SHARED:x},b", "move b1,r2",
       "tfr a,b", "asl #1,b,b", f"add #>${FADE:x},b", "move b1,r3",
       "tfr a,b", "asl #5,b,b", f"add #>${PAR:x},b", "move b1,r1", "nop",
-      "move y:(r2),x0", "move y:(r3),x1", "mpy x1,x0,a", f"move {yv(C_GC)},b", "sub b,a", "asr #5,a,a", f"move a,{yv(C_GS)}")
+      *(_ge_vca() if env else ["move y:(r2),x0", "move y:(r3),x1", "mpy x1,x0,a"]),
+      f"move {yv(C_GC)},b", "sub b,a", "asr #5,a,a", f"move a,{yv(C_GS)}")
     # ---- the filter's words: the low-pass (index < 127), the high-pass (index > 0), their f smoothed 1/8 a block, the damping
-    e(f"move y:(r1+${LP_I:x}),a", "and #>$7f,a", "move a1,a", f"move #>${LP_OPEN:x},x0", "clr b", "cmp x0,a", ("jcc", "ge", "c_lpoff"),
+    e(f"move y:(r1+${LP_I:x}),a", "and #>$7f,a", "move a1,a", *(_ge_lp() if env else []),
+      f"move #>${LP_OPEN:x},x0", "clr b", "cmp x0,a", ("jcc", "ge", "c_lpoff"),
       "move #>$1,b", f"add #>${tab_at['F2']:x},a", "move a1,r4", "nop", "move p:(r4),x0", f"move x0,{yv(C_TFL)}",
       f"move {yv(C_LON)},a", "tst a", ("jcc", "ne", "c_lpon"),                     # turned on: from its target, the state from zero
       f"move x0,{yv(C_FL)}", "clr a", f"move a,{yv(C_LL)}", f"move a,{yv(C_LB)}",
@@ -169,15 +182,41 @@ def items(tab_at, gr, stereo=False, multi=False):
     return L
 
 
-def code(gr, stereo=False, multi=False):
+def _ge_pick(k, v, G0):
+    """(env) CIN_GE = slot k's envelope block when its key is on and its track is the slot's, else 0"""
+    import synth0 as SY
+    ge = SY.GE0 + SY.SN * k
+    return [f"move y:>${ge + SY.C_KEY:x},a", f"move #>${SY.KEY:x},x0", "cmp x0,a", ("jcc", "ne", f"ge_n{k}"),
+            f"move y:>${v + G0.V_T:x},a", "and #>$7,a", "move a1,a", "add #>$1,a", f"move y:>${ge + SY.C_TRK:x},x0", "cmp x0,a",
+            ("jcc", "ne", f"ge_n{k}"), f"move #>${ge:x},x0", f"move x0,y:>${CIN_GE:x}", ("jmp", f"ge_y{k}"),
+            ("label", f"ge_n{k}"), "clr a", f"move a,y:>${CIN_GE:x}", ("label", f"ge_y{k}")]
+
+
+def _ge_vca():
+    """(env) a = the VCA's target: the envelope block's S_VCA, or the voice's (as before)"""
+    import synth0 as SY
+    return [f"move y:>${CIN_GE:x},b", "tst b", ("jcc", "eq", "c_vv"), "move b1,r4", "nop", f"move y:(r4+${SY.S_VCA:x}),a", ("jmp", "c_vd"),
+            ("label", "c_vv"), "move y:(r2),x0", "move y:(r3),x1", "mpy x1,x0,a", ("label", "c_vd")]
+
+
+def _ge_lp():
+    """(env) a (the low-pass index) + C_EF x S_ENV of the envelope block, from 0"""
+    import synth0 as SY
+    return [f"move y:>${CIN_GE:x},b", "tst b", ("jcc", "eq", "c_ln"), "move b1,r4", "nop",
+            f"move y:(r4+${SY.S_ENV:x}),x0", f"move y:(r4+${SY.C_EF:x}),y0", "mpy y0,x0,b", "asr #16,b,b", "move b1,b", "add b,a",
+            "tst a", ("jcc", "ge", "c_ln"), "clr a", ("label", "c_ln")]
+
+
+def code(gr, stereo=False, multi=False, env=False):
     tb = tables()
-    at0 = AT_M if multi else AT
-    w0, _ = C0.asm_at(items({k: 0x3F00 for k in tb}, gr, stereo=stereo, multi=multi), at0)
+    at0 = place(multi, env)
+    w0, _ = C0.asm_at(items({k: 0x3F00 for k in tb}, gr, stereo=stereo, multi=multi, env=env), at0)
     at, tab_at = at0 + len(w0), {}
     for k in ("F2", "Q2"):
         tab_at[k] = at
         at += len(tb[k])
-    w, labels = C0.asm_at(items(tab_at, gr, stereo=stereo, multi=multi), at0)
+    assert multi or not env
+    w, labels = C0.asm_at(items(tab_at, gr, stereo=stereo, multi=multi, env=env), at0)
     assert len(w) == len(w0)
     for k in ("F2", "Q2"):
         w += tb[k]
@@ -185,9 +224,9 @@ def code(gr, stereo=False, multi=False):
     return w, labels, tab_at
 
 
-def segs(gr_labels, stereo=False, multi=False):
+def segs(gr_labels, stereo=False, multi=False, env=False):
     """for granular0's extra: our code at P:AT (GR's end jumps here: granular0 post=AT); stereo (RH47): the side too; multi (RH50): at
     P:AT_M, a chain per slot"""
-    w, labels, _ = code(gr_labels, stereo=stereo, multi=multi)
-    assert labels["ch"] == (AT_M if multi else AT)
-    return [(AT_M if multi else AT, w)]
+    w, labels, _ = code(gr_labels, stereo=stereo, multi=multi, env=env)
+    assert labels["ch"] == place(multi, env)
+    return [(place(multi, env), w)]

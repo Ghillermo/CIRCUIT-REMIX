@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## Alpha 0.06 (2026-10-28) — experimental
+
+> ⚠️ **Experimental: necesita pulirse.** La envolvente y la entrada desde los retornos de FX solo se han comprobado en emulación, como casi todo lo de Alpha 0.04 / 0.05. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
+
+**Español.** Dos versiones nuevas: **Alpha 0.06** (marca `A0.06`) y **Alpha 0.06S** (marca `A0.06S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **Envolvente por modo de reproducción** para el sinte y el granular, en una **página Envolvente** nueva (menú de pista, pad 5, rosa):
+  - K1 inicio (el ataque), K2 longitud, K3 pendiente (desde el centro), K4 envolvente → paso bajo;
+  - la longitud según el modo de la pista: **one-shot** = caída percusiva; **gated** = sostiene y suelta; **loop** = sostiene ese tiempo aunque la nota sea corta;
+  - en el granular, con su gate encendido, la envolvente es el VCA;
+  - se guarda con el proyecto.
+- **Entrada de línea desde los retornos de FX:**
+  - pad 15 del menú: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón);
+  - el gate (pad 14) ahora pasa además por el **filtro** de la pista (VCA y VCF).
+- La foto que usa Clear + botón de pista vive ahora en la RAM: deja sitio en el proyecto para la envolvente.
+
+**English.** Two new builds: **Alpha 0.06** (marker `A0.06`) and **Alpha 0.06S** (marker `A0.06S`: no project copy, pack delete or sample copy). Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** The envelope and the line input from the FX returns have only been checked in emulation, like most of Alpha 0.04 / 0.05. Expect bugs, noises or hangs: for serious playing, stay on **Alpha 0.03** (still in the installer). **Back up the SD card.**
+
+What's new:
+- **Envelope by play mode** for the synth and the granular, on a new **Envelope page** (track menu, pad 5, rose):
+  - K1 start (the attack), K2 length, K3 slope (from the centre), K4 envelope → low-pass;
+  - the length by the track's play mode: **one-shot** = a percussive decay; **gated** = holds and releases; **loop** = holds for that time even after a short note;
+  - on the granular, with its gate on, the envelope is the VCA;
+  - saved with the project.
+- **Line input from the FX returns:**
+  - menu pad 15: the inputs (amber) → the reverb return (cream) → the delay return (peach);
+  - the gate (pad 14) now also goes through the track's **filter** (VCA and VCF).
+- The snapshot Clear + track button uses now lives in RAM: it frees project space for the envelope.
+
 ## Alpha 0.05 (2026-10-28) — experimental
 
 > ⚠️ **Experimental: necesita pulirse.** El sinte y la interfaz nueva solo se han comprobado en emulación, como casi todo lo de Alpha 0.04. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**

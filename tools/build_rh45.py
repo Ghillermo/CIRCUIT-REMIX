@@ -22,7 +22,7 @@ NAME = "RH45"
 def build(name=NAME, sp=None, g0more=None, gpx=None, chain=None, **kw):
     b = build_rh40.build(name, ram2=True, pm={"qdrain": True, "stereo": True, "envexp": True},
                          g0extra=lambda L: granchain.segs(L, **(chain or {})) + stsplit.segs(L) + (g0more(L) if g0more else []),
-                         g0post=granchain.AT_M if (chain or {}).get("multi") else granchain.AT, sp=sp or {"fitflag": True},
+                         g0post=granchain.place((chain or {}).get("multi", False), (chain or {}).get("env", False)), sp=sp or {"fitflag": True},
                          gp={"v2": True, **(gpx or {})}, **kw)
     b.add("startfix", startfix)
     if "rdiag" not in b.report:

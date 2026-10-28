@@ -51,6 +51,7 @@ OFF2 = {                                   # module -> (offset, length) inside t
     "granmulti": (1756, 64),               # (RH50) + 0 the granular slots to send, + 1 the round, + 2 sent once, + 4 their low 7 bits (13 a slot)
     "synth": (1820, 8),                    # (RH51) + 0 the synth slots to send, + 1 the round, + 2 sent once, + 3 the block's check seen, + 4 the Synth pages (bit t)
     "pagehold": (1828, 8),                 # (RH52, synthpage ui) the menu's page pad held: + 0 the pad + 1 (0 none), + 1 its track, + 2 the pages before, + 4 its press
+    "trkphoto": (1836, 212),               # (RH54, trkcopy ram) "TS" and each track's photo at the load (25 parameters, the sample): out of the project's tail
 }
 OFF = {                                    # module -> (offset, length) inside the block
     "magic": (0, 4),

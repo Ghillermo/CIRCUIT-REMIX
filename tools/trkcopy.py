@@ -54,7 +54,7 @@ def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 <<
 def pushw(regs, lr=False): return h(0xE92D) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, ram=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -81,10 +81,10 @@ def arm_code(base, L, prev):
     E(pop_list, [4], pc=True)
     a.label("c_tcblk")
     E(push_list, [4], lr=True)
-    E(bl, L["c_rrt"])
+    E(bl, L["c_rram"] if ram else L["c_rrt"])                             # (ram, RH54: the photos in our RAM, not in the project)
     E(cmp_imm, 0, 0)
     E(b_cond, "tb_x", "eq")
-    E(movw, 1, BLK)
+    E(movw, 1, rhstate.OFF2["trkphoto"][0] if ram else BLK)
     E(adds_reg, 0, 0, 1)
     a.label("tb_x")
     E(pop_list, [4], pc=True)
@@ -357,16 +357,19 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
-    """Append the code; the head of the button chain, the end of «apply the record», the LED task calls."""
+def install(img, report, base_addr, ram=False):
+    """Append the code; the head of the button chain, the end of «apply the record», the LED task calls.  ram (RH54): the photos in rhstate's
+    second block (OFF2 «trkphoto»), freeing their 212 B of the project's tail (rhrec.OFF54)."""
     import rhbuild
     BASE = rhbuild.BASE
     lab = lambda sec, n: int(report[sec]["labels"][n], 16)
     L = dict(c_rst=lab("rhstate", "c_rst"), c_rrt=lab("rhrec", "c_rrt"), c_ciok=lab("countin", "c_ciok"), c_cinew=lab("countin", "c_cinew"),
-             c_skblk=lab("sckn", "c_skblk"), c_skok=lab("sckn", "c_skok"), c_skfix=lab("sckn", "c_skfix"))
+             c_skblk=lab("sckn", "c_skblk"), c_skok=lab("sckn", "c_skok"), c_skfix=lab("sckn", "c_skfix"),
+             **({"c_rram": lab("rhstate", "c_rram")} if ram else {}))
     prev = dict(btn=rhbuild.bw_target(img, CI.BTN_ENTRY), load=rhbuild.bw_target(img, PC.LOAD_TAIL), ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev)
+    assert not ram or rhstate.OFF2["trkphoto"][1] >= BLK_LEN
+    code, labels = arm_code(base_addr, L, prev, ram)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -374,5 +377,5 @@ def install(img, report, base_addr):
     rhbuild.patch(img, PC.LOAD_TAIL, f"b.w #{prev['load']:#x}", b_w(PC.LOAD_TAIL, labels["c_tcload"]))
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_tcled"]))
-    report["trkcopy"] = dict(prev={k: hex(v) for k, v in prev.items()}, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["trkcopy"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"ram": True} if ram else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code
