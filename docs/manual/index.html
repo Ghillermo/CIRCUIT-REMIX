@@ -25,7 +25,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </style></head><body>
 <header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.07</p><div class="bar"></div></header><main>
 <p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.06 es experimental:</strong> lo nuevo (la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04 / 0.05) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.07 es experimental:</strong> lo nuevo (Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
 <p>Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.</p>
 <nav class="toc"><h2>Índice</h2>
 <h3>0. Introducción</h3><ol>
@@ -175,7 +175,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>Frecuencias (LFO, scan)</td><td>centro = parado; a la derecha libre, más rápido hacia el extremo; a la izquierda a tempo, divisiones más rápidas hacia el extremo</td></tr>
 <tr><td>Adelante / atrás (scan del granular)</td><td>centro = parado; a la derecha hacia delante, a la izquierda hacia atrás, más rápido hacia los extremos</td></tr>
 <tr><td>Encendido / apagado</td><td>el mismo color, brillante / tenue</td></tr>
-<tr><td>Modos</td><td>un color por modo (las formas de onda del sinte, el tipo de filtro de Stock+, el metrónomo)</td></tr>
+<tr><td>Modos</td><td>un color por modo (las formas de onda del sinte, el tipo de filtro y el de waveshaper de Stock+, el metrónomo)</td></tr>
 <tr><td>Opciones que se eligen entre sí</td><td>en la misma fila; la elegida brillante, las demás tenues</td></tr>
 <tr><td>Abrir un menú o una página</td><td>un toque lo deja abierto; mantenerlo lo muestra hasta soltar</td></tr>
 </tbody></table>
@@ -194,7 +194,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.</li>
 <li>Elige la versión y envíala al aparato por USB.</li>
 </ol>
-<p><strong>Versiones S</strong> (A0.06S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.</p>
+<p><strong>Versiones S</strong> (A0.07S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.</p>
 <p><strong>Volver al firmware oficial:</strong> mantén <strong>Sample Rec + Samples + Note</strong> al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.</p>
 </section>
 <h2 class="group">1. En cualquier vista</h2>
@@ -721,6 +721,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>K8</td><td>★ LFO de la <strong>posición</strong> de los granos (Shift: su profundidad)</td><td>★ LFO de la <strong>cantidad de FM</strong> (Shift: su profundidad)</td></tr>
 </tbody></table>
 <ul>
+<li><strong>Tipo de filtro</strong> (Shift + K6): con <strong>24 dB</strong> su filtro pasa dos veces; con <strong>comb</strong>, sus filtros se abren y suena un comb afinado por el knob de paso bajo de la pista (más el follow; en el sinte, más la envolvente → filtro), con la resonancia como realimentación.</li>
 <li>El LED de K7 va en el color del tipo y brilla según la cantidad; con Shift, a tope. Clear + K7: apagado y suave.</li>
 <li>El waveshaper se guarda con el proyecto y lo llevan Clear + el botón de la pista y Duplicate.</li>
 </ul>
@@ -818,7 +819,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
 </svg><figcaption>Página Granular: knobs en lila.</figcaption></figure>
-<p>El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master <em>(desde Alpha 0.04)</em>. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él. <strong>Hasta 4 pistas granulares</strong>, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).</p>
+<p>El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master <em>(desde Alpha 0.04)</em>. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él; también la distorsión <em>(Alpha 0.07)</em>. <strong>Hasta 4 pistas granulares</strong>, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).</p>
 <table><thead><tr><th>Knob</th><th>Solo</th><th>Con Shift</th></tr></thead><tbody>
 <tr><td>K1</td><td>tamaño del grano (5-500 ms)</td><td>fino</td></tr>
 <tr><td>K2</td><td>densidad (1-16 granos)</td><td>★ apertura estéreo (0 = mono)</td></tr>
@@ -936,7 +937,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>K8</td><td>ancho del pulso (50 % → 2 %)</td><td>—</td></tr>
 </tbody></table>
 <ul>
-<li><strong>Los knobs del original</strong> de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, nivel, panorama, envíos, sidechain y mute.</li>
+<li><strong>Los knobs del original</strong> de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, distorsión <em>(Alpha 0.07)</em>, nivel, panorama, envíos, sidechain y mute.</li>
 <li><strong>Note-off:</strong> una pista con sinte recibe el note-off aunque esté en one-shot, para que suene el release.</li>
 <li><strong>LEDs:</strong> menta con el brillo según el valor (K3, K4, Shift + K4, Shift + K7: la distancia al centro); K1 / K2 en el color de su forma de onda.</li>
 <li>Clear + knob = por defecto. <strong>Se guarda con el proyecto.</strong></li>
@@ -1158,7 +1159,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="98.0" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Gate</text>
 </svg><figcaption>Micro Step: pad 31 longitud fija, pad 32 gate por pulsación (apagados: tenues).</figcaption></figure>
 <table><thead><tr><th>Vista</th><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
-<tr><td>Velocity</td><td><strong>Shift + paso</strong></td><td>marca el paso: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista <em>(desde Alpha 0.05)</em> <em>(desde Alpha 0.04)</em></td></tr>
+<tr><td>Velocity</td><td><strong>Shift + paso</strong></td><td>marca el paso <em>(desde Alpha 0.04)</em>: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista <em>(desde Alpha 0.05)</em></td></tr>
 <tr><td>Micro Step</td><td><strong>pad 31</strong></td><td>longitud fija: apagada → el selector en los pads 17-32 (1-16 pasos; elegir una la enciende); encendida → apagada (naranja brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
 <tr><td>Micro Step</td><td><strong>pad 32</strong></td><td>gate por pulsación: el golpe dura lo que mantienes el pad del paso; mantener un paso vacío 300 ms o más también lo crea (verde brillante / tenue) <em>(desde Alpha 0.04)</em></td></tr>
 </tbody></table>

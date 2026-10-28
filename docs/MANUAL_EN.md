@@ -2,7 +2,7 @@
 
 [Español](MANUAL.md) · [illustrated version](manual/en.html)
 
-> ⚠️ **Alpha 0.06 is experimental:** what's new (the envelope, the line input from the FX returns, and most of Alpha 0.04 / 0.05) has mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**
+> ⚠️ **Alpha 0.07 is experimental:** what's new (Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**
 
 Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.
 
@@ -83,7 +83,7 @@ Since Alpha 0.05 everything new follows fixed rules *(since Alpha 0.05)*:
 | Frequencies (LFO, scan) | centre = stopped; right = free running, faster towards the end; left = synced to the tempo, faster divisions towards the end |
 | Forward / backward (the granular scan) | centre = stopped; right forward, left backward, faster towards the ends |
 | On / off | the same colour, bright / dim |
-| Modes | a colour per mode (the synth's waveforms, Stock+'s filter type, the metronome) |
+| Modes | a colour per mode (the synth's waveforms, Stock+'s filter and waveshaper types, the metronome) |
 | Options you pick one of | on the same row; the chosen one bright, the others dim |
 | Opening a menu or a page | a tap keeps it open; holding shows it until you let go |
 
@@ -104,7 +104,7 @@ Each knob page of a track has its own colour, the same on its knobs, on the trac
 2. Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.
 3. Pick the version and send it to the device over USB.
 
-**S versions** (A0.06S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
+**S versions** (A0.07S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
 
 **Back to the official firmware:** hold **Sample Rec + Samples + Note** while powering on (Novation's bootloader mode) and send the official one with the installer ("Official") or with Novation Components. Always back up your SD card.
 
@@ -202,6 +202,7 @@ The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8
 | K7 | ★ **waveshaper**: amount (0 = off; the gain from ×1 to ×16; for bitcrush, the bits). Shift: its **type**, **soft** (gold), **hard** (red-orange), **fold** (teal), **bitcrush** (lime) | the same |
 | K8 | ★ an LFO on the grains' **position** (Shift: its depth) | ★ an LFO on the **FM amount** (Shift: its depth) |
 
+- **Filter type** (Shift + K6): with **24 dB** its filter runs twice; with **comb** its filters open and a comb plays, tuned by the track's low-pass knob (plus the follow; on the synth, plus envelope → filter), with the resonance as feedback.
 - K7's LED is in the type's colour, as bright as the amount; with Shift, fully. Clear + K7: off and soft.
 - The waveshaper is saved with the project and goes along with Clear + the track's button and Duplicate.
 
@@ -210,7 +211,7 @@ The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8
 
 *How to get there:* track menu, pad 11 (puts the granular on, with its page) or pad 3 (its page) (the track's button blinks lilac)
 
-The CIRCUIT-HACKS granular engine on the track's sample, on the master DSP *(since Alpha 0.04)*. It follows the note (Note view, keyboard and MIDI). The track's filter knobs (high-pass, low-pass, resonance) and envelope act on it. **Up to 4 granular tracks**, each with its own settings; the 16 grains are shared (16 with one track, 7 each with two, 4 with three, 2 with four).
+The CIRCUIT-HACKS granular engine on the track's sample, on the master DSP *(since Alpha 0.04)*. It follows the note (Note view, keyboard and MIDI). The track's filter knobs (high-pass, low-pass, resonance) and envelope act on it; the distortion too *(Alpha 0.07)*. **Up to 4 granular tracks**, each with its own settings; the 16 grains are shared (16 with one track, 7 each with two, 4 with three, 2 with four).
 
 | Knob | Alone | With Shift |
 |---|---|---|
@@ -243,7 +244,7 @@ Lilac with the value as brightness (K4, K5 and Shift + K5: the distance from the
 | K7 | FM (OSC 2 modulates OSC 1) | envelope → low-pass (from the centre) |
 | K8 | pulse width (50 % → 2 %) | — |
 
-- **The original's knobs** of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, level, pan, sends, sidechain and mute.
+- **The original's knobs** of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, distortion *(Alpha 0.07)*, level, pan, sends, sidechain and mute.
 - **Note-off:** a synth track gets the note-off even in one-shot mode, so the release sounds.
 - **LEDs:** mint with the value as brightness (K3, K4, Shift + K4, Shift + K7: the distance from the centre); K1 / K2 in their waveform's colour.
 - Clear + knob = default. **Saved with the project.**
@@ -304,7 +305,7 @@ When you let go of Shift, the keyboard plays the scale: one iteration per row (t
 
 | View | Gesture | What it does |
 |---|---|---|
-| Velocity | **Shift + step** | marks the step: when it plays, automation is silent there and automated parameters go back to their knob's position. With Shift, the marked steps in red; the others as the view draws them *(since Alpha 0.05)* *(since Alpha 0.04)* |
+| Velocity | **Shift + step** | marks the step *(since Alpha 0.04)*: when it plays, automation is silent there and automated parameters go back to their knob's position. With Shift, the marked steps in red; the others as the view draws them *(since Alpha 0.05)* |
 | Micro Step | **pad 31** | fixed length: off → the selector on pads 17-32 (1-16 steps; picking one switches it on); on → off (orange bright / dim) *(since Alpha 0.04)* |
 | Micro Step | **pad 32** | gate by press: the hit lasts as long as you hold the step's pad; holding an empty step 300 ms or more also creates it (green bright / dim) *(since Alpha 0.04)* |
 
