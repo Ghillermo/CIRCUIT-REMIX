@@ -256,7 +256,7 @@ def words(v):
     return [((v[0] - 8192) * A_SCALE) & 0xFFFFFF, interp(decay_table(), v[1]), interp(rate_table(), v[2]), v[3] * L_SCALE]
 
 
-def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False, ui=False):
+def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False, ui=False, noblink=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -1396,21 +1396,23 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         E(movs_imm, 0, 0)
         for k in range(4, 8):
             E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
-    imm32(0, HAL_TICK)
-    E(ldr_imm, 0, 0, 0)
-    E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
-    E(b_cond, "ld_x", "pl")
-    E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
-    E(lsls_imm, 1, 4, 1)
-    E(adds_reg, 1, 5, 1)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK0)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK1)
+    if not noblink:                                                       # (noblink, RH58: no blink; it also lit LED 40 + t, not a track's)
+        imm32(0, HAL_TICK)
+        E(ldr_imm, 0, 0, 0)
+        E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
+        E(b_cond, "ld_x", "pl")
+        E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
+        E(lsls_imm, 1, 4, 1)
+        E(adds_reg, 1, 5, 1)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK0)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK1)
     a.label("ld_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
     return a.assemble()
 
 
-def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False, ui=False):
+def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False, ui=False,
+            noblink=False):
     """Append the code; the head of the button chain, the head of the container's knob slot, the LED task calls (outermost).  pitchmod's
     core 1 code (tools/pitchmod.py, without dspload) must be in the build too, with the same shift."""
     global YB
@@ -1431,7 +1433,8 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False,
     assert v2 or not fitflag
     assert k8sync or not k3sync
     assert k8sync or not ui
-    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync, fitflag=fitflag, k3sync=k3sync, ui=ui)
+    code, labels = arm_code(base_addr, L, prev, v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync, fitflag=fitflag, k3sync=k3sync, ui=ui,
+                            noblink=noblink)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1443,4 +1446,6 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False,
                                **({"fitflag": True, "t_spd": hex(base_addr + 8 * 129 + 2 * NPAR + 4 * 129)} if fitflag else {}),
                                **({"k3sync": True} if k3sync else {}), **({"ui": True} if ui else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    if noblink:
+        report["stockplus"]["noblink"] = True
     return labels, code

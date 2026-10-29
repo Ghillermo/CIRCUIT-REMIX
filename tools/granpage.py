@@ -752,7 +752,7 @@ def _gn_dsp(a, E):
     E(b, "gl_gx")
 
 
-def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False):
+def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False, noblink=False):
     nwx = NW_X + (1 if v2 else 0)
     nk, nwg = NK + (1 if stereo else 0), NW_G + (1 if stereo else 0)           # (stereo, RH47) value 12 = the spread (Shift + K2)
     bip = BIP_UI if ui else BIP
@@ -1828,21 +1828,22 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
         imm32(0, UI_KNOB if ui else COL_KNOB)
         E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
-    imm32(0, CI.HAL_TICK)
-    E(ldr_imm, 0, 0, 0)
-    E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
-    E(b_cond, "gl_x", "pl")
-    E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
-    E(lsls_imm, 1, 4, 1)
-    E(adds_reg, 1, 5, 1)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK0)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK1)
+    if not noblink:                                                       # (noblink, RH58: no blink; it also lit LED 40 + t, not a track's)
+        imm32(0, CI.HAL_TICK)
+        E(ldr_imm, 0, 0, 0)
+        E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
+        E(b_cond, "gl_x", "pl")
+        E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
+        E(lsls_imm, 1, 4, 1)
+        E(adds_reg, 1, 5, 1)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK0)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK1)
     a.label("gl_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
     return a.assemble()
 
 
-def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False):
+def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False, noblink=False):
     """Ahead of stockplus (button chain, knob slot, LED calls) and in Sample mode's subview (slots 0 and 8).  The build needs granular0
     (core 0's engine) and pitchmod with loopxf (core 1's crossfade).  v2 (RH45): also the controller's pad press / release entries and
     Sample Rec's slot 0 (ahead of smpcopy, or the stock's without it: nosd); needs rhstate ram2; the stereo word is stereorec's (installed after)."""
@@ -1877,7 +1878,7 @@ def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=Fa
     assert multi or not ui
     assert ui or not menu2
     assert multi or not env
-    code, labels = arm_code(base_addr, L, prev, note=note, v2=v2, stereo=stereo, multi=multi, ui=ui, menu2=menu2, env=env)
+    code, labels = arm_code(base_addr, L, prev, note=note, v2=v2, stereo=stereo, multi=multi, ui=ui, menu2=menu2, env=env, noblink=noblink)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1895,4 +1896,6 @@ def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=Fa
     report["granpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), note=note, **({"v2": True} if v2 else {}), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}),
                               **({"multi": True} if multi else {}),
                               labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    if noblink:
+        report["granpage"]["noblink"] = True
     return labels, code

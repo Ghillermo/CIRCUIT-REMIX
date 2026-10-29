@@ -5,7 +5,7 @@ style manual, group chapters per view when possible and add a glossary per funct
                                        the pads and knobs in colour); in the development tree under public/
 
 Every chapter: (id, part, {es, en: title, how to get there, detail in a small markdown: ### | tables | - lists, 1. lists, **bold**, `code`},
-figures).  The glossary: one entry per function, linked to its chapter.  The colours follow docs/INTERFAZ.md (RH52-RH56 / Alpha 0.05-0.08).
+figures).  The glossary: one entry per function, linked to its chapter.  The colours follow docs/INTERFAZ.md (RH52-RH59 / Alpha 0.05-0.09).
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "Alpha 0.08"
+VERSION = "Alpha 0.09"
 OUT = ROOT / "public" / "docs" if (ROOT / "public").is_dir() else ROOT / "docs"     # (the development tree / the public one)
 
 # ---------------------------------------------------------------------------------------------------- colours (the LEDs' RGB, docs/INTERFAZ.md)
@@ -92,8 +92,10 @@ def view(vid, part, es, en, figs=()):
     V.append(dict(id=vid, part=part, es=es, en=en, figs=list(figs)))
 
 
-A = "*(Alpha 0.08)*"
-A_EN = "*(Alpha 0.08)*"
+A = "*(Alpha 0.09)*"
+A_EN = "*(Alpha 0.09)*"
+A8 = "*(Alpha 0.08)*"
+A8_EN = "*(Alpha 0.08)*"
 A7 = "*(Alpha 0.07)*"
 A7_EN = "*(Alpha 0.07)*"
 A6 = "*(Alpha 0.06)*"
@@ -136,7 +138,7 @@ Desde Alpha 0.05 todo lo nuevo sigue unas reglas fijas {A5}:
 | Opciones que se eligen entre sí | en la misma fila; la elegida brillante, las demás tenues |
 | Abrir un menú o una página | un toque lo deja abierto; mantenerlo lo muestra hasta soltar |
 
-Cada página de knobs de una pista tiene su color, el mismo en sus knobs, en el botón de la pista (que parpadea) y en su pad del menú:
+Cada página de knobs de una pista tiene su color, el mismo en sus knobs y en su pad del menú (el botón de la pista ya no parpadea {A}):
 
 | Página | Color |
 |---|---|
@@ -161,7 +163,7 @@ Since Alpha 0.05 everything new follows fixed rules {A5_EN}:
 | Options you pick one of | on the same row; the chosen one bright, the others dim |
 | Opening a menu or a page | a tap keeps it open; holding shows it until you let go |
 
-Each knob page of a track has its own colour, the same on its knobs, on the track's (blinking) button and on its pad in the menu:
+Each knob page of a track has its own colour, the same on its knobs and on its pad in the menu (the track's button no longer blinks {A_EN}):
 
 | Page | Colour |
 |---|---|
@@ -177,7 +179,7 @@ view("instalar", "0", ("Instalar y volver al original", "—", """
 2. Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.
 3. Elige la versión y envíala al aparato por USB.
 
-**Versiones S** (A0.08S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
+**Versiones S** (A0.09S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
 
 **Volver al firmware oficial:** mantén **Sample Rec + Samples + Note** al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.
 """), ("Install and go back to the original", "—", """
@@ -185,7 +187,7 @@ view("instalar", "0", ("Instalar y volver al original", "—", """
 2. Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.
 3. Pick the version and send it to the device over USB.
 
-**S versions** (A0.08S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
+**S versions** (A0.09S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
 
 **Back to the official firmware:** hold **Sample Rec + Samples + Note** while powering on (Novation's bootloader mode) and send the official one with the installer ("Official") or with Novation Components. Always back up your SD card.
 """))
@@ -197,12 +199,12 @@ view("transporte", "1", ("Transporte, metrónomo y cuantizar", "en cualquier vis
 | **Shift + Clear** | metrónomo en cuatro estados; con Shift, el LED de Clear: rojo = sin metrónomo, verde = metrónomo, magenta = solo cuenta atrás, cian = las dos *(desde Alpha 0.0)* |
 | **Record armado + Play** (parado, con cuenta atrás) | un compás de clics al tempo y arranca grabando (Record parpadea); Play durante la cuenta la cancela |
 | **Shift + Play** (parado) | el del original: sigue desde donde se paró; con cuenta atrás, la cuenta y luego sigue |
-| **K5 de la vista Tempo / Swing a 0** (clic sin volumen) | metrónomo visual: Clear destella 100 ms en cada clic de la cuenta y, sonando con el metrónomo, en cada tiempo, en naranja (distinto de los colores del metrónomo que muestra Clear con Shift); no mientras se mantiene Shift o Clear {A6} |
+| **K5 de la vista Tempo / Swing a 0** (clic sin volumen) | metrónomo visual: Clear destella 100 ms en cada clic de la cuenta y, sonando con el metrónomo, en cada tiempo, en naranja (distinto de los colores del metrónomo que muestra Clear con Shift); no mientras se mantiene Shift o Clear *(Alpha 0.08)* |
 | **Shift + Play** (sonando) | cuantiza el patrón de la pista elegida: los micropasos 2-3 al comienzo de su paso, 4-6 al del siguiente; los redobles se quedan. LED de Play con Shift: amarillo; verde tras cuantizar; rojo = nada que cuantizar *(desde Alpha 0.0)* |
 
 La cuenta atrás no se guarda: al encender vuelve a «sin cuenta atrás».
 
-**La cuenta con el reloj de la música** {A6} (contribución de mefisme):
+**La cuenta con el reloj de la música** *(Alpha 0.08)* (contribución de mefisme):
 - Los clics siguen el reloj de la música: el tempo del proyecto, o el reloj MIDI externo si el Rhythm es esclavo. Antes los contaba la tarea de los LEDs, de 0 a 10 ms tarde.
 - Play entra al empezar la cuenta y el reloj espera hasta el 1: el trabajo de Play se hace durante la cuenta y el 1 llega a tiempo.
 - Durante la cuenta no se graba nada, el LED de Play se ve parado y Record destella en rojo en cada clic.
@@ -218,12 +220,12 @@ La cuenta atrás no se guarda: al encender vuelve a «sin cuenta atrás».
 | **Shift + Clear** | metronome in four states; with Shift, the Clear LED: red = no metronome, green = metronome, magenta = count-in only, cyan = both *(since Alpha 0.0)* |
 | **Record armed + Play** (stopped, with count-in) | one bar of clicks at the tempo, then recording starts (Record blinks); Play during the count cancels it |
 | **Shift + Play** (stopped) | the original's: carry on from where it stopped; with count-in, the count and then carry on |
-| **Tempo / Swing view K5 at 0** (click muted) | visual metronome: Clear flashes for 100 ms on each click of the count and, while playing with the metronome, on each beat, in orange (unlike the metronome colours Clear shows with Shift); not while Shift or Clear is held {A6} |
+| **Tempo / Swing view K5 at 0** (click muted) | visual metronome: Clear flashes for 100 ms on each click of the count and, while playing with the metronome, on each beat, in orange (unlike the metronome colours Clear shows with Shift); not while Shift or Clear is held *(Alpha 0.08)* |
 | **Shift + Play** (playing) | quantizes the selected track's pattern: micro steps 2-3 to the start of their step, 4-6 to the next one; rolls stay. Play LED with Shift: yellow; green after quantizing; red = nothing to quantize *(since Alpha 0.0)* |
 
 The count-in isn't saved: at power-on it goes back to "no count-in".
 
-**The count on the music's clock** {A6} (contributed by mefisme):
+**The count on the music's clock** *(Alpha 0.08)* (contributed by mefisme):
 - The clicks follow the music's clock: the project's tempo, or the external MIDI clock when the Rhythm is a slave. Before, the LED task timed them, 0 to 10 ms late.
 - Play goes through at the start of the count and the clock waits until the 1: Play's work runs during the count and the 1 is on time.
 - During the count nothing records, the Play LED shows stopped and Record flashes red on each click.
@@ -256,8 +258,7 @@ Pressing the button without holding selects the track, as in the original. From 
 """))
 
 MENU_FIG = dict(pads={1: ("white", "stock", "stock"), 2: ("sky", "Stock+", "Stock+", True), 3: ("lilac", "Granular", "Granular", True),
-                      4: ("mint", "Sinte", "Synth", True), 9: ("steel", "enlace", "link", True), 11: ("lilac", "gran.\non/off", "gran.\non/off", True),
-                      12: ("mint", "sinte\non/off", "synth\non/off", True), 13: ("amber", "entrada", "line in", True), 14: ("amber", "gate", "gate", True)})
+                      4: ("mint", "Sinte", "Synth", True), 5: ("rose", "Envolv.", "Envelope", True), 8: ("red", "Project\ninit", "Project\ninit")})
 view("menu", "2", ("El menú de pista", "toca el botón de la pista elegida (el menú se queda abierto hasta que eliges algo o lo vuelves a tocar), o mantén el botón de cualquier pista (el menú solo mientras lo mantienes)", f"""
 Los pads se convierten en el menú de esa pista {A6}:
 
@@ -268,26 +269,22 @@ Los pads se convierten en el menú de esa pista {A6}:
 | **3** | página **[Granular](#granular)** (con el granular) |
 | **4** | página **[Sinte](#sinte)** (con el sinte) |
 | **5** | página **[Envolvente](#envolvente)** (con el sinte o el granular) {A6} |
-| **9** | ★ **[enlace estéreo](#entrada)** con la pista siguiente, sí / no |
-| **11** | el **granular** de la pista, sí / no (hasta 4 pistas); encendido, su página |
-| **12** | ★ el **sinte** de la pista, sí / no (hasta 4 pistas); encendido, su página |
-| **13** | ★ la **[entrada de línea](#entrada)** como sonido de la pista, sí / no |
-| **14** | el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas, por el VCA y el filtro de la pista (oscuro si la pista no es de entrada) |
-| **15** | la fuente de la entrada: las entradas (ámbar tenue: sin FX {A}) → el retorno de reverb (crema) → el de delay (melocotón) {A6} |
+| **8** | ★ la voz de la pista vuelve a **Project init** (rojo): K1-K8 y el resto de la voz como se cargó o guardó el proyecto por última vez; el nivel, el panorama, los envíos y el sidechain no se tocan {A} |
+
+**El sonido de la pista, el enlace estéreo y la entrada** pasaron a [Sample mode](#samplemode) {A}: sus pads 5-8, 14, 15 y 16.
 
 - **Abrirlo:** un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.
 - Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Stock+, Granular y Envolvente; sinte: stock, Stock+, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
-- Fila 2, debajo, los **conmutadores**: brillante = encendido, tenue = apagado. **El sonido de la pista solo cambia aquí:** sample, granular, sinte o entrada, uno por pista; poner uno quita los otros.
+- **El sonido de la pista** (sample, granular, sinte o entrada, uno por pista) se elige en [Sample mode](#samplemode), pads 5-8 {A}. Hasta Alpha 0.08 estaba en la fila 2 de este menú (pads 11-14), con el enlace en el 9 y la fuente de la entrada en el 15.
 - Con el granular o el sinte, la página stock deja los knobs del original (filtro, envolvente, tono, nivel…) actuando sobre ellos; también la **distorsión**, con la misma curva que en un sample {A7}.
 
 En Alpha 0.04 el menú era: 1-3 páginas, 4 granular, 5 / 6 entrada y gate, 7 enlace.
 """, [fig("El menú de una pista con un sample, en la página stock.", "The menu of a track with a sample, on the stock page.",
           buttons=[("Pista elegida (toque)", "Selected track (tap)")],
-          pads={1: ("white", "stock", "stock"), 2: ("sky", "Stock+", "Stock+", True), 9: ("steel", "enlace", "link", True),
-                11: ("lilac", "granular", "granular", True), 12: ("mint", "sinte", "synth", True), 13: ("amber", "entrada", "line in", True)}),
+          pads={1: ("white", "stock", "stock"), 2: ("sky", "Stock+", "Stock+", True), 8: ("red", "Project\ninit", "Project\ninit")}),
       fig("El menú de una pista con el sinte, en su página.", "The menu of a synth track, on its page.",
-          pads={1: ("white", "stock", "stock", True), 4: ("mint", "Sinte", "Synth"), 5: ("rose", "Envolv.", "Envelope", True), 9: ("steel", "enlace", "link", True),
-                11: ("lilac", "granular", "granular", True), 12: ("mint", "sinte", "synth"), 13: ("amber", "entrada", "line in", True)})]),
+          pads={1: ("white", "stock", "stock", True), 2: ("sky", "Stock+", "Stock+", True), 4: ("mint", "Sinte", "Synth"),
+                5: ("rose", "Envolv.", "Envelope", True), 8: ("red", "Project\ninit", "Project\ninit")})]),
      ("The track menu", "tap the selected track's button (the menu stays open until you pick something or tap again), or hold any track's button (the menu only while held)", f"""
 The pads become that track's menu {A6_EN}:
 
@@ -298,22 +295,19 @@ The pads become that track's menu {A6_EN}:
 | **3** | the **[Granular](#granular)** page (with the granular) |
 | **4** | the **[Synth](#sinte)** page (with the synth) |
 | **5** | the **[Envelope](#envolvente)** page (with the synth or the granular) {A6_EN} |
-| **9** | ★ **[stereo link](#entrada)** with the next track, on / off |
-| **11** | the track's **granular**, on / off (up to 4 tracks); switched on, its page |
-| **12** | ★ the track's **synth**, on / off (up to 4 tracks); switched on, its page |
-| **13** | ★ the **[line input](#entrada)** as the track's sound, on / off |
-| **14** | the input's gate: dim = always sounds, bright = only with its notes, through the track's VCA and filter (dark if the track isn't an input track) |
-| **15** | the input's source: the inputs (dim amber: no FX {A_EN}) → the reverb return (cream) → the delay return (peach) {A6_EN} |
+| **8** | ★ the track's voice back to **Project init** (red): K1-K8 and the rest of the voice as the project was last loaded or saved; level, pan, sends and sidechain are left alone {A_EN} |
+
+**The track's sound, the stereo link and the line input** moved to [Sample mode](#samplemode) {A_EN}: its pads 5-8, 14, 15 and 16.
 
 - **Opening it:** a tap on the button of the track already selected leaves it open; it closes when you let go of a menu pad, tap the button again or press any other button. Holding a track's button (¼ s) opens it only while held, like the original's view buttons.
 - Row 1, the track's **pages**: only those of its sound (sample: stock and Stock+; granular: stock, Stock+, Granular and Envelope; synth: stock, Stock+, Synth and Envelope; input: stock); the others dark. Bright = the one shown. **Holding** a page pad (½ s or more) shows it only until you let go, then the previous one returns.
-- Row 2, below, the **toggles**: bright = on, dim = off. **The track's sound only changes here:** sample, granular, synth or input, one per track; setting one removes the others.
+- **The track's sound** (sample, granular, synth or input, one per track) is picked in [Sample mode](#samplemode), pads 5-8 {A_EN}. Up to Alpha 0.08 it was on row 2 of this menu (pads 11-14), with the link on 9 and the input's source on 15.
 - With the granular or the synth, the stock page leaves the original's knobs (filter, envelope, pitch, level…) acting on them; the **distortion** too, with the same curve as on a sample {A7_EN}.
 
 In Alpha 0.04 the menu was: 1-3 pages, 4 granular, 5 / 6 input and gate, 7 link.
 """))
 
-view("stockplus", "2", ("Página Stock+", "menú de pista, pad 2, en una pista con un sample, el granular o el sinte (el botón de la pista parpadea en azul cielo)", f"""
+view("stockplus", "2", ("Página Stock+", "menú de pista, pad 2, en una pista con un sample, el granular o el sinte", f"""
 La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8 desde Alpha 0.02)*. Actúa sobre el sample de la pista; con el granular o el sinte, sobre ellos {A7}.
 
 | Knob | Solo | Con Shift |
@@ -352,7 +346,7 @@ La página Stock+ es por pista y se queda hasta apagar *(desde Alpha 0.01; K5-K8
           "Stock+ page of a synth track: K7, the waveshaper in its type's colour (soft, gold); K8, the FM's LFO.",
           knobs={1: ("env. tono", "pitch env.", "", "sky"), 2: ("caída", "decay", "", "sky"), 3: ("LFO vel.", "LFO rate", "", "sky"),
                  4: ("LFO prof.", "LFO depth", "", "sky"), 5: ("ring", "ring", "", "sky"), 6: ("follow", "follow", "", "white"),
-                 7: ("waveshaper", "waveshaper", "", "gold"), 8: ("FM", "FM", "", "sky")})]), ("Stock+ page", "track menu, pad 2, on a track with a sample, the granular or the synth (the track's button blinks sky blue)", f"""
+                 7: ("waveshaper", "waveshaper", "", "gold"), 8: ("FM", "FM", "", "sky")})]), ("Stock+ page", "track menu, pad 2, on a track with a sample, the granular or the synth", f"""
 The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8 since Alpha 0.02)*. It acts on the track's sample; with the granular or the synth, on them {A7_EN}.
 
 | Knob | Alone | With Shift |
@@ -385,7 +379,7 @@ The Stock+ page is per track and stays until power-off *(since Alpha 0.01; K5-K8
 - The waveshaper is saved with the project and goes along with Clear + the track's button and Duplicate.
 """))
 
-view("granular", "2", ("Página Granular", "menú de pista, pad 11 (pone el granular y su página) o pad 3 (su página) (el botón de la pista parpadea en lila)", f"""
+view("granular", "2", ("Página Granular", "Sample mode, pad 6 (pone el granular y su página), o menú de pista, pad 3 (su página)", f"""
 El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del master *(desde Alpha 0.04)*. Sigue la nota (vista Note, teclado y MIDI). Los knobs de filtro (paso alto, paso bajo, resonancia) y la envolvente de la pista actúan sobre él; también la distorsión {A7}. **Hasta 4 pistas granulares**, cada una con sus ajustes; los 16 granos se reparten (16 con una pista, 7 por pista con dos, 4 con tres, 2 con cuatro).
 
 | Knob | Solo | Con Shift |
@@ -400,10 +394,12 @@ El motor granular de CIRCUIT-HACKS sobre el sample de la pista, en el DSP del ma
 | K8 | ventana (rectángulo → triángulo → percusiva) | gate, encendido / apagado: tenue = siempre suena (drone), brillante = lo abren las notas {A5} |
 
 Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro). Clear + knob = por defecto. Se guarda con el proyecto.
+
+**Inicio y longitud del original** {A} (página stock, K2 / K3): el inicio se suma a la posición (K3 de esta página), hasta el final del sample; la longitud estrecha la zona (a tope, su valor por defecto, no cambia nada).
 """, [fig("Página Granular: knobs en lila.", "Granular page: knobs in lilac.",
           knobs={1: ("tamaño", "size", "", "lilac"), 2: ("densidad", "density", "", "lilac"), 3: ("posición", "position", "", "lilac"),
                  4: ("scan", "scan", "", "lilac"), 5: ("altura", "pitch", "", "lilac"), 6: ("disp. pos.", "pos. spray", "", "lilac"),
-                 7: ("disp. alt.", "pitch spray", "", "lilac"), 8: ("ventana", "window", "", "lilac")})]), ("Granular page", "track menu, pad 11 (puts the granular on, with its page) or pad 3 (its page) (the track's button blinks lilac)", f"""
+                 7: ("disp. alt.", "pitch spray", "", "lilac"), 8: ("ventana", "window", "", "lilac")})]), ("Granular page", "Sample mode, pad 6 (puts the granular on, with its page), or track menu, pad 3 (its page)", f"""
 The CIRCUIT-HACKS granular engine on the track's sample, on the master DSP *(since Alpha 0.04)*. It follows the note (Note view, keyboard and MIDI). The track's filter knobs (high-pass, low-pass, resonance) and envelope act on it; the distortion too {A7_EN}. **Up to 4 granular tracks**, each with its own settings; the 16 grains are shared (16 with one track, 7 each with two, 4 with three, 2 with four).
 
 | Knob | Alone | With Shift |
@@ -418,9 +414,11 @@ The CIRCUIT-HACKS granular engine on the track's sample, on the master DSP *(sin
 | K8 | window (rectangle → triangle → percussive) | gate, on / off: dim = always sounds (drone), bright = opened by the notes {A5_EN} |
 
 Lilac with the value as brightness (K4, K5 and Shift + K5: the distance from the centre). Clear + knob = default. Saved with the project.
+
+**The original's start and length** {A_EN} (stock page, K2 / K3): the start adds to the position (this page's K3), up to the sample's end; the length narrows the zone (fully up, its default, changes nothing).
 """))
 
-view("sinte", "2", ("Página Sinte", "menú de pista, pad 12 (pone el sinte y su página) o pad 4 (su página) (el botón de la pista parpadea en menta)", f"""
+view("sinte", "2", ("Página Sinte", "Sample mode, pad 7 (pone el sinte y su página), o menú de pista, pad 4 (su página)", f"""
 ★ Un sinte monofónico de dos osciladores en el DSP del master, como sonido de cualquier pista {A5}. **Hasta 4 pistas con sinte.** Las notas le llegan como a un sample (pads, vista Note, secuencia, MIDI).
 
 | Knob | Solo | Con Shift |
@@ -435,13 +433,14 @@ view("sinte", "2", ("Página Sinte", "menú de pista, pad 12 (pone el sinte y su
 | K8 | ancho del pulso (50 % → 2 %) | — |
 
 - **Los knobs del original** de la pista siguen actuando sobre el sinte (en la página stock): tono, envolvente (a la izquierda del centro caída, en el centro sostiene, a la derecha ataque lento), paso bajo, paso alto, resonancia, distorsión {A7}, nivel, panorama, envíos, sidechain y mute.
+- **Inicio y longitud del original** {A} (página stock, K2 / K3): **el inicio = morph**: desde la forma de K1 / K2, cada oscilador pasa de forma continua a la siguiente (sierra → pulso → triángulo → seno → sierra), hasta 3 formas a tope; **la longitud = unísono**: por debajo del máximo, cada oscilador suena dos veces, desafinadas hasta un cuarto de semitono (con la longitud a 0). Con los valores por defecto (inicio 0, longitud a tope) suena como antes. Morph y unísono gastan más DSP: cuatro sintes así con el granular a la vez podrían no caber.
 - **Note-off:** una pista con sinte recibe el note-off aunque esté en one-shot, para que suene el release.
 - **LEDs:** menta con el brillo según el valor (K3, K4, Shift + K4, Shift + K7: la distancia al centro); K1 / K2 en el color de su forma de onda.
 - Clear + knob = por defecto. **Se guarda con el proyecto.**
 """, [fig("Página Sinte: K1 / K2 en el color de la forma de onda, el resto en menta.", "Synth page: K1 / K2 in the waveform's colour, the rest in mint.",
           knobs={1: ("OSC 1", "OSC 1", "", "red"), 2: ("OSC 2", "OSC 2", "", "red"), 3: ("altura 2", "pitch 2", "", "mint"),
                  4: ("fino 2", "fine 2", "", "mint"), 5: ("mezcla", "mix", "", "mint"), 6: ("SUB", "SUB", "", "mint"),
-                 7: ("FM", "FM", "", "mint"), 8: ("pulso", "pulse", "", "mint")})]), ("Synth page", "track menu, pad 12 (puts the synth on, with its page) or pad 4 (its page) (the track's button blinks mint)", f"""
+                 7: ("FM", "FM", "", "mint"), 8: ("pulso", "pulse", "", "mint")})]), ("Synth page", "Sample mode, pad 7 (puts the synth on, with its page), or track menu, pad 4 (its page)", f"""
 ★ A monophonic two-oscillator synth on the master DSP, as any track's sound {A5_EN}. **Up to 4 synth tracks.** It gets its notes like a sample does (pads, Note view, sequence, MIDI).
 
 | Knob | Alone | With Shift |
@@ -456,12 +455,13 @@ view("sinte", "2", ("Página Sinte", "menú de pista, pad 12 (pone el sinte y su
 | K8 | pulse width (50 % → 2 %) | — |
 
 - **The original's knobs** of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, distortion {A7_EN}, level, pan, sends, sidechain and mute.
+- **The original's start and length** {A_EN} (stock page, K2 / K3): **start = morph**: from K1 / K2's waveform, each oscillator moves smoothly to the next one (saw → pulse → triangle → sine → saw), up to 3 shapes fully up; **length = unison**: below fully up, each oscillator plays twice, detuned by up to a quarter semitone (length at 0). At the defaults (start 0, length fully up) it sounds as before. Morph and unison use more DSP: four synths like that plus the granular at once may not fit.
 - **Note-off:** a synth track gets the note-off even in one-shot mode, so the release sounds.
 - **LEDs:** mint with the value as brightness (K3, K4, Shift + K4, Shift + K7: the distance from the centre); K1 / K2 in their waveform's colour.
 - Clear + knob = default. **Saved with the project.**
 """))
 
-view("envolvente", "2", ("Página Envolvente", "menú de pista, pad 5, en una pista con el sinte o el granular (el botón de la pista parpadea en rosa)", f"""
+view("envolvente", "2", ("Página Envolvente", "menú de pista, pad 5, en una pista con el sinte o el granular", f"""
 ★ La envolvente del sinte y del granular, según el **modo de reproducción** de la pista (Sample mode, pads 25 / 26 / 27) {A6}:
 
 | Knob | Qué hace |
@@ -477,7 +477,7 @@ view("envolvente", "2", ("Página Envolvente", "menú de pista, pad 5, en una pi
 - Rosa con el brillo según el valor (K3 / K4: la distancia al centro). Clear + knob = por defecto. **Se guarda con el proyecto.**
 """, [fig("Página Envolvente: K1-K4 en rosa, K5-K8 apagados.", "Envelope page: K1-K4 in rose, K5-K8 off.",
           knobs={1: ("inicio", "start", "", "rose"), 2: ("longitud", "length", "", "rose"), 3: ("pendiente", "slope", "", "rose"),
-                 4: ("→ filtro", "→ filter", "", "rose")})]), ("Envelope page", "track menu, pad 5, on a synth or granular track (the track's button blinks rose)", f"""
+                 4: ("→ filtro", "→ filter", "", "rose")})]), ("Envelope page", "track menu, pad 5, on a synth or granular track", f"""
 ★ The synth's and the granular's envelope, by the track's **play mode** (Sample mode, pads 25 / 26 / 27) {A6_EN}:
 
 | Knob | What it does |
@@ -493,22 +493,36 @@ view("envolvente", "2", ("Página Envolvente", "menú de pista, pad 5, en una pi
 - Rose with the value as brightness (K3 / K4: the distance from the centre). Clear + knob = default. **Saved with the project.**
 """))
 
-view("entrada", "2", ("Entrada de línea y enlace estéreo", "menú de pista, pads 13 / 14 / 15 y 9", """
-**Entrada de línea** (pad 13; desde Alpha 0.04): la entrada de audio suena como el sonido de la pista, con su nivel, panorama, envíos, filtro y envolvente.
-- Una pista de entrada: L + R. Dos: la de número menor es L, la mayor R. En una tercera, sale la primera puesta.
-- **Pad 14, el gate:** tenue = siempre suena; brillante = solo mientras suenan sus notas, por el VCA y el filtro de la pista (paso bajo, paso alto, resonancia; el filtro desde Alpha 0.06).
-- **Pad 15, la fuente** (Alpha 0.06): las entradas (ámbar tenue, sin FX; hasta Alpha 0.07, ámbar) → el **retorno de reverb** (crema) → el **de delay** (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms). Ojo: mandar esa pista a su propia reverb o delay realimenta.
+view("entrada", "2", ("Entrada de línea y enlace estéreo", "Sample mode, pads 8 / 15 / 16 y 14", """
+Los pads son los de [Sample mode](#samplemode) {A6}; hasta Alpha 0.08 estaban en el menú de pista (entrada 13, gate 14, fuente 15, enlace 9).
 
-**Enlace estéreo** (pad 9; desde Alpha 0.04): la pista (izquierda, su sample) y la siguiente (derecha, el sample siguiente) suenan juntas con los parámetros y las notas de la primera. Pad 9 en cualquiera de las dos = deshacer. En la pista 8 sola, oscuro. Sin enlazar quedan el LFO y el scan libres de Stock+ y el WSOLA del stretch.
+**Entrada de línea** (pad 8; desde Alpha 0.04): la entrada de audio suena como el sonido de la pista, con su nivel, panorama, envíos, filtro y envolvente.
+- Una pista de entrada: L + R. Dos: la de número menor es L, la mayor R. En una tercera, sale la primera puesta.
+- **Pad 16, el gate:** tenue = siempre suena; brillante = solo mientras suenan sus notas, por el VCA y el filtro de la pista (paso bajo, paso alto, resonancia; el filtro desde Alpha 0.06).
+- **Pad 15, la fuente** (Alpha 0.06): las entradas (ámbar tenue, sin FX; hasta Alpha 0.07, ámbar) → el **retorno de reverb** (crema) → el **de delay** (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms).
+- **El FX hacia una entrada** {A6}: el retorno que toma una pista de entrada ya no va al master; suena solo a través de la pista. El envío de esa pista a su propio efecto llega a la mitad (el knob entero = medio envío), así la realimentación se queda contenida; el envío al otro efecto va entero. Hasta Alpha 0.08, el retorno sonaba también por el master y el envío a su propio efecto realimentaba.
+
+**Enlace estéreo** (pad 14; desde Alpha 0.04): la pista (izquierda) y la siguiente (derecha) suenan juntas con las notas de la primera. Pad 14 en cualquiera de las dos = deshacer. En la pista 8 sola, oscuro. Sin enlazar quedan el LFO y el scan libres de Stock+ y el WSOLA del stretch.
+- **La segunda pista, en desviaciones** {A6}: sus K1-K8 (página stock) son desviaciones de los de la primera: centro = igual, a la derecha suma, a la izquierda resta. Sus LEDs en azul acero, oscuros en el centro. Clear + knob = el centro.
+- **Su sample** = el de la primera + la distancia entre sus pads: por defecto, el siguiente; elegir otro pad en la segunda cambia la distancia, y mover el de la primera mueve los dos {A6}.
+- **Sus propios pasos también suenan** {A6}: la segunda toca las notas de la primera y además las suyas.
+- Enlazar pone los knobs de la segunda en el centro (suena igual); deshacer el enlace los deja donde sonaban. Un proyecto de Alpha 0.04-0.08 con un enlace carga como sonaba.
 
 Las dos se guardan con el proyecto.
-"""), ("Line input and stereo link", "track menu, pads 13 / 14 / 15 and 9", """
-**Line input** (pad 13; since Alpha 0.04): the audio input plays as the track's sound, with its level, pan, sends, filter and envelope.
-- One input track: L + R. Two: the lower-numbered one is L, the higher R. Setting a third removes the first one set.
-- **Pad 14, the gate:** dim = always sounds; bright = only while its notes play, through the track's VCA and filter (low-pass, high-pass, resonance; the filter since Alpha 0.06).
-- **Pad 15, the source** (Alpha 0.06): the inputs (dim amber, no FX; up to Alpha 0.07, amber) → the **reverb return** (cream) → the **delay return** (peach), in turn; each input track its own. The return arrives a block late (0.67 ms). Careful: sending that track to its own reverb or delay feeds back.
+"""), ("Line input and stereo link", "Sample mode, pads 8 / 15 / 16 and 14", """
+The pads are [Sample mode](#samplemode)'s {A6}; up to Alpha 0.08 they were on the track menu (input 13, gate 14, source 15, link 9).
 
-**Stereo link** (pad 9; since Alpha 0.04): the track (left, its sample) and the next one (right, the next sample) play together with the first one's parameters and notes. Pad 9 on either = undo. Dark on track 8 alone. Not linked: Stock+'s free LFO and scan, and the stretch's WSOLA.
+**Line input** (pad 8; since Alpha 0.04): the audio input plays as the track's sound, with its level, pan, sends, filter and envelope.
+- One input track: L + R. Two: the lower-numbered one is L, the higher R. Setting a third removes the first one set.
+- **Pad 16, the gate:** dim = always sounds; bright = only while its notes play, through the track's VCA and filter (low-pass, high-pass, resonance; the filter since Alpha 0.06).
+- **Pad 15, the source** (Alpha 0.06): the inputs (dim amber, no FX; up to Alpha 0.07, amber) → the **reverb return** (cream) → the **delay return** (peach), in turn; each input track its own. The return arrives a block late (0.67 ms).
+- **An FX into an input** {A6}: the return an input track takes no longer goes to the master; it only sounds through the track. That track's send into its own effect is halved (the full knob = half a send), so the feedback stays contained; its send into the other effect is whole. Up to Alpha 0.08 the return also sounded through the master and the send into its own effect fed back.
+
+**Stereo link** (pad 14; since Alpha 0.04): the track (left) and the next one (right) play together with the first one's notes. Pad 14 on either = undo. Dark on track 8 alone. Not linked: Stock+'s free LFO and scan, and the stretch's WSOLA.
+- **The second track, as offsets** {A6}: its K1-K8 (stock page) are offsets from the first one's: centre = the same, right adds, left subtracts. Its LEDs steel blue, dark at the centre. Clear + knob = the centre.
+- **Its sample** = the first one's + the gap between their pads: by default the next one; picking another pad on the second changes the gap, and moving the first one's moves both {A6}.
+- **Its own steps play too** {A6}: the second plays the first one's notes and its own as well.
+- Linking puts the second's knobs at the centre (it sounds the same); unlinking leaves them where they sounded. An Alpha 0.04-0.08 project with a link loads as it sounded.
 
 Both are saved with the project.
 """))
@@ -537,21 +551,35 @@ When you let go of Shift, the keyboard plays the scale: one iteration per row (t
 view("velocity", "3", ("Velocity y Micro Step", "botón Velocity; Micro Step = Shift + Gate", f"""
 | Vista | Gesto | Qué hace |
 |---|---|---|
-| Velocity | **Shift + paso** | marca el paso *(desde Alpha 0.04)*: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a la posición de su knob. Con Shift, los pasos marcados en rojo; los demás, como los dibuja la vista {A5} |
+| Velocity | **Shift mantenido** | ★ la **vista de automatización** {A}: los pasos con automatización de knobs en **amarillo**, los marcados en **rojo**, los demás como los dibuja la vista |
+| Velocity | **Shift + paso amarillo** | ★ **escucharlo** {A}: sus valores van a los knobs y al sonido, esos knobs en amarillo (brillo = el valor); otro paso amarillo pone los suyos; al soltar Shift, todo vuelve como estaba |
+| Velocity | **Shift + otro paso** | marca el paso *(desde Alpha 0.04)*: al sonar, la automatización no suena ahí y los parámetros automatizados vuelven a **Project init** {A} (hasta Alpha 0.08, a la posición de su knob); un knob girado a mano se queda donde lo dejaste. Otra vez = desmarcar |
+| Velocity | **Velocity otra vez** | ★ la vista de automatización **fija**, sin mantener Shift {A}: un toque en un paso amarillo lo escucha, en otro lo marca. Velocity otra vez, u otra vista, la quita (lo que escuchabas vuelve). Shift + Velocity sigue siendo la velocity fija del original |
+| Velocity | **Clear + paso** (con o sin Shift; Clear primero) | ★ borra la automatización de knobs de ese paso; sus notas, su marca y los carriles del Mixer se quedan {A} |
+| Vista de pista (Samples) | **Record mantenido + paso** | ★ **snapshot** {A}: cada knob que no está en Project init queda en ese paso (sus 6 micropasos); el pad del paso en amarillo mientras lo mantienes; al soltar Record, la grabación como estaba |
 | Micro Step | **pad 31** | longitud fija: apagada → el selector en los pads 17-32 (1-16 pasos; elegir una la enciende); encendida → apagada (naranja brillante / tenue) *(desde Alpha 0.04)* |
 | Micro Step | **pad 32** | gate por pulsación: el golpe dura lo que mantienes el pad del paso; mantener un paso vacío 300 ms o más también lo crea (verde brillante / tenue) *(desde Alpha 0.04)* |
 
 Encender uno de los dos de Micro Step apaga el otro. Con cualquiera, un golpe introducido a mano en los pasos toma esa longitud.
+
+**Project init** de una pista {A}: sus parámetros como se cargó o se guardó el proyecto por última vez (se vuelve a tomar en cada guardado). El pad 8 del [menú de pista](#menu) (rojo) devuelve ahí su voz.
 """, [fig("Micro Step: pad 31 longitud fija, pad 32 gate por pulsación (apagados: tenues).", "Micro Step: pad 31 fixed length, pad 32 gate by press (off: dim).",
           pads={31: ("orange", "longitud", "length", True), 32: ("green", "gate", "gate", True)}, buttons=["Shift", "Gate"])]),
      ("Velocity and Micro Step", "the Velocity button; Micro Step = Shift + Gate", f"""
 | View | Gesture | What it does |
 |---|---|---|
-| Velocity | **Shift + step** | marks the step *(since Alpha 0.04)*: when it plays, automation is silent there and automated parameters go back to their knob's position. With Shift, the marked steps in red; the others as the view draws them {A5_EN} |
+| Velocity | **Shift held** | ★ the **automation view** {A_EN}: steps with knob automation in **yellow**, the marked ones in **red**, the others as the view draws them |
+| Velocity | **Shift + a yellow step** | ★ **listen to it** {A_EN}: its values go to the knobs and the sound, those knobs yellow (brightness = the value); another yellow step sets its own; let go of Shift and everything goes back |
+| Velocity | **Shift + another step** | marks the step *(since Alpha 0.04)*: when it plays, automation is silent there and automated parameters go back to **Project init** {A_EN} (up to Alpha 0.08, to their knob's position); a knob turned by hand stays where you left it. Again = unmark |
+| Velocity | **Velocity again** | ★ the automation view **latched**, without holding Shift {A_EN}: a tap on a yellow step listens to it, on another marks it. Velocity again, or another view, removes it (what you were listening to goes back). Shift + Velocity is still the original's fixed velocity |
+| Velocity | **Clear + step** (with or without Shift; Clear first) | ★ erases that step's knob automation; its notes, its mark and the Mixer's lanes stay {A_EN} |
+| Track view (Samples) | **Record held + step** | ★ **snapshot** {A_EN}: each knob not at Project init goes into that step (its 6 micro steps); the step's pad yellow while you hold it; when you let go of Record, recording as it was |
 | Micro Step | **pad 31** | fixed length: off → the selector on pads 17-32 (1-16 steps; picking one switches it on); on → off (orange bright / dim) *(since Alpha 0.04)* |
 | Micro Step | **pad 32** | gate by press: the hit lasts as long as you hold the step's pad; holding an empty step 300 ms or more also creates it (green bright / dim) *(since Alpha 0.04)* |
 
 Switching one of the two Micro Step options on switches the other off. With either, a hit entered by hand on the steps takes that length.
+
+A track's **Project init** {A_EN}: its parameters as the project was last loaded or saved (taken again on every save). Pad 8 of the [track menu](#menu) (red) brings its voice back there.
 """))
 
 view("patternsettings", "3", ("Pattern Settings y probabilidad", "botón Pattern Settings (dos veces: la vista de probabilidad, modo 1)", """
@@ -612,19 +640,29 @@ view("samplemode", "4", ("Sample mode", "botón Samples dos veces", """
 | **Pads 1 / 2** (del original) | ajustan el sample al patrón cambiando el tono; desde Alpha 0.04 apagan antes el stretch |
 | **Pads 9 / 10** | ★ lo mismo con el **stretch** (K7 de Stock+), sin cambiar el tono: la longitud siguiente / la anterior *(desde Alpha 0.04)* |
 | **Pad 19** | ★ de-clicker del loop de la pista elegida (crossfade de 256 muestras), encendido / apagado (azul brillante / tenue); encendido por defecto, se guarda con el proyecto *(desde Alpha 0.04)* |
+| **Pads 5-8** | ★ el **sonido de la pista**, uno encendido, los demás tenues: **5** sample (blanco), **6** [granular](#granular) (lila), **7** [sinte](#sinte) (menta), **8** [entrada de línea](#entrada) (ámbar). El 5 quita el granular, el sinte o la entrada; el 6 / 7 dejan los knobs de la pista en su página; el del sonido que ya suena no hace nada {A6} |
+| **Pad 14** | ★ [enlace estéreo](#entrada) con la pista siguiente (azul acero) {A6} |
+| **Pad 15** | ★ la fuente de la [entrada](#entrada): las entradas (ámbar tenue), el retorno de reverb (crema), el de delay (melocotón); solo en una pista de entrada {A6} |
+| **Pad 16** | ★ el gate de la [entrada](#entrada) (ámbar brillante / tenue); solo en una pista de entrada {A6} |
 
-El pad 19 está sobre el 27 (loop). Los loops muy cortos suenan a su longitud (en el original se repetían cada ~128 muestras).
-""", [fig("Sample mode: pads 9 / 10 bajo los 1 / 2; pad 19 sobre el loop.", "Sample mode: pads 9 / 10 under 1 / 2; pad 19 above loop.",
-          pads={1: ("cyan", "tono +", "pitch +"), 2: ("cyan", "tono −", "pitch −"), 9: ("cyan", "stretch +", "stretch +"),
-                10: ("cyan", "stretch −", "stretch −"), 19: ("cyan", "de-click", "de-click"), 27: ("cyan", "loop", "loop", True)})]),
+Shift + estos pads, como el original. El pad 19 está sobre el 27 (loop). Los loops muy cortos suenan a su longitud (en el original se repetían cada ~128 muestras).
+""", [fig("Sample mode: pads 9 / 10 bajo los 1 / 2; el sonido de la pista en 5-8 y el enlace en 14; pad 19 sobre el loop.", "Sample mode: pads 9 / 10 under 1 / 2; the track's sound on 5-8 and the link on 14; pad 19 above loop.",
+          pads={1: ("cyan", "tono +", "pitch +"), 2: ("cyan", "tono −", "pitch −"), 5: ("white", "sample", "sample"),
+                6: ("lilac", "granular", "granular", True), 7: ("mint", "sinte", "synth", True), 8: ("amber", "entrada", "line in", True),
+                9: ("cyan", "stretch +", "stretch +"), 10: ("cyan", "stretch −", "stretch −"), 14: ("steel", "enlace", "link", True),
+                19: ("cyan", "de-click", "de-click"), 27: ("cyan", "loop", "loop", True)})]),
      ("Sample mode", "the Samples button twice", """
 | Gesture | What it does |
 |---|---|
 | **Pads 1 / 2** (the original's) | fit the sample to the pattern by changing pitch; since Alpha 0.04 they switch the stretch off first |
 | **Pads 9 / 10** | ★ the same with the **stretch** (Stock+ K7), without changing pitch: the next / previous length *(since Alpha 0.04)* |
 | **Pad 19** | ★ the selected track's loop de-clicker (256-sample crossfade), on / off (blue bright / dim); on by default, saved with the project *(since Alpha 0.04)* |
+| **Pads 5-8** | ★ the **track's sound**, one lit, the others dim: **5** sample (white), **6** [granular](#granular) (lilac), **7** [synth](#sinte) (mint), **8** [line input](#entrada) (amber). Pad 5 removes the granular, the synth or the input; 6 / 7 leave the track's knobs on their page; the pad of the sound already playing does nothing {A6} |
+| **Pad 14** | ★ [stereo link](#entrada) with the next track (steel blue) {A6} |
+| **Pad 15** | ★ the [input](#entrada)'s source: the inputs (dim amber), the reverb return (cream), the delay return (peach); only on an input track {A6} |
+| **Pad 16** | ★ the [input](#entrada)'s gate (amber bright / dim); only on an input track {A6} |
 
-Pad 19 sits above pad 27 (loop). Very short loops play at their own length (the original repeated them every ~128 samples).
+Shift + these pads, as in the original. Pad 19 sits above pad 27 (loop). Very short loops play at their own length (the original repeated them every ~128 samples).
 """))
 
 view("samplerec", "4", ("Sample Rec", "botón Sample Rec", """
@@ -753,17 +791,17 @@ Everything is saved in the device's settings, except GM mode, which goes with th
 view("guardado", "A", ("Qué se guarda y dónde", "—", """
 | Dónde | Qué |
 |---|---|
-| **Con el proyecto** | Stock+, Granular, Sinte (ajustes y pistas), Envolvente, la fuente de la entrada, entrada de línea, enlace estéreo, de-clicker por pista, escala propia, reglas de cadena, dinámicas / mutación / frecuencia por paso, marcas de Velocity, Micro Step, modo GM, reverb / delay / sidechain |
+| **Con el proyecto** | Stock+, Granular, Sinte (ajustes y pistas), Envolvente, la fuente de la entrada, entrada de línea, enlace estéreo (con las desviaciones de la segunda pista), de-clicker por pista, escala propia, reglas de cadena, dinámicas / mutación / frecuencia por paso, marcas de Velocity, Micro Step, modo GM, reverb / delay / sidechain |
 | **Ajustes del aparato** | canales de Program Change, modo del Thru, teclado al arpegiador, fusión USB, resonancia del filtro master, compresor |
-| **Hasta apagar** | la página de knobs de cada pista, el modo cue, el metrónomo / cuenta atrás, Sample Rec pads 23 / 24 |
+| **Hasta apagar** | la página de knobs de cada pista, Project init (lo cargado o guardado), el modo cue, el metrónomo / cuenta atrás, Sample Rec pads 23 / 24 |
 
 Lo propio del mod va en una zona del fichero de proyecto que el original no usa. Un proyecto de una versión anterior carga sin lo que esa versión no tenía. **Guarda copias de tus proyectos.**
 """), ("What is saved and where", "—", """
 | Where | What |
 |---|---|
-| **With the project** | Stock+, Granular, Synth (settings and tracks), Envelope, the input's source, line input, stereo link, per-track de-clicker, own scale, chain rules, per-step dynamics / mutation / frequency, Velocity marks, Micro Step, GM mode, reverb / delay / sidechain |
+| **With the project** | Stock+, Granular, Synth (settings and tracks), Envelope, the input's source, line input, stereo link (with the second track's offsets), per-track de-clicker, own scale, chain rules, per-step dynamics / mutation / frequency, Velocity marks, Micro Step, GM mode, reverb / delay / sidechain |
 | **Device settings** | Program Change channels, Thru mode, keyboard into the arpeggiator, USB merge, master filter resonance, compressor |
-| **Until power-off** | each track's knob page, cue mode, metronome / count-in, Sample Rec pads 23 / 24 |
+| **Until power-off** | each track's knob page, Project init (what was loaded or saved), cue mode, metronome / count-in, Sample Rec pads 23 / 24 |
 
 The mod's own data goes in a part of the project file the original doesn't use. A project from an earlier version loads without what that version lacked. **Keep copies of your projects.**
 """))
@@ -791,10 +829,11 @@ GLOSSARY = [
     ("Metrónomo visual", "Visual metronome", "Clear destella en naranja en cada clic con el nivel del clic a 0 (K5 de Tempo / Swing)", "Clear flashes orange on each click with the click's level at 0 (Tempo / Swing K5)", "transporte", "0.08"),
     ("De-clicker de loops", "Loop de-clicker", "crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec", "a crossfade at the loop point; Sample mode pad 19, Sample Rec pad 23", "samplemode", "0.04"),
     ("Dinámicas por paso", "Per-step dynamics", "velocity y retraso al azar dentro del paso; fila 3 de la probabilidad", "random velocity and delay within the step; probability row 3", "patternsettings", "0.0"),
-    ("Enlace estéreo", "Stereo link", "una pista y la siguiente como un sonido estéreo; menú, pad 9", "a track and the next as one stereo sound; menu, pad 9", "entrada", "0.04"),
-    ("Entrada de línea", "Line input", "la entrada de audio como sonido de una pista; menú, pads 13 / 14", "the audio input as a track's sound; menu, pads 13 / 14", "entrada", "0.04"),
+    ("Enlace estéreo", "Stereo link", "una pista y la siguiente como un sonido estéreo; Sample mode, pad 14; desde 0.09 la segunda en desviaciones", "a track and the next as one stereo sound; Sample mode, pad 14; since 0.09 the second as offsets", "entrada", "0.04"),
+    ("Entrada de línea", "Line input", "la entrada de audio como sonido de una pista; Sample mode, pads 8 / 16", "the audio input as a track's sound; Sample mode, pads 8 / 16", "entrada", "0.04"),
+    ("FX hacia una entrada", "FX into an input", "el retorno que toma una pista de entrada deja el master; su realimentación, a la mitad", "a return taken by an input track leaves the master; its feedback, halved", "entrada", "0.09"),
     ("Envolvente por modo", "Envelope by play mode", "inicio, longitud, pendiente y → filtro del sinte y el granular; menú, pad 5", "start, length, slope and → filter of the synth and the granular; menu, pad 5", "envolvente", "0.06"),
-    ("Retornos de FX como fuente", "FX returns as a source", "la reverb o el delay como sonido de una pista de entrada; menú, pad 15", "the reverb or the delay as an input track's sound; menu, pad 15", "entrada", "0.06"),
+    ("Retornos de FX como fuente", "FX returns as a source", "la reverb o el delay como sonido de una pista de entrada; Sample mode, pad 15", "the reverb or the delay as an input track's sound; Sample mode, pad 15", "entrada", "0.06"),
     ("Envolvente de tono", "Pitch envelope", "Stock+, K1 / K2", "Stock+, K1 / K2", "stockplus", "0.01"),
     ("Escala propia", "Own scale", "una escala por pista; Shift en la vista Note", "a scale per track; Shift in the Note view", "note", "0.0"),
     ("Fixed Recording con reloj externo", "Fixed Recording with external clock", "la duración al tempo del reloj MIDI que llega", "the length at the incoming MIDI clock's tempo", "samplerec", "0.02"),
@@ -803,10 +842,15 @@ GLOSSARY = [
     ("Gate por pulsación", "Gate by press", "el golpe dura lo que mantienes el pad; Micro Step, pad 32", "the hit lasts as long as the pad is held; Micro Step, pad 32", "velocity", "0.04"),
     ("General MIDI", "General MIDI", "las pistas por el canal 10 con su nota GM; Setup, pad 22", "the tracks on channel 10 with their GM note; Setup, pad 22", "setup", "0.04"),
     ("Grabación estéreo", "Stereo recording", "L y R en dos huecos; Sample Rec, pad 24", "L and R into two slots; Sample Rec, pad 24", "samplerec", "0.04"),
-    ("Granular", "Granular", "el motor granular en hasta 4 pistas; menú, pads 11 / 3", "the granular engine on up to 4 tracks; menu, pads 11 / 3", "granular", "0.04"),
+    ("Granular", "Granular", "el motor granular en hasta 4 pistas; Sample mode pad 6, menú pad 3", "the granular engine on up to 4 tracks; Sample mode pad 6, menu pad 3", "granular", "0.04"),
+    ("Inicio y longitud en el granular", "Start and length on the granular", "el inicio del original se suma a la posición, la longitud estrecha la zona", "the original's start adds to the position, the length narrows the zone", "granular", "0.09"),
     ("Longitud fija", "Fixed length", "los golpes a mano con una longitud; Micro Step, pad 31", "hand-entered hits with a set length; Micro Step, pad 31", "velocity", "0.04"),
     ("LFO de tono", "Pitch LFO", "Stock+, K3 / K4; libre o a tempo", "Stock+, K3 / K4; free or synced", "stockplus", "0.01"),
-    ("Marcas de Velocity", "Velocity marks", "en el paso marcado la automatización vuelve al knob; Shift + paso", "on a marked step automation returns to the knob; Shift + step", "velocity", "0.04"),
+    ("Marcas de Velocity", "Velocity marks", "en el paso marcado los parámetros vuelven a Project init (hasta 0.08, al knob); Shift + paso", "on a marked step the parameters go back to Project init (up to 0.08, to the knob); Shift + step", "velocity", "0.04"),
+    ("Vista de automatización", "Automation view", "los pasos con automatización de knobs en amarillo, y escucharlos; Velocity + Shift, o Velocity otra vez (fija)", "steps with knob automation in yellow, and listening to them; Velocity + Shift, or Velocity again (latched)", "velocity", "0.09"),
+    ("Borrar la automatización de un paso", "Clear a step's automation", "Clear + paso en Velocity", "Clear + step in Velocity", "velocity", "0.09"),
+    ("Snapshot", "Snapshot", "los knobs movidos, a un paso; Record mantenido + paso", "the moved knobs into a step; Record held + step", "velocity", "0.09"),
+    ("Project init", "Project init", "la voz de la pista como se cargó o guardó; menú, pad 8 (rojo)", "the track's voice as loaded or saved; menu, pad 8 (red)", "menu", "0.09"),
     ("Menú de pista", "Track menu", "tocar el botón de la pista elegida (se queda abierto) o mantener el de una pista", "tap the selected track's button (stays open) or hold a track's button", "menu", "0.04"),
     ("Metrónomo", "Metronome", "cuatro estados con Shift + Clear", "four states with Shift + Clear", "transporte", "0.0"),
     ("Modo cue", "Cue mode", "mezcla a la izquierda, cue a la derecha; Mixer, panoramas, Shift + knob", "mix on the left, cue on the right; Mixer, pan, Shift + knob", "mixer", "0.04"),
@@ -823,7 +867,8 @@ GLOSSARY = [
     ("Ring mod", "Ring mod", "Stock+, K5 (Shift: la frecuencia)", "Stock+, K5 (Shift: the frequency)", "stockplus", "0.02"),
     ("Scan", "Scan", "mueve el inicio de cada nota o del loop; Stock+, K8", "moves each note's or the loop's start; Stock+, K8", "stockplus", "0.02"),
     ("Sidechain por knobs", "Sidechain on the knobs", "K1-K4 de la vista Sidechain", "Sidechain view K1-K4", "fx", "0.0"),
-    ("Sinte", "Synth", "dos osciladores con FM en hasta 4 pistas; menú, pads 12 / 4", "two oscillators with FM on up to 4 tracks; menu, pads 12 / 4", "sinte", "0.05"),
+    ("Sinte", "Synth", "dos osciladores con FM en hasta 4 pistas; Sample mode pad 7, menú pad 4", "two oscillators with FM on up to 4 tracks; Sample mode pad 7, menu pad 4", "sinte", "0.05"),
+    ("Morph y unísono del sinte", "Synth morph and unison", "el inicio y la longitud del original en el sinte", "the original's start and length on the synth", "sinte", "0.09"),
     ("Stretch", "Stretch", "más lento o rápido sin cambiar el tono; Stock+ K7, Sample mode pads 9 / 10", "slower or faster without changing pitch; Stock+ K7, Sample mode pads 9 / 10", "stockplus", "0.02"),
     ("Teclado externo al arpegiador", "External keyboard into the arpeggiator", "Advanced Setup, pad 22", "Advanced Setup, pad 22", "setup", "0.04"),
     ("Thru: Out 2 / Merge / Filter", "Thru: Out 2 / Merge / Filter", "Duplicate en Advanced Setup", "Duplicate in Advanced Setup", "setup", "0.0"),
@@ -837,13 +882,13 @@ GLOSSARY = [
 UI = dict(es=dict(title=f"Circuit Remix {VERSION} — manual", how="Cómo se llega:", toc="Índice", glossary="Glosario de funciones",
                   gl_cols=("Función", "Qué es / gesto", "Capítulo", "Desde"), other='[English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)',
                   other_html='<p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>',
-                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.08 es experimental:** lo nuevo (la cuenta atrás con el reloj, Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**",
+                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.09 es experimental:** lo nuevo (la automatización, los modos en Sample mode, el FX hacia una entrada, las desviaciones del enlace estéreo, el morph y el unísono del sinte) y casi todo desde Alpha 0.04 se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**",
                   intro="Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.", md="MANUAL.md", html="index.html", lang="es",
                   footer="Circuit Remix — MIT. Sin código de Novation."),
           en=dict(title=f"Circuit Remix {VERSION} — manual", how="How to get there:", toc="Contents", glossary="Glossary of functions",
                   gl_cols=("Function", "What it is / gesture", "Chapter", "Since"), other='[Español](MANUAL.md) · [illustrated version](manual/en.html)',
                   other_html='<p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>',
-                  cover="Manual by views", warn="> ⚠️ **Alpha 0.08 is experimental:** what's new (the count-in on the clock, Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**",
+                  cover="Manual by views", warn="> ⚠️ **Alpha 0.09 is experimental:** what's new (the automation, the modes in Sample mode, an FX into an input, the stereo link's offsets, the synth's morph and unison) and most things since Alpha 0.04 have mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**",
                   intro="Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.", md="MANUAL_EN.md", html="en.html", lang="en",
                   footer="Circuit Remix — MIT. No Novation code."))
 

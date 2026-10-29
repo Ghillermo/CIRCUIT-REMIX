@@ -20,6 +20,9 @@ def build(name=NAME, synth=False, **kw):
     rh54 = kw.pop("rh54", False)
     rh55 = kw.pop("rh55", False)
     rh56 = kw.pop("rh56", False)                                   # (RH56) linein srcdim: no FX into the line = dim
+    rh58 = kw.pop("rh58", False)                                   # (RH58) the page modules without their blink (noblink); fxroute's FXZ
+    import fxroute
+    excl = {"excl": fxroute.FXZ_AT} if rh58 else {}
     assert not rh55 or (rh54 and synth)
     if rh54:
         kw["tcram"] = True
@@ -32,7 +35,8 @@ def build(name=NAME, synth=False, **kw):
             import synth0
             tabs = synth0.code(0, env2=True)[3]
             li = linein.code(spl, two=True, fx=tabs)[1]["li"]
-            return (linein.segs(spl, two=True, fx=tabs) + synth0.segs(li, env2=True, sp=rh55) + (SP0.segs(L) if rh55 else [])
+            return (linein.segs(spl, two=True, fx=tabs, **excl) + synth0.segs(li, env2=True, sp=rh55, sl=rh58) + (SP0.segs(L) if rh55 else [])
+                    + (fxroute.segs() if rh58 else [])
                     + gstereo.segs(synth0.code(li, env2=True, sp=rh55)[1]["sy"], multi=True))
         li = linein.code(spl, two=True)[1]["li"]
         if synth:
@@ -40,11 +44,12 @@ def build(name=NAME, synth=False, **kw):
             return linein.segs(spl, two=True) + synth0.segs(li) + gstereo.segs(synth0.code(li)[1]["sy"], multi=True)
         return linein.segs(spl, two=True) + gstereo.segs(li, multi=True)
     env = {"env": True} if rh54 else {}
-    b = build_rh46.build(name, g0more=more, g0={"stereo": True, "multi": True, **spx}, chain={"stereo": True, "multi": True, **env, **spx},
-                         gpx={"stereo": True, "multi": True, **env}, **kw)
+    nob = {"noblink": True} if rh58 else {}
+    b = build_rh46.build(name, g0more=more, g0={"stereo": True, "multi": True, **spx, **({"sl": True} if rh58 else {})}, chain={"stereo": True, "multi": True, **env, **spx},
+                         gpx={"stereo": True, "multi": True, **env, **nob}, **({"spx": nob, "arx": {"init": True}} if rh58 else {}), **kw)
     ui = {"ui": True} if kw.get("ui") else {}                         # (RH52: docs/INTERFAZ.md)
     b.add("cue", cue)
-    b.add("linein", linein, two=True, **ui, **({"fx": True} if rh54 else {}), **({"srcdim": True} if rh56 else {}))
+    b.add("linein", linein, two=True, **ui, **({"fx": True} if rh54 else {}), **({"srcdim": True} if rh56 else {}), **excl)
     b.add("slink", slink, **ui)
     return b
 

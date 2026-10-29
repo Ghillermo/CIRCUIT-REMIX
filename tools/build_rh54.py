@@ -14,7 +14,7 @@ NAME = "RH54"
 
 def build(name=NAME, **kw):
     b = build_rh53.build(name, rh54=True, **kw)
-    b.add("envpage", envpage)
+    b.add("envpage", envpage, **({"noblink": True} if kw.get("rh58") else {}))
     return b
 
 

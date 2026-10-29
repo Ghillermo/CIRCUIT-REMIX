@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## Alpha 0.09 (2026-10-29) — experimental
+
+> ⚠️ **Experimental: necesita pulirse.** Todo lo nuevo se ha comprobado solo en emulación (el código del aparato ejecutado sobre un volcado de su memoria). Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
+
+**Español.** Dos versiones nuevas: **Alpha 0.09** (marca `A0.09`) y **Alpha 0.09S** (marca `A0.09S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **Automatización (la de CIRCUIT-HACKS):**
+  - **Velocity + Shift:** los pasos con automatización de knobs en amarillo, los marcados en rojo.
+  - **Shift + paso amarillo = escucharlo:** sus valores a los knobs y al sonido (los knobs en amarillo); al soltar Shift, todo vuelve.
+  - **Velocity otra vez** = esa vista fija, sin mantener Shift (un toque escucha un paso amarillo o marca otro); otra vez, o salir de la vista, la quita.
+  - **Clear + paso** en Velocity borra la automatización de knobs de ese paso (las notas se quedan).
+  - **Un paso marcado** devuelve los parámetros a **Project init** (como se cargó o guardó el proyecto), no a donde estaba el knob.
+  - **Snapshot:** en la vista de pista, Record mantenido + un paso guarda ahí los knobs movidos; el pad se ve amarillo mientras lo mantienes.
+  - **Menú de pista, pad 8 (rojo):** la voz de la pista vuelve a Project init.
+- **Los modos de la pista, en Sample mode** (Samples dos veces): pads 5-8 = sample / granular / sinte / entrada de línea, 14 = enlace estéreo, 15 / 16 = la fuente y el gate de la entrada. El menú de pista se queda con las páginas.
+- **El FX hacia una entrada:** una pista de entrada que toma el retorno de la reverb o del delay lo saca del master (suena solo por la pista), y su envío a ese mismo efecto llega a la mitad: la realimentación se queda contenida. El envío al otro efecto, entero.
+- **Enlace estéreo con desviaciones:** los K1-K8 de la segunda pista suman o restan a los de la primera (centro = igual; azul acero); su sample mantiene la distancia con el de la primera (por defecto, el siguiente); sus propios pasos también suenan. Los proyectos con enlace de Alpha 0.04-0.08 cargan como sonaban.
+- **Inicio y longitud del original** (página stock, K2 / K3) en el granular (el inicio mueve la posición, la longitud estrecha la zona) y en el sinte (**morph** continuo entre formas de onda y **unísono** de dos voces por oscilador).
+- **Sin parpadeos:** el botón de la pista ya no parpadea en las páginas Stock+, Granular, Sinte y Envolvente (encendía también el botón Samples).
+
+**English.** Two new builds: **Alpha 0.09** (marker `A0.09`) and **Alpha 0.09S** (marker `A0.09S`: no project copy, pack delete or sample copy). Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** Everything new has only been checked in emulation (the device's code run on a dump of its memory). Expect bugs, noises or hangs: for serious playing, stay on **Alpha 0.03** (still in the installer). **Back up the SD card.**
+
+What's new:
+- **Automation (CIRCUIT-HACKS'):**
+  - **Velocity + Shift:** steps with knob automation in yellow, the marked ones in red.
+  - **Shift + a yellow step = listen to it:** its values to the knobs and the sound (the knobs in yellow); let go of Shift and everything goes back.
+  - **Velocity again** = that view latched, without holding Shift (a tap listens to a yellow step or marks another); again, or leaving the view, removes it.
+  - **Clear + step** in Velocity erases that step's knob automation (the notes stay).
+  - **A marked step** brings the parameters back to **Project init** (as the project was loaded or saved), not to where the knob was.
+  - **Snapshot:** in the track view, Record held + a step stores the moved knobs there; the pad shows yellow while you hold it.
+  - **Track menu, pad 8 (red):** the track's voice back to Project init.
+- **The track's modes, in Sample mode** (Samples twice): pads 5-8 = sample / granular / synth / line input, 14 = stereo link, 15 / 16 = the input's source and gate. The track menu keeps the pages.
+- **An FX into an input:** an input track that takes the reverb or delay return takes it off the master (it only sounds through the track), and its send into that same effect is halved: the feedback stays contained. The send into the other effect, whole.
+- **Stereo link with offsets:** the second track's K1-K8 add to or subtract from the first one's (centre = the same; steel blue); its sample keeps its distance from the first one's (by default, the next); its own steps play too. Linked projects from Alpha 0.04-0.08 load as they sounded.
+- **The original's start and length** (stock page, K2 / K3) on the granular (the start moves the position, the length narrows the zone) and on the synth (a smooth **morph** between waveforms and a two-voice **unison** per oscillator).
+- **No more blinking:** the track's button no longer blinks on the Stock+, Granular, Synth and Envelope pages (it also lit the Samples button).
+
 ## Alpha 0.08 (2026-10-29) — experimental
 
 > ⚠️ **Experimental: necesita pulirse.** La cuenta atrás con el reloj se probó en el aparato sobre Alpha 0.04 (A0.04F, de mefisme); sobre lo de ahora solo se ha comprobado en emulación, como casi todo lo de Alpha 0.04-0.07. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**

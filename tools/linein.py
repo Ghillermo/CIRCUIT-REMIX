@@ -73,9 +73,9 @@ FMAGIC = 0x1F7E4C
 PAR, LP_I, HP_I, RES_I, LP_OPEN = 0x307C8, 0xC, 0xB, 0xD, 127
 
 
-def items(spl, two=False, fx=None):
+def items(spl, two=False, fx=None, excl=None):
     if fx is not None:
-        return items_fx(spl, fx)
+        return items_fx(spl, fx, excl)
     if two:
         return items2(spl)
     L = []
@@ -147,7 +147,7 @@ def items2(spl):
     return L
 
 
-def items_fx(spl, tabs):
+def items_fx(spl, tabs, excl=None):
     """(fx, with two) items2 with a source per slot and the filter on a gated slot; tabs = synth0's table addresses (F2, Q2)"""
     L = []
 
@@ -238,21 +238,24 @@ def items_fx(spl, tabs):
     # ---- FXH (P:$5C0 -> jsr FXH): the reverb's and the delay's outputs of this block to RVB / DLY, then the stock's `move #>$9c9,r6`
     e(("label", "fxh"), f"move #>${FX_RV:x},r6", f"move #>${RVB:x},r0", "nop", "do #$40,${fx_1:x}", "move y:(r6)+,a", "move a,y:(r0)+",
       ("label", "fx_1"),
-      f"move #>${FX_DL:x},r6", f"move #>${DLY:x},r0", "nop", "do #$40,${fx_2:x}", "move y:(r6)+,a", "move a,y:(r0)+", ("label", "fx_2"),
-      f"move #>${FX_DL:x},r6", "rts")
+      f"move #>${FX_DL:x},r6", f"move #>${DLY:x},r0", "nop", "do #$40,${fx_2:x}", "move y:(r6)+,a", "move a,y:(r0)+", ("label", "fx_2"))
+    if excl is not None:                                                  # (excl, RH58) tools/fxroute.py's FXZ: a routed return off the master
+        e(("jmp", excl))
+    else:
+        e(f"move #>${FX_DL:x},r6", "rts")
     return L
 
 
-def code(spl, two=False, fx=None):
-    w, labels = C0.asm_at(items(spl, two, fx), AT)
+def code(spl, two=False, fx=None, excl=None):
+    w, labels = C0.asm_at(items(spl, two, fx, excl), AT)
     assert AT + len(w) <= C0.LD, hex(AT + len(w))
     return w, labels
 
 
-def segs(spl, two=False, fx=None):
+def segs(spl, two=False, fx=None, excl=None):
     """for granular0's extra, after stsplit's: our code at P:AT and P:$224 -> jsr LI (the loader writes it last); fx (RH54, with two): also
     P:$5C0 -> jsr FXH (its stock words checked by the loader's builder: `move #>$9c9,r6`)"""
-    w, labels = code(spl, two, fx)
+    w, labels = code(spl, two, fx, excl)
     hooks = [(FXHOOK, [0x0BF080, labels["fxh"]])] if fx is not None else []
     return [(AT, w), (HOOK, [0x0BF080, labels["li"]])] + hooks
 
@@ -882,7 +885,7 @@ def arm_code(base, L, prev, two=False, ui=False, fx=False, srcdim=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, two=False, ui=False, fx=False, srcdim=False):
+def install(img, report, base_addr, two=False, ui=False, fx=False, srcdim=False, excl=None):
     """The controller's pad press (in front of granpage v2's head), the head of the LED calls.  core 0's LI goes in through granular0's extra
     (segs, with the same two).  Needs granpage v2, cthresh, rhrec, rhstate ram2."""
     import rhbuild
@@ -907,5 +910,6 @@ def install(img, report, base_addr, two=False, ui=False, fx=False, srcdim=False)
     rhbuild.patch(img, PP_ENTRY, f"b.w #{prev['pad']:#x}", b_w(PP_ENTRY, labels["c_lipad"]))
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_liled"]))
-    report["linein"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"ui": True} if ui else {}), **({"fx": True} if fx else {}), **({"srcdim": True} if srcdim else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["linein"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"ui": True} if ui else {}), **({"fx": True} if fx else {}), **({"srcdim": True} if srcdim else {}), **({"excl": hex(excl)} if excl is not None else {}),
+                          labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code_

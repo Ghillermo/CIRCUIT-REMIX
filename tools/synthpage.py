@@ -472,7 +472,7 @@ def _pad_ui(a, E, bc, L, prev, menu2=False, env=False, spall=False):
     E(pop_list, [5], pc=True)
 
 
-def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False):
+def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, noblink=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -1276,21 +1276,22 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False):
             imm32(0, COL_KNOB)
             E(strh_imm, 0, 7, K_CODE + 2 * k)
             E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
-    imm32(0, CI.HAL_TICK)
-    E(ldr_imm, 0, 0, 0)
-    E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
-    bc("ll_x", "pl")
-    E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
-    E(lsls_imm, 1, 4, 1)
-    E(adds_reg, 1, 5, 1)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK0)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK1)
+    if not noblink:                                                       # (noblink, RH58: no blink; it also lit LED 40 + t, not a track's)
+        imm32(0, CI.HAL_TICK)
+        E(ldr_imm, 0, 0, 0)
+        E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
+        bc("ll_x", "pl")
+        E(movs_imm, 0, UI_BLINK if ui else COL_BLINK)
+        E(lsls_imm, 1, 4, 1)
+        E(adds_reg, 1, 5, 1)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK0)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK1)
     a.label("ll_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
     return a.assemble()
 
 
-def install(img, report, base_addr, ui=False, menu2=False, env=False, spall=False):
+def install(img, report, base_addr, ui=False, menu2=False, env=False, spall=False, noblink=False):
     """The controller's pad press (in front of slink's), the container's knob slot (in front of granpage's), the head of the LED calls, the
     note-off's one-shot test.  Needs granpage multi, linein two, slink, stockplus, kbright, cthresh, rhrec, rhstate ram2, and synth0 on core 0."""
     import rhbuild
@@ -1315,7 +1316,7 @@ def install(img, report, base_addr, ui=False, menu2=False, env=False, spall=Fals
     assert not menu2 or report["granpage"].get("menu2"), "synthpage menu2 needs granpage's"
     assert menu2 or not env
     assert env or not spall
-    code_, labels = arm_code(base_addr, L, prev, ui, menu2, env, spall)
+    code_, labels = arm_code(base_addr, L, prev, ui, menu2, env, spall, noblink)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
@@ -1328,4 +1329,6 @@ def install(img, report, base_addr, ui=False, menu2=False, env=False, spall=Fals
         rhbuild.patch(img, GP.PR_ENTRY, f"b.w #{prev['rel']:#x}", b_w(GP.PR_ENTRY, labels["c_syrel"]))
     report["synthpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}), **({"spall": True} if spall else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    if noblink:
+        report["synthpage"]["noblink"] = True
     return labels, code_

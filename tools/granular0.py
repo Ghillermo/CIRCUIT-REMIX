@@ -70,6 +70,12 @@ CAP_T = (16, 7, 4, 2)                                  # (multi) a slot's grains
                                                        #   so fewer grains in all (16 / 14 / 12 / 8): the worst case (+24, filters on, a
                                                        #   spread) stays near one track's on the device (tests/emu_rh50.py)
 MCODE = 0x3000                                         # (multi) the engine's P (granular0's single place stays for later)
+# sl (RH58; the user, 2026-10-29: «On synth voices, start/length do nothing ... can we add controls there?» -> granular: the stock's start =
+# the grains' position, its length = the zone, as offsets on the Granular page's): the zone's block goes to GZ (P:GZ_AT, free: granchain's
+# env part ends at $3F43, the loader at $3FE0) with the track's start (its parameter word 7, the stock's K2) added to POS (up to 127) and
+# its length (word 8, K3; 127 = the stock's default, nothing) scaling the zone: Z = L x zf / 128, zf = ((ZONE + 1)(LEN + 1)) >> 7, >= 64.
+GZ_AT = 0x3F50
+P_START, P_LEN = 7, 8
 
 
 def slot_y(s):
@@ -92,7 +98,7 @@ def X(r, off):
     return f"x:({r})" if off == 0 else f"x:({r}+${off:x})"
 
 
-def items(tab_at, note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX):
+def items(tab_at, note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX, sl=False):
     """the engine at P:CODE; tab_at = {table: P address}; note (RH40): the played note pitches the whole granular, as a sampler: r =
     2^((note - 60) / 12), each grain's increment x r, its length / r (the same source span, sooner), the spawn interval / r; multi (RH50):
     NSLOT slots, the controls and the voice state in Y"""
@@ -198,8 +204,12 @@ def items(tab_at, note=False, post=None, stereo=False, multi=False, sp=False, mi
     e(
       f"move a,{V('r7', V_PH)}", f"move a,{V('r7', V_PL)}", f"move a,{V('r7', V_CD)}", "move #>$1,x0", f"move x0,{V('r7', V_ON)}",
       ("label", "g_von"))
-    # ---- the zone Z = L (ZONE + 1) / 128 (>= 64), its start ZS = (L - Z) POS / 128
-    e(f"move {V('r6', P_ZONE)},a", "and #>$7f,a", "add #>$1,a", "move a1,x0", f"move {V('r7', V_L)},x1", "mpy x1,x0,a", "asr a",
+    # ---- the zone Z = L (ZONE + 1) / 128 (>= 64), its start ZS = (L - Z) POS / 128 (sl: GZ, with the track's start and length)
+    if sl:
+        assert multi
+        e(("jsr", GZ_AT))
+    else:
+        e(f"move {V('r6', P_ZONE)},a", "and #>$7f,a", "add #>$1,a", "move a1,x0", f"move {V('r7', V_L)},x1", "mpy x1,x0,a", "asr a",
       "asr #7,a,a", "move a0,b", "move #>$40,x0", "cmp x0,b", "tlt x0,b", f"move b1,{V('r7', V_Z)}",
       f"move {V('r7', V_L)},a", "sub b,a", "move a1,x1", f"move {V('r6', P_POS)},a", "and #>$7f,a", *_hook(sp, "gpos"), "move a1,x0",
       "mpy x1,x0,a", "asr a",
@@ -432,19 +442,49 @@ def gr_multi(tab_at, post, mix=MIX):
     return L
 
 
-def code(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX):
+def gz_items(sp=False):
+    """(sl) GZ (r6 / r7 = the slot's controls / state, Y): the zone and its start with the track's start / length words"""
+    V = Ym
+    return [("label", "gz"),
+            f"move {V('r7', V_T)},a", "and #>$7,a", "asl #5,a,a", f"add #>${PAR0:x},a", "move a1,r0", "nop",
+            f"move {V('r6', P_ZONE)},a", "and #>$7f,a", "add #>$1,a", "move a1,x0",
+            f"move y:(r0+${P_LEN:x}),a", "and #>$7f,a", "add #>$1,a", "move a1,y0",
+            "mpy x0,y0,a", "asr a", "asr #7,a,a", "move a0,x0",
+            f"move {V('r7', V_L)},x1", "mpy x1,x0,a", "asr a",
+            "asr #7,a,a", "move a0,b", "move #>$40,x0", "cmp x0,b", "tlt x0,b", f"move b1,{V('r7', V_Z)}",
+            f"move {V('r7', V_L)},a", "sub b,a", "move a1,x1", f"move {V('r6', P_POS)},a", "and #>$7f,a",
+            f"move y:(r0+${P_START:x}),b", "and #>$7f,b", "add b,a", "move #>$7f,y0", "cmp y0,a", "tgt y0,a",
+            *_hook(sp, "gpos"), "move a1,x0", "mpy x1,x0,a", "asr a",
+            "asr #7,a,a", f"move a0,{V('r7', V_ZS)}", "rts"]
+
+
+def gz_code(sp=False):
+    w, labels = C0.asm_at(gz_items(sp), GZ_AT)
+    assert GZ_AT + len(w) <= C0.LD, hex(GZ_AT + len(w))
+    return w, labels
+
+
+def model_zone(L, zone, pos, start, length):
+    """(sl) GZ's V_Z, V_ZS (the tests')"""
+    zf = (((zone & 0x7F) + 1) * ((length & 0x7F) + 1) >> 7) & 0xFFFFFF
+    z = max(0x40, ((L * zf) >> 7) & 0xFFFFFF)
+    p = min(0x7F, (pos & 0x7F) + (start & 0x7F))
+    return z, (((L - z) * p) >> 7) & 0xFFFFFF
+
+
+def code(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX, sl=False):
     """-> (the segment's words from P:CODE (multi: P:MCODE), labels, {table: address})"""
     tb = tables()
     names = ("SIZE_T", "PT", "GAIN_T") + (("CAP_T",) if multi else ())
     if multi:
         tb["CAP_T"] = list(CAP_T)
     at0 = MCODE if multi else CODE
-    w0, _ = C0.asm_at(items({k: 0x3000 for k in tb}, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix), at0)
+    w0, _ = C0.asm_at(items({k: 0x3000 for k in tb}, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl), at0)
     at, tab_at = at0 + len(w0), {}
     for k in names:
         tab_at[k] = at
         at += len(tb[k])
-    w, labels = C0.asm_at(items(tab_at, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix), at0)
+    w, labels = C0.asm_at(items(tab_at, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl), at0)
     assert len(w) == len(w0)
     for k in names:
         w += tb[k]
@@ -452,24 +492,25 @@ def code(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX):
     return w, labels, tab_at
 
 
-def segs(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX):
+def segs(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX, sl=False):
     """-> core0.py's segments: RD20's test segment + 1 pad word + the engine at P:CODE, and the hook at P:$224; multi: the test segment
     alone, the engine at P:MCODE"""
     sw, _ = C0.asm_at(C0.seg_items(), C0.SEG)
-    w, labels, _ = code(note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix)
+    w, labels, _ = code(note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl)
     if multi:
-        return [(C0.SEG, sw), (MCODE, w), (HOOK, [0x0BF080, labels["gr"]])], labels
+        gz = [(GZ_AT, gz_code(sp)[0])] if sl else []
+        return [(C0.SEG, sw), (MCODE, w), (HOOK, [0x0BF080, labels["gr"]])] + gz, labels
     first = sw + [0] * (CODE - C0.SEG - len(sw)) + w
     return [(C0.SEG, first), (HOOK, [0x0BF080, labels["gr"]])], labels
 
 
-def install(img, report, base_addr, counter=True, note=False, extra=None, post=None, stereo=False, multi=False, sp=False, mix=MIX):
+def install(img, report, base_addr, counter=True, note=False, extra=None, post=None, stereo=False, multi=False, sp=False, mix=MIX, sl=False):
     """counter: RD20's pass counter in core 0's vectors (diagnostic builds); the user builds (RH39 on) without it.  note (RH40): the
     played note pitches the granular (X:GB + P_NOTE, written by tools/granpage.py).  extra (RD23): f(labels) -> more core 0 segments,
     sent after ours (tools/stsplit.py: its code and P:$224 -> its SPL, which goes on to GR).  sp / mix (RH55): tools/sp0.py's hooks in the
     grains' pitch and position, and the end (with no slot running, or after `post`) to `mix` (sp0's SPX) in place of the stock's mix"""
     import voicefx
-    sg, labels = segs(note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix)
+    sg, labels = segs(note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl)
     if extra:
         sg = sg + extra(labels)
     if multi:
@@ -480,5 +521,6 @@ def install(img, report, base_addr, counter=True, note=False, extra=None, post=N
     assert tuple(ws[HOOK:HOOK + 2]) == OLD_HOOK, "core 0's jsr $367 at P:$224 moved"
     C0.install(img, report, base_addr, counter=counter, loader=True, segs=sg)
     report["granular0"] = dict(gr=hex(labels["gr"]), words=len(sg[0][1]), x=hex(GB), lb=hex(LB), outb=hex(OUTB), save=hex(SAVE), note=note,
-                               **({"stereo": True} if stereo else {}), **({"multi": True} if multi else {}), **({"sp": True} if sp else {}))
+                               **({"stereo": True} if stereo else {}), **({"multi": True} if multi else {}), **({"sp": True} if sp else {}),
+                               **({"sl": True} if sl else {}))
     return labels

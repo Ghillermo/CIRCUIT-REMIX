@@ -107,7 +107,7 @@ def model_block(sslope=(64,) * 4, gvals=(DEF_G,) * 4):
     return bytes(b)
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, noblink=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -729,21 +729,22 @@ def arm_code(base, L, prev):
             E(strb_imm, 0, 7, K_VAL + k)
         E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
-    imm32(0, CI.HAL_TICK)
-    E(ldr_imm, 0, 0, 0)
-    E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
-    bc("ll_x", "pl")
-    E(movs_imm, 0, COL)
-    E(lsls_imm, 1, 4, 1)
-    E(adds_reg, 1, 5, 1)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK0)
-    E(strh_w_imm, 0, 1, 2 * LED_TRK1)
+    if not noblink:                                                       # (noblink, RH58: no blink; it also lit LED 40 + t, not a track's)
+        imm32(0, CI.HAL_TICK)
+        E(ldr_imm, 0, 0, 0)
+        E(lsls_imm, 0, 0, 23)                                                 # bit 8 of the tick
+        bc("ll_x", "pl")
+        E(movs_imm, 0, COL)
+        E(lsls_imm, 1, 4, 1)
+        E(adds_reg, 1, 5, 1)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK0)
+        E(strh_w_imm, 0, 1, 2 * LED_TRK1)
     a.label("ll_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, noblink=False):
     """The container's knob slot (in front of synthpage's), the head of the LED calls.  Needs synthpage env (its pad 5, c_sysnd), granpage
     multi (env: the engine's gate at 0), synth0 env2 and granchain env on core 0, trkcopy ram (our block in the tail it left)."""
     import rhbuild
@@ -759,7 +760,7 @@ def install(img, report, base_addr):
     prev = dict(knob=u(SLOT_KNOB) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert prev["knob"] == lab("synthpage", "c_syknob")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code_, labels = arm_code(base_addr, L, prev)
+    code_, labels = arm_code(base_addr, L, prev, noblink)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
@@ -768,4 +769,6 @@ def install(img, report, base_addr):
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_evled"]))
     report["envpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), block=hex(BLK),
                              labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    if noblink:
+        report["envpage"]["noblink"] = True
     return labels, code_
