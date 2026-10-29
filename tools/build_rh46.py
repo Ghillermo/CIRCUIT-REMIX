@@ -19,7 +19,9 @@ NAME = "RH46"
 
 def build(name=NAME, **kw):
     ui = {"ui": True} if kw.get("ui") else {}                         # (RH52: docs/INTERFAZ.md)
-    b = build_rh45.build(name, sp={"fitflag": True, "k3sync": True}, **kw)
+    spx = kw.pop("spx", {})                                       # (RH58) more stockplus options
+    arx = kw.pop("arx", {})                                       # (RH58) more autorel options
+    b = build_rh45.build(name, sp={"fitflag": True, "k3sync": True, **spx}, **kw)
     b.add("stepgate", stepgate, **ui)
     b.add("dqclear", dqclear)
     b.add("setsave", setsave)
@@ -27,7 +29,7 @@ def build(name=NAME, **kw):
     b.add("arpext", arpext, **ui)
     b.add("gmmode", gmmode, **ui)
     b.add("qfull", qfull)
-    b.add("autorel", autorel, **ui, **({"keep": True} if kw.get("menu2") else {}))   # (RH53: menu2 builds keep the stock's colours)
+    b.add("autorel", autorel, **ui, **({"keep": True} if kw.get("menu2") else {}), **arx)   # (RH53: menu2 builds keep the stock's colours)
     return b
 
 

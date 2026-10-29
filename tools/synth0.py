@@ -73,6 +73,21 @@ GE0, GE_N = 0x1C00, 4                                  # core 0 Y (free in the R
 # its messages, SPIT (+ the pitch envelope / LFO), SFM (+ the scan LFO on the FM amount), SDS (the stock's distortion knob on the mix),
 # SLP / SHP (the filter's follow, the comb: both off), S24 (24 dB: the filter run again with the second states S_LL2 ..)
 (S_LL2, S_LB2, S_HL2, S_HB2) = range(58, 62)
+# sl (RH58; the user, 2026-10-29: «On synth voices, start/length do nothing ... Something new?» -> «1 and 3»: the stock's start knob = a
+# morph of the waves, its length = unison; «Offset from K1/K2», «2 per oscillator»): the track's start (word 7, K2: 0 = the stock's
+# default, nothing) moves each oscillator's wave onward from its K1 / K2 shape: q = 3 start (0..381), the wave (shape + q >> 7) & 3
+# crossfaded into the next one by (q & 127) / 128 (saw -> pulse -> triangle -> sine -> saw); its length (word 8, K3; 127 = the default,
+# nothing) below 127 plays each oscillator twice, at the pitch + and - (127 - length) x 2^7 (a quarter of a semitone at 0), the two copies'
+# phases their own (S_PH1 / S_PH2 and S_PH1B / S_PH2B), averaged.  Three pieces in core 0's free P: at SL_AT (sp0's part b ends at $3944,
+# gstereo at $3A00) the jump table (+0 UNI, +2 MW), OSC, u_swap, u_inc; MW at SLM_AT (after fxroute's FXZ, below LI's $2E00); UNI at SLU_AT
+# (after granular0's GZ, below the loader's $3FE0).  The main's s_play calls UNI (a <> 0: done, on to the SUB / mix), passes C / D's waves go
+# through MW.
+SL_AT, SLM_AT, SLU_AT = 0x3948, 0x2D80, 0x3F92
+PBX, PBA1, PBA2 = 0x1B80, 0x1BA0, 0x1BC0              # Y (free: the stock's $1B80.. are in X)
+GU = 0x1BE0
+(G_MF, G_TC, G_DT, G_R1S, G_RJ, G_T3) = range(GU, GU + 6)
+S_PH1B, S_PH2B = 62, 63
+P_START, P_LEN = 7, 8
 
 
 def frac(x):
@@ -100,7 +115,7 @@ def tables():
     return t
 
 
-def items(tab_at, entry, env2=False, sp=False):
+def items(tab_at, entry, env2=False, sp=False, sl=False):
     L = []
     if sp:
         import sp0 as SP0
@@ -200,7 +215,7 @@ def items(tab_at, entry, env2=False, sp=False):
       f"move {ys(S_BUF)},r0", f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "ne", "s_play"),
       f"move {ys(S_EC)},a", "tst a", ("jcc", "ne", "s_play"),
       "clr a", "rep #$20", "move a,y:(r0)+", ("label", "s_r"), "rts",
-      ("label", "s_play"))
+      ("label", "s_play"), *([("jsr", SL_AT), "tst a", ("jcc", "ne", "sy_ps")] if sl else []))
 
     # ---- pass A: OSC 1's phases -> PB1 (its phase at the block's start kept, for the sync)
     e(f"move {ys(S_PH1)},a", f"move a,{y(G_P1O)}", f"move {ys(S_INC1)},x0", f"move #>${PB1:x},r1", "nop",
@@ -216,7 +231,7 @@ def items(tab_at, entry, env2=False, sp=False):
     # ---- pass C: OSC 2's wave (polyBLEP)
     e(f"move {ys(S_INC2)},a", f"lua (r6+${S_INC2:x}),r4", ("jsr", "s_wset"),
       f"move {ys(C_SHP)},a", "asr #2,a,a", "and #>$3,a", "move a1,a", f"add #>${tab_at['WT']:x},a", "move a1,r3", f"move #>${PB2:x},r1",
-      "nop", "move p:(r3),r2", "nop", "jsr (r2)")
+      "nop", "move p:(r3),r2", "nop", ("jsr", SL_AT + 2) if sl else "jsr (r2)")
     # ---- pass D: FM (C_FM + velocity x C_VFM) into OSC 1's phases, then its wave (naive under FM)
     e(f"move {ys(S_VEL)},x0", f"move {ys(C_VFM)},y0", "mpy y0,x0,a", f"move {ys(C_FM)},x0", "add x0,a", *hook("sfm"), "move a,y0", "clr b",
       "tst a", ("jcc", "eq", "d_wave"),
@@ -225,9 +240,9 @@ def items(tab_at, entry, env2=False, sp=False):
       ("label", "d_end"), "move #>$4,b",
       ("label", "d_wave"), "move b,x1", f"move {ys(S_INC1)},a", f"lua (r6+${S_INC1:x}),r4", ("jsr", "s_wset"),
       f"move {ys(C_SHP)},a", "and #>$3,a", "move a1,a", "add x1,a", f"add #>${tab_at['WT']:x},a", "move a1,r3", f"move #>${PB1:x},r1",
-      "nop", "move p:(r3),r2", "nop", "jsr (r2)")
+      "nop", "move p:(r3),r2", "nop", ("jsr", SL_AT + 2) if sl else "jsr (r2)")
     # ---- pass S: SUB + noise -> PB3 (only with GS or GN)
-    e(f"move {ys(C_GS)},x0", f"move {ys(C_GN)},x1", "move x0,a", "add x1,a", ("jcc", "eq", "e_basic"),
+    e(*([("label", "sy_ps")] if sl else []), f"move {ys(C_GS)},x0", f"move {ys(C_GN)},x1", "move x0,a", "add x1,a", ("jcc", "eq", "e_basic"),
       f"move x0,{y(G_GS)}", "clr a", "sub x0,a", f"move a,{y(G_GSN)}", f"move x1,{y(G_GN)}",
       f"move {ys(S_PHS)},a", f"move a,{y(G_PS)}", f"move {ys(S_NZ)},a", f"move a,{y(G_NZ)}", f"move {ys(S_INCS)},x1",
       f"move #>${PB3:x},r3", "nop",
@@ -383,7 +398,101 @@ def items(tab_at, entry, env2=False, sp=False):
     return L
 
 
-def code(entry, env2=False, sp=False):
+def sl_pieces(L, tab_at, sp=False):
+    """(sl) -> {piece: items}: "a" at SL_AT (the jump table, OSC, u_swap, u_inc), "m" at SLM_AT (MW), "u" at SLU_AT (UNI); L = the main's
+    labels (s_inc, s_wset) and the other pieces' (osc, u_swap, u_inc)"""
+    if sp:
+        import sp0 as SP0
+        hook = lambda n: [("jsr", SP0.entry(n))]                         # noqa: E731
+    else:
+        hook = lambda n: []                                              # noqa: E731
+
+    def y(a):
+        return f"y:>${a:x}"
+
+    def ys(o):
+        return f"y:(r6+${o:x})"
+    WT = tab_at["WT"]
+    A, M, U = [], [], []
+    # ---- the jump table
+    A += [("jmp", SLU_AT), ("jmp", SLM_AT)]
+    # ---- OSC: the main's passes A-D (the waves through MW)
+    A += [("label", "osc"),
+          f"move {ys(S_PH1)},a", f"move a,{y(G_P1O)}", f"move {ys(S_INC1)},x0", f"move #>${PB1:x},r1", "nop",
+          "do #$20,${oa_e:x}", "add x0,a", "move a1,a", "move a,y:(r1)+", ("label", "oa_e"), f"move a,{ys(S_PH1)}",
+          f"move {ys(S_PH2)},a", f"move {ys(S_INC2)},x0", f"move #>${PB2:x},r2", f"move {ys(C_SHP)},b", f"and #>${SHP_SYNC:x},b", "tst b",
+          ("jcc", "ne", "ob_s"),
+          "do #$20,${ob_e:x}", "add x0,a", "move a1,a", "move a,y:(r2)+", ("label", "ob_e"), ("jmp", "ob_d"),
+          ("label", "ob_s"), f"move #>${PB1:x},r1", f"move {y(G_P1O)},y1", "nop",
+          "do #$20,${obs_e:x}", "add x0,a", "move a1,a", "move y:(r1)+,b", "cmp y1,b", ("jcc", "ge", "obs_n"), "move #>$800000,a",
+          ("label", "obs_n"), "move b,y1", "move a,y:(r2)+", ("label", "obs_e"),
+          ("label", "ob_d"), f"move a,{ys(S_PH2)}",
+          f"move {ys(S_INC2)},a", f"lua (r6+${S_INC2:x}),r4", ("jsr", L["s_wset"]),
+          f"move {ys(C_SHP)},a", "asr #2,a,a", "and #>$3,a", "move a1,a", f"add #>${WT:x},a", "move a1,r3", f"move #>${PB2:x},r1",
+          "nop", "move p:(r3),r2", "nop", ("jsr", SLM_AT),
+          f"move {ys(S_VEL)},x0", f"move {ys(C_VFM)},y0", "mpy y0,x0,a", f"move {ys(C_FM)},x0", "add x0,a", *hook("sfm"), "move a,y0",
+          "clr b", "tst a", ("jcc", "eq", "od_w"),
+          f"move #>${PB1:x},r1", f"move #>${PB2:x},r2", "nop",
+          "do #$20,${od_e:x}", "move y:(r2)+,x0", "mpy y0,x0,b", "asl b", "move y:(r1),a", "add b,a", "move a1,a", "move a,y:(r1)+",
+          ("label", "od_e"), "move #>$4,b",
+          ("label", "od_w"), "move b,x1", f"move {ys(S_INC1)},a", f"lua (r6+${S_INC1:x}),r4", ("jsr", L["s_wset"]),
+          f"move {ys(C_SHP)},a", "and #>$3,a", "move a1,a", "add x1,a", f"add #>${WT:x},a", "move a1,r3", f"move #>${PB1:x},r1",
+          "nop", "move p:(r3),r2", "nop", ("jsr", SLM_AT), "rts"]
+    # u_swap: the phases of the copies swapped (S_PH1 <-> S_PH1B, S_PH2 <-> S_PH2B)
+    A += [("label", "u_swap")]
+    for a_, b_ in ((S_PH1, S_PH1B), (S_PH2, S_PH2B)):
+        A += [f"move {ys(a_)},a", f"move {ys(b_)},b", f"move b,{ys(a_)}", f"move a,{ys(b_)}"]
+    A += ["rts"]
+    # u_inc: a = OSC 1's pitch -> S_INC1, + C_P2 -> S_INC2 (the main's s_inc)
+    A += [("label", "u_inc"), f"move a,{y(G_T3)}", f"lua (r6+${S_INC1:x}),r4", ("jsr", L["s_inc"]),
+          f"move {y(G_T3)},a", f"move {ys(C_P2)},x0", "add x0,a", f"lua (r6+${S_INC2:x}),r4", ("jsr", L["s_inc"]), "rts"]
+    # ---- MW (r1 = the phases, r2 = shape s's wave, r3 = WT + g + s; r5 = the track's parameters): start = 0: the wave as the main's;
+    #      else waves i and i + 1 (in the same group g, plain or naive) crossfaded
+    M += [("label", "mw"), f"move y:(r5+${P_START:x}),a", "and #>$7f,a", "move a1,a", "tst a", ("jcc", "ne", "mw_m"), "jmp (r2)",
+          ("label", "mw_m"), "tfr a,b", "asl a", "add b,a", "move a1,a",
+          "move a1,b", "asr #7,b,b", "move b1,b", "and #>$7f,a", "asl #16,a,a", f"move a1,{y(G_MF)}",
+          "move r3,a", f"sub #>${WT:x},a", "move a1,x0",
+          "move x0,a", "and #>$3,a", "add b,a", "and #>$3,a", "move a1,y1",
+          "move x0,b", "and #>$4,b", "move b1,x1",
+          "move y1,a", "add x1,a", f"add #>${WT:x},a", "move a1,r3",
+          "move y1,a", "add #>$1,a", "and #>$3,a", "add x1,a", f"add #>${WT:x},a", "move a1,r4", "nop",
+          "move p:(r3),r2", "move p:(r4),x0", f"move x0,{y(G_RJ)}", f"move r1,{y(G_R1S)}",
+          f"move #>${PBX:x},r4", "nop", "do #$20,${mw_c:x}", "move y:(r1)+,a", "move a,y:(r4)+", ("label", "mw_c"),
+          f"move {y(G_R1S)},r1", "nop", "jsr (r2)",
+          f"move #>${PBX:x},r1", f"move {y(G_RJ)},r2", "nop", "jsr (r2)",
+          f"move {y(G_R1S)},r1", f"move #>${PBX:x},r4", f"move {y(G_MF)},y0", "nop",
+          "do #$20,${mw_x:x}", "move y:(r1),a", "move y:(r4)+,b", "sub a,b", "move b,x0", "mac x0,y0,a", "move a,y:(r1)+",
+          ("label", "mw_x"), "rts"]
+    # ---- UNI (r5 = the track's parameters, r6 = the slot; r0 kept): length < 127: both copies -> PB1 / PB2 averaged, a = 1; else a = 0
+    if "osc" in L:
+        U += [("label", "uni"), f"move y:(r5+${P_LEN:x}),a", "and #>$7f,a", "move a1,b", "move #>$7f,a", "sub b,a", "tst a",
+              ("jcc", "eq", "u_0"),
+              "asl #7,a,a", f"move a1,{y(G_DT)}", f"move {y(G_T1)},a", f"move a,{y(G_TC)}",
+              f"move {y(G_DT)},x0", "add x0,a", ("jsr", L["u_inc"]), ("jsr", L["osc"]),
+              f"move #>${PB1:x},r1", f"move #>${PBA1:x},r4", "nop", "do #$40,${u_cp:x}", "move y:(r1)+,a", "move a,y:(r4)+",
+              ("label", "u_cp"),
+              ("jsr", L["u_swap"]),
+              f"move {y(G_TC)},a", f"move {y(G_DT)},x0", "sub x0,a", ("jsr", L["u_inc"]), ("jsr", L["osc"]),
+              ("jsr", L["u_swap"]),
+              f"move #>${PB1:x},r1", f"move #>${PBA1:x},r4", "nop", "do #$40,${u_av:x}", "move y:(r4)+,a", "move y:(r1),b", "add b,a",
+              "asr a", "move a,y:(r1)+", ("label", "u_av"),
+              "move #>$1,a", "rts",
+              ("label", "u_0"), "clr a", "rts"]
+    return dict(a=A, m=M, u=U)
+
+
+def sl_segs(L, tab_at, sp=False):
+    """(sl) -> [(address, words)]: the three pieces"""
+    wm, _ = C0.asm_at(sl_pieces(L, tab_at, sp)["m"], SLM_AT)
+    assert SLM_AT + len(wm) <= 0x2E00, hex(SLM_AT + len(wm))         # (linein at $2E00)
+    wa, la = C0.asm_at(sl_pieces(L, tab_at, sp)["a"], SL_AT)
+    assert SL_AT + len(wa) <= 0x3A00, hex(SL_AT + len(wa))            # (gstereo at $3A00)
+    wu, _ = C0.asm_at(sl_pieces(dict(L, **la), tab_at, sp)["u"], SLU_AT)
+    assert SLU_AT + len(wu) <= C0.LD, hex(SLU_AT + len(wu))           # (the loader at $3FE0)
+    return [(SL_AT, wa), (SLM_AT, wm), (SLU_AT, wu)]
+
+
+def code(entry, env2=False, sp=False, sl=False):
     """-> (the code's words at P:AT, labels, the tables' words at P:TAB, the tables' addresses)"""
     tb = tables()
     names = ("WT", "INCT", "ENVT", "F2", "Q2")
@@ -392,7 +501,7 @@ def code(entry, env2=False, sp=False):
     for k in names:
         tab_at[k] = at
         at += sizes[k]
-    w, labels = C0.asm_at(items(tab_at, entry, env2, sp), AT)
+    w, labels = C0.asm_at(items(tab_at, entry, env2, sp, sl), AT)
     assert AT + len(w) <= 0x2600, hex(AT + len(w))                 # (stsplit at $2600)
     tw = [labels[n] for n in ("w_saw", "w_pul", "w_tri", "w_sin", "w_sawn", "w_puln", "w_tri", "w_sin")]
     tw += tb["INCT"] + tb["ENVT"] + tb["F2"] + tb["Q2"]
@@ -400,10 +509,10 @@ def code(entry, env2=False, sp=False):
     return w, labels, tw, tab_at
 
 
-def segs(entry, env2=False, sp=False):
-    """for granular0's extra, before gstereo's (GST calls SY, SY goes on to `entry`, the line input's LI)"""
-    w, labels, tw, _ = code(entry, env2, sp)
-    return [(AT, w), (TAB, tw)]
+def segs(entry, env2=False, sp=False, sl=False):
+    """for granular0's extra, before gstereo's (GST calls SY, SY goes on to `entry`, the line input's LI); sl: also P:SL_AT"""
+    w, labels, tw, tab_at = code(entry, env2, sp, sl)
+    return [(AT, w), (TAB, tw)] + (sl_segs(labels, tab_at, sp) if sl else [])
 
 
 # ================================================================ the model (the tests'): the DSP's arithmetic, bit for bit
@@ -430,8 +539,9 @@ class Model:
     """SY's blocks: ctl[s] = slot s's 16 control words; par[t] = track t's parameter words (6, 9, $B-$D read); msgs = the queue's 16
     pairs (w0, w1), widx = the ARM's write index -> {track: its 32 samples} (y:$FFFFD0 = 0, as in dsptool)"""
 
-    def __init__(self, env2=False, sp=None):
-        """sp (RH55): a tools/sp0.py Model, the synth's hooks into it"""
+    def __init__(self, env2=False, sp=None, sl=False):
+        """sp (RH55): a tools/sp0.py Model, the synth's hooks into it; sl (RH58): the start's morph, the length's unison"""
+        self.sl = sl
         self.tab = tables()
         self.g = dict(qkey=0, qrd=0)
         self.env2 = env2
@@ -489,7 +599,7 @@ class Model:
             st.clear()
             st.update(mag=MAGIC, ph1=0, ph2=0, phs=0, nz=1, pit=0, tgt=0, stg=IDLE, env=0, vel=0, ec=0, es=0, t=0xFF,
                       ll=0, lb=0, hl=0, hb=0, fl=0, fh=0, lon=0, hon=0, tfl=0, tfh=0, lin=0, hc=0, gate=0, vca=0,
-                      ll2=0, lb2=0, hl2=0, hb2=0)
+                      ll2=0, lb2=0, hl2=0, hb2=0, ph1b=0, ph2b=0)
 
     def block(self, ctl, par, msgs=(), widx=0, gctl=None, gslots=()):
         """(env2) gctl = the granular slots' envelope blocks' control words (64 a block, as the slots'); (sp) gslots: sp0's TICK's"""
@@ -569,29 +679,43 @@ class Model:
         self.env(st, c, p)
         if st["stg"] == IDLE and st["ec"] == 0:
             return t, [0] * 32
-        pb1, ph, p1o = [], st["ph1"], st["ph1"]
-        for _ in range(32):
-            ph = s24(ph + inc1)
-            pb1.append(ph)
-        st["ph1"] = ph
-        pb2, ph, prev = [], st["ph2"], p1o
-        for i in range(32):
-            ph = s24(ph + inc2)
-            if c[C_SHP] & SHP_SYNC:
-                if pb1[i] < prev:
-                    ph = -(1 << 23)
-                prev = pb1[i]
-            pb2.append(ph)
-        st["ph2"] = ph
-        k = s24(c[C_K])
-        o2 = self.wave((c[C_SHP] >> 2) & 3, pb2, inc2, rm2, re2, k, False)
-        afm = _mpy(st["vel"], c[C_VFM]) + (s24(c[C_FM]) << 24)
-        if sp is not None:                                     # (sp) SFM: + the scan LFO
-            afm += sp.S(t)["so"] << 24
-        fm, naive = _sat(afm), afm != 0
-        if naive:
-            pb1 = [_a1((pb1[i] << 24) + (_mpy(fm, o2[i]) << 1)) for i in range(32)]
-        o1 = self.wave(c[C_SHP] & 3, pb1, inc1, rm1, re1, k, naive)
+        morph = (p[P_START] & 0x7F) if self.sl else 0
+        det = (0x7F - (p[P_LEN] & 0x7F)) if self.sl else 0
+
+        def osc(i1, i2, k1, k2):
+            """passes A-D on the phases st[k1] / st[k2] with these increments -> (OSC 1's, OSC 2's samples)"""
+            (inc1, rm1, re1), (inc2, rm2, re2) = i1, i2
+            pb1, ph, p1o = [], st[k1], st[k1]
+            for _ in range(32):
+                ph = s24(ph + inc1)
+                pb1.append(ph)
+            st[k1] = ph
+            pb2, ph, prev = [], st[k2], p1o
+            for i in range(32):
+                ph = s24(ph + inc2)
+                if c[C_SHP] & SHP_SYNC:
+                    if pb1[i] < prev:
+                        ph = -(1 << 23)
+                    prev = pb1[i]
+                pb2.append(ph)
+            st[k2] = ph
+            k = s24(c[C_K])
+            o2 = self.wave_m((c[C_SHP] >> 2) & 3, pb2, inc2, rm2, re2, k, False, morph)
+            afm = _mpy(st["vel"], c[C_VFM]) + (s24(c[C_FM]) << 24)
+            if sp is not None:                                 # (sp) SFM: + the scan LFO
+                afm += sp.S(t)["so"] << 24
+            fm, naive = _sat(afm), afm != 0
+            if naive:
+                pb1 = [_a1((pb1[i] << 24) + (_mpy(fm, o2[i]) << 1)) for i in range(32)]
+            return self.wave_m(c[C_SHP] & 3, pb1, inc1, rm1, re1, k, naive, morph), o2
+        if det == 0:
+            o1, o2 = osc((inc1, rm1, re1), (inc2, rm2, re2), "ph1", "ph2")
+        else:                                                  # (sl) unison: + and - (127 - length) << 7, averaged
+            ctr, dt = _sat(acc1), det << 7
+            a1_, a2_ = osc(self.inc(ctr + dt), self.inc(ctr + dt + s24(c[C_P2])), "ph1", "ph2")
+            b1_, b2_ = osc(self.inc(ctr - dt), self.inc(ctr - dt + s24(c[C_P2])), "ph1b", "ph2b")
+            o1 = [_sat(((x << 24) + (y << 24)) >> 1) for x, y in zip(a1_, b1_)]
+            o2 = [_sat(((x << 24) + (y << 24)) >> 1) for x, y in zip(a2_, b2_)]
         gs, gn = s24(c[C_GS]), s24(c[C_GN])
         if gs + gn != 0:
             gsn, ps, nz, pb3 = _sat(-(gs << 24)), st["phs"], st["nz"], []
@@ -613,6 +737,17 @@ class Model:
             buf[i] = _sat(_mpy(_sat(ec), buf[i]))
         st["ec"] = _sat(ec)
         return t, self.filt(st, c, p, buf, sp, t)
+
+    def wave_m(self, shape, ph, inc, rm, re, k, naive, morph):
+        """(sl) MW: start 0 = the wave; else waves i = (shape + 3 start >> 7) & 3 and i + 1 crossfaded by (3 start & 127) / 128"""
+        if morph == 0:
+            return self.wave(shape, ph, inc, rm, re, k, naive)
+        q = 3 * morph
+        i = (shape + (q >> 7)) & 3
+        f = (q & 0x7F) << 16
+        wi = self.wave(i, ph, inc, rm, re, k, naive)
+        wj = self.wave((i + 1) & 3, ph, inc, rm, re, k, naive)
+        return [_sat((a << 24) + _mpy(_sat((b << 24) - (a << 24)), f)) for a, b in zip(wi, wj)]
 
     def wave(self, shape, ph, inc, rm, re, k, naive):
         THL, THH = s24(inc - ONE), s24(ONE - inc)

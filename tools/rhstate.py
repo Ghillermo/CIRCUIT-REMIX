@@ -37,6 +37,12 @@ OFF2 = {                                   # module -> (offset, length) inside t
     "latdiag": (4, 224),                   # (RD24) the playback start's times: state, the start, the clock's first pass, 16 queue writes, the freeze
     "clkci": (4, 52),                      # (RH56, mefisme's A0.04F) the count-in on the music's clock: flags, the held mode, the master, clicks,
                                            # times, its log (in latdiag's room: latdiag is only in RD24-RD26, never with clkci)
+    "slinkofs": (56, 28),                  # (RH57) the stereo link's R sample: + 0 the pairs known (bit t), + 4 + t the gap + 128, + 12 + t / + 20 + t the
+                                           # selections last seen (in latdiag's room after clkci's)
+    "smodes": (84, 24),                    # (RH58) Sample mode's mode pads: + 0 the pads swallowed (bit p), + 4 the menu's state kept while a pad
+                                           # plays the menu's (16 B) (in latdiag's room)
+    "fxroute": (108, 4),                   # (RH58) the line bytes last seen (two), seen once (in latdiag's room)
+    "autoinit": (112, 32),                 # (RH58) the pads swallowed, the preview (its track, kept / shown knobs and values), Record (latdiag's room)
     "startfix": (228, 12),                 # (RD25) tick 0 played at the start: ACT, the passes N, T0 (HAL tick)
     "clkprobe": (240, 112),                # (RD27) the clock timer's gaps: the switch, the time source, stats since the last internal start
     "stallprof": (352, 1072),              # (RD28) SysTick's samples of what runs while the timers' dispatcher is stalled
@@ -88,7 +94,7 @@ OFF = {                                    # module -> (offset, length) inside t
 }
 
 
-SHARED = {"clkci": "latdiag"}               # slots that share a diagnostic module's room (never in the same build: the module's install checks)
+SHARED = {"clkci": "latdiag", "slinkofs": "latdiag", "smodes": "latdiag", "fxroute": "latdiag", "autoinit": "latdiag"}               # slots that share a diagnostic module's room (never in the same build: the module's install checks)
 
 
 def check_layout():

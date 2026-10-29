@@ -71,7 +71,7 @@ def ldrh_reg(rt, rn, rm): return h(0x5A00 | rm << 6 | rn << 3 | rt)
 def strh_reg(rt, rn, rm): return h(0x5200 | rm << 6 | rn << 3 | rt)
 
 
-def arm_code(base, L, prev, ui=False, keep=False):
+def arm_code(base, L, prev, ui=False, keep=False, init=False):
     a = Asm(base)
     E = a.emit
 
@@ -276,6 +276,29 @@ def arm_code(base, L, prev, ui=False, keep=False):
     E(raw, ldrh_reg(1, 0, 1))                                             # the lane's id
     E(adds_reg, 2, 7, 5)
     E(ldrb_imm, 2, 2, T_BASE)
+    if init:                                                              # (init, RH58) Project init: trkcopy's photo (as loaded / saved) when valid
+        E(push_list, [0, 1, 2])
+        E(bl, L["c_rram"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "ai_b", "eq")
+        E(movw, 1, rhstate.OFF2["trkphoto"][0])
+        E(adds_reg, 0, 0, 1)
+        E(ldrb_imm, 1, 0, 0)
+        E(cmp_imm, 1, ord("T"))
+        E(b_cond, "ai_b", "ne")
+        E(ldrb_imm, 1, 0, 1)
+        E(cmp_imm, 1, ord("S"))
+        E(b_cond, "ai_b", "ne")
+        E(adds_imm8, 0, 2)
+        E(movs_imm, 1, 26)
+        E(muls, 1, 6)
+        E(adds_reg, 0, 0, 1)                                              # the track's photo (r6 = the track, c_arplay's)
+        imm32(1, t_idx)
+        E(raw, ldrb_reg(1, 1, 5))
+        E(raw, ldrb_reg(0, 0, 1))                                         # its parameter of this lane
+        E(raw, h(0x9002))                                                 # str r0, [sp, #8]: in place of the base
+        a.label("ai_b")
+        E(pop_list, [0, 1, 2])
     E(ldr_imm, 0, 4, P_PARAM)
     E(ldr_imm, 3, 0, 0)
     E(ldr_imm, 3, 3, 0)
@@ -445,7 +468,7 @@ def arm_code(base, L, prev, ui=False, keep=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, ui=False, keep=False):
+def install(img, report, base_addr, ui=False, keep=False, init=False):
     """The head of 0x08055324, the step views' slots 0 / 1 (stepgate's in front), the head of the LED calls.  Needs stepgate, rhrec, rhstate ram2."""
     import rhbuild
     BASE = rhbuild.BASE
@@ -456,7 +479,8 @@ def install(img, report, base_addr, ui=False, keep=False):
     prev = dict(press=u(SV_VT) & ~1, rel=u(SV_VT + 4) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert prev["press"] == lab("stepgate", "c_sgpress") and prev["rel"] == lab("stepgate", "c_sgrel")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev, ui, keep)
+    assert not init or report["trkcopy"].get("ram"), "autorel init: needs trkcopy's photo in RAM"
+    code, labels = arm_code(base_addr, L, prev, ui, keep, init)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -465,5 +489,5 @@ def install(img, report, base_addr, ui=False, keep=False):
     rhbuild.patch_word(img, SV_VT + 4, prev["rel"] | 1, labels["c_arrel"] | 1)
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_arled"]))
-    report["autorel"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"keep": True} if keep else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["autorel"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"keep": True} if keep else {}), **({"init": True} if init else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

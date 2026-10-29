@@ -147,7 +147,7 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
     blks = [pack([len(lw), LD] + lw)] + [pack([len(w), a] + list(w)) for a, w in segs] + [pack([0, 0])]
     assert rhbuild.bl_target(img, UPLOAD_BL0) == SEND
 
-    def gen(ats):
+    def gen(ats, inv=False):
         a = Asm(base_addr)
         E = a.emit
 
@@ -164,7 +164,14 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         E(mov_reg, 4, 0)
         imm32(0, BLK0)
         E(cmp_reg, 4, 0)
-        E(b_cond, "d0_stock", "ne")
+        if inv:                                                           # (more segments than a forward b<c> reaches, RH58: the stock's first)
+            E(b_cond, "d0_ours", "eq")
+            E(mov_reg, 0, 4)
+            E(bl, SEND)
+            E(pop_list, [4], pc=True)
+            a.label("d0_ours")
+        else:
+            E(b_cond, "d0_stock", "ne")
         send(ats[0])                                                      # our loader (a bootstrap block)
         E(mov_reg, 0, 4)
         E(movs_imm, 1, 0)
@@ -172,17 +179,23 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         for x in ats[1:]:
             send(x)                                                       # our segments, the end
         E(pop_list, [4], pc=True)
-        a.label("d0_stock")
-        E(mov_reg, 0, 4)
-        E(bl, SEND)
-        E(pop_list, [4], pc=True)
+        if not inv:
+            a.label("d0_stock")
+            E(mov_reg, 0, 4)
+            E(bl, SEND)
+            E(pop_list, [4], pc=True)
         return a.assemble()
-    size = len(gen([0] * len(blks))[0])
+    inv = False
+    try:
+        size = len(gen([0] * len(blks))[0])
+    except AssertionError:                                                # the forward branch out of reach: the other order
+        inv = True
+        size = len(gen([0] * len(blks), True)[0])
     ats, x = [], (base_addr + size + 3) & ~3
     for blk in blks:
         ats.append(x)
         x = (x + len(blk) + 3) & ~3
-    code_arm, labels = gen(ats)
+    code_arm, labels = gen(ats, inv)
     assert (base_addr + len(code_arm) + 3) & ~3 == ats[0]
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_arm
     for x, blk in zip(ats, blks):
