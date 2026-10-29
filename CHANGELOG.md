@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## Alpha 0.08 (2026-10-29) — experimental
+
+> ⚠️ **Experimental: necesita pulirse.** La cuenta atrás con el reloj se probó en el aparato sobre Alpha 0.04 (A0.04F, de mefisme); sobre lo de ahora solo se ha comprobado en emulación, como casi todo lo de Alpha 0.04-0.07. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
+
+**Español.** Dos versiones nuevas: **Alpha 0.08** (marca `A0.08`) y **Alpha 0.08S** (marca `A0.08S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Lo nuevo es la contribución de **mefisme** (pull request 7, sus A0.04F / A04FS), llevada a lo de ahora. Todo en el [manual](docs/MANUAL.md#transporte) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **La cuenta atrás sigue el reloj de la música:** el tempo del proyecto, o el reloj MIDI externo como esclavo. Antes la contaba la tarea de los LEDs: clics de 0 a 10 ms tarde.
+- **El 1 a tiempo:** Play entra al empezar la cuenta y el arranque del reloj espera hasta el 1, así el trabajo de Play se hace durante la cuenta.
+- **Durante la cuenta** no se graba nada y el LED de Play se ve parado; Record destella en rojo en cada clic.
+- **Esclavo:** el primer clic cae en el compás siguiente del maestro si se conoce su posición (Start o Song Position).
+- **Metrónomo visual:** con el nivel del clic a 0 (K5 de Tempo / Swing), Clear destella en naranja en cada clic y en cada tiempo.
+- **Carga de pasos más rápida al pulsar Play** (el mismo resultado con la cuarta parte de las llamadas).
+- **Luz de error:** Clear parpadea en rojo si estas funciones no pueden funcionar con el firmware que encuentran (no debería verse nunca).
+- Shift + Play (la cuenta y seguir) y Play durante la cuenta (la cancela) siguen igual.
+- **Entrada de línea:** en el menú de pista, el pad 15 con las entradas como fuente (sin FX) se ve ámbar tenue; los retornos de reverb y delay, como antes.
+
+**English.** Two new builds: **Alpha 0.08** (marker `A0.08`) and **Alpha 0.08S** (marker `A0.08S`: no project copy, pack delete or sample copy). What's new is **mefisme**'s contribution (pull request 7, their A0.04F / A04FS), brought onto the current line. Everything is in the [manual](docs/MANUAL_EN.md#transporte) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** The count-in on the clock was tested on the device on Alpha 0.04 (mefisme's A0.04F); on the current line it has only been checked in emulation, like most of Alpha 0.04-0.07. Expect bugs, noises or hangs: for serious playing, stay on **Alpha 0.03** (still in the installer). **Back up the SD card.**
+
+What's new:
+- **The count-in follows the music's clock:** the project's tempo, or the external MIDI clock as a slave. Before, the LED task timed it: clicks 0 to 10 ms late.
+- **The 1 on time:** Play goes through at the start of the count and the clock's start waits until the 1, so Play's work runs during the count.
+- **During the count** nothing records and the Play LED shows stopped; Record flashes red on each click.
+- **Slave:** the first click comes on the master's next bar when its position is known (Start or Song Position).
+- **Visual metronome:** with the click's level at 0 (Tempo / Swing K5), Clear flashes orange on each click and each beat.
+- **Faster step load on Play** (the same result with a quarter of the calls).
+- **Error light:** Clear blinks red if these features cannot run on the firmware they find (it should never show).
+- Shift + Play (the count, then carry on) and Play during the count (cancels it) work as before.
+- **Line input:** on the track menu, pad 15 with the inputs as the source (no FX) shows dim amber; the reverb and delay returns as before.
+
 ## Alpha 0.07 (2026-10-28) — experimental
 
 > ⚠️ **Experimental: necesita pulirse.** Stock+ en el granular y el sinte solo se ha comprobado en emulación, como casi todo lo de Alpha 0.04-0.06. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**

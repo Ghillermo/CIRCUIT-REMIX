@@ -290,6 +290,7 @@ UI_COL, UI_DIM = 0x2B, 0x2C
 # (RH48-RH53's bytes: 0 = the inputs); its words LSRC / LSRC2 sent with the others (the key still last)
 UI_PAD_SRC, SRC_SHIFT, SRC_MASK = 14, 5, 0x60
 SRC_COLS = (UI_COL, 0x29, 0x74)
+# srcdim (RH56; the user, 2026-10-29: «no fx into line in must remain dim»): the inputs (no FX into the line) dim amber, the returns as before
 PAL, PAL_ON, PAL_OFF, PAL_TON, PAL_TOFF = GP.PAL, GP.PAL_ON, GP.PAL_OFF, GP.PAL_TON, GP.PAL_TOFF
 PP_ENTRY = GP.PP_ENTRY
 M_GRAN, M_SWAL = GP.M_GRAN, GP.M_SWAL
@@ -307,7 +308,7 @@ def _liw(a, E):
     E(pop_list, [4], pc=True)
 
 
-def _arm2(a, E, imm32, L, prev, ui=False, fx=False):
+def _arm2(a, E, imm32, L, prev, ui=False, fx=False, srcdim=False):
     """(two) c_lipad, c_liw, c_liwk, c_liled; ui: the menu's pads 13 / 14 in amber (bright / dim)"""
     PAD_LINE, PAD_GATE = (UI_PAD_LINE, UI_PAD_GATE) if ui else (PAD_LINE_, PAD_GATE_)
     # ---- c_lipad (the controller's pad press, granpage's head after it): the menu open, pads 5 / 6 are ours
@@ -626,7 +627,7 @@ def _arm2(a, E, imm32, L, prev, ui=False, fx=False):
         E(lsrs_imm, 0, 7, SRC_SHIFT)
         E(movs_imm, 1, 3)
         E(ands_reg, 0, 1)
-        E(movs_imm, 1, SRC_COLS[0])
+        E(movs_imm, 1, UI_DIM if srcdim else SRC_COLS[0])
         E(cmp_imm, 0, 1)
         E(b_cond, "ll_c1", "ne")
         E(movs_imm, 1, SRC_COLS[1])
@@ -640,7 +641,7 @@ def _arm2(a, E, imm32, L, prev, ui=False, fx=False):
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
 
 
-def arm_code(base, L, prev, two=False, ui=False, fx=False):
+def arm_code(base, L, prev, two=False, ui=False, fx=False, srcdim=False):
     a = Asm(base)
     E = a.emit
 
@@ -725,7 +726,7 @@ def arm_code(base, L, prev, two=False, ui=False, fx=False):
     a.label("lr_x")
     E(pop_list, [4], pc=True)
     if two:
-        _arm2(a, E, imm32, L, prev, ui, fx)
+        _arm2(a, E, imm32, L, prev, ui, fx, srcdim)
         return a.assemble()
 
     # ---- c_lipad (the controller's pad press, granpage's head after it): the menu open, pads 5 / 6 are ours
@@ -881,7 +882,7 @@ def arm_code(base, L, prev, two=False, ui=False, fx=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, two=False, ui=False, fx=False):
+def install(img, report, base_addr, two=False, ui=False, fx=False, srcdim=False):
     """The controller's pad press (in front of granpage v2's head), the head of the LED calls.  core 0's LI goes in through granular0's extra
     (segs, with the same two).  Needs granpage v2, cthresh, rhrec, rhstate ram2."""
     import rhbuild
@@ -898,12 +899,13 @@ def install(img, report, base_addr, two=False, ui=False, fx=False):
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
     assert two or not ui
     assert ui or not fx
-    code_, labels = arm_code(base_addr, L, prev, two, ui, fx)
+    assert fx or not srcdim
+    code_, labels = arm_code(base_addr, L, prev, two, ui, fx, srcdim)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
     rhbuild.patch(img, PP_ENTRY, f"b.w #{prev['pad']:#x}", b_w(PP_ENTRY, labels["c_lipad"]))
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_liled"]))
-    report["linein"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"ui": True} if ui else {}), **({"fx": True} if fx else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    report["linein"] = dict(prev={k: hex(v) for k, v in prev.items()}, **({"ui": True} if ui else {}), **({"fx": True} if fx else {}), **({"srcdim": True} if srcdim else {}), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code_

@@ -1,8 +1,8 @@
-# Circuit Remix Alpha 0.07 — manual
+# Circuit Remix Alpha 0.08 — manual
 
 [English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)
 
-> ⚠️ **Alpha 0.07 es experimental:** lo nuevo (Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**
+> ⚠️ **Alpha 0.08 es experimental:** lo nuevo (la cuenta atrás con el reloj, Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**
 
 Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.
 
@@ -68,7 +68,7 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.07)* es nuevo o cambia en esta versión.
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.08)* es nuevo o cambia en esta versión.
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 
 <a id="colores"></a>
@@ -104,7 +104,7 @@ Cada página de knobs de una pista tiene su color, el mismo en sus knobs, en el 
 2. Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.
 3. Elige la versión y envíala al aparato por USB.
 
-**Versiones S** (A0.07S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
+**Versiones S** (A0.08S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
 
 **Volver al firmware oficial:** mantén **Sample Rec + Samples + Note** al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.
 
@@ -120,9 +120,18 @@ Cada página de knobs de una pista tiene su color, el mismo en sus knobs, en el 
 | **Shift + Clear** | metrónomo en cuatro estados; con Shift, el LED de Clear: rojo = sin metrónomo, verde = metrónomo, magenta = solo cuenta atrás, cian = las dos *(desde Alpha 0.0)* |
 | **Record armado + Play** (parado, con cuenta atrás) | un compás de clics al tempo y arranca grabando (Record parpadea); Play durante la cuenta la cancela |
 | **Shift + Play** (parado) | el del original: sigue desde donde se paró; con cuenta atrás, la cuenta y luego sigue |
+| **K5 de la vista Tempo / Swing a 0** (clic sin volumen) | metrónomo visual: Clear destella 100 ms en cada clic de la cuenta y, sonando con el metrónomo, en cada tiempo, en naranja (distinto de los colores del metrónomo que muestra Clear con Shift); no mientras se mantiene Shift o Clear *(Alpha 0.08)* |
 | **Shift + Play** (sonando) | cuantiza el patrón de la pista elegida: los micropasos 2-3 al comienzo de su paso, 4-6 al del siguiente; los redobles se quedan. LED de Play con Shift: amarillo; verde tras cuantizar; rojo = nada que cuantizar *(desde Alpha 0.0)* |
 
 La cuenta atrás no se guarda: al encender vuelve a «sin cuenta atrás».
+
+**La cuenta con el reloj de la música** *(Alpha 0.08)* (contribución de mefisme):
+- Los clics siguen el reloj de la música: el tempo del proyecto, o el reloj MIDI externo si el Rhythm es esclavo. Antes los contaba la tarea de los LEDs, de 0 a 10 ms tarde.
+- Play entra al empezar la cuenta y el reloj espera hasta el 1: el trabajo de Play se hace durante la cuenta y el 1 llega a tiempo.
+- Durante la cuenta no se graba nada, el LED de Play se ve parado y Record destella en rojo en cada clic.
+- Como esclavo, el primer clic cae en el compás siguiente del maestro si el Rhythm conoce su posición (recibió su Start o Song Position); si no, en el primer pulso tras pulsar Play. Un Start del maestro durante la cuenta la para.
+- Play carga los pasos más rápido (el mismo resultado con la cuarta parte de las llamadas).
+- **Luz de error:** si Clear parpadea en rojo (¼ s encendido, ¼ s apagado) sin pulsar nada, estas funciones se han apagado porque el firmware no es el esperado. No debería verse nunca: si lo ves, avísanos en GitHub.
 
 **Arreglos del original** (desde Alpha 0.04): la reproducción empieza antes (≈ 10 ms de Play al primer sonido; el original ≈ 18 ms), las notas de un mismo paso suenan juntas, no se pierden notas con muchas pistas en el mismo paso y el reloj no tropieza al guardar un sample.
 
@@ -161,7 +170,7 @@ Los pads se convierten en el menú de esa pista *(Alpha 0.06)*:
 | **12** | ★ el **sinte** de la pista, sí / no (hasta 4 pistas); encendido, su página |
 | **13** | ★ la **[entrada de línea](#entrada)** como sonido de la pista, sí / no |
 | **14** | el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas, por el VCA y el filtro de la pista (oscuro si la pista no es de entrada) |
-| **15** | la fuente de la entrada: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón) *(Alpha 0.06)* |
+| **15** | la fuente de la entrada: las entradas (ámbar tenue: sin FX *(Alpha 0.08)*) → el retorno de reverb (crema) → el de delay (melocotón) *(Alpha 0.06)* |
 
 - **Abrirlo:** un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.
 - Fila 1, las **páginas** de la pista: solo las de su sonido (sample: stock y Stock+; granular: stock, Stock+, Granular y Envolvente; sinte: stock, Stock+, Sinte y Envolvente; entrada: stock); las demás, oscuras. Brillante = la que se ve. **Mantener** un pad de página (½ s o más) la muestra solo hasta que lo sueltas y vuelve la anterior.
@@ -276,7 +285,7 @@ Lila con el brillo según el valor (K4, K5 y Shift + K5: la distancia al centro)
 **Entrada de línea** (pad 13; desde Alpha 0.04): la entrada de audio suena como el sonido de la pista, con su nivel, panorama, envíos, filtro y envolvente.
 - Una pista de entrada: L + R. Dos: la de número menor es L, la mayor R. En una tercera, sale la primera puesta.
 - **Pad 14, el gate:** tenue = siempre suena; brillante = solo mientras suenan sus notas, por el VCA y el filtro de la pista (paso bajo, paso alto, resonancia; el filtro desde Alpha 0.06).
-- **Pad 15, la fuente** (Alpha 0.06): las entradas (ámbar) → el **retorno de reverb** (crema) → el **de delay** (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms). Ojo: mandar esa pista a su propia reverb o delay realimenta.
+- **Pad 15, la fuente** (Alpha 0.06): las entradas (ámbar tenue, sin FX; hasta Alpha 0.07, ámbar) → el **retorno de reverb** (crema) → el **de delay** (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms). Ojo: mandar esa pista a su propia reverb o delay realimenta.
 
 **Enlace estéreo** (pad 9; desde Alpha 0.04): la pista (izquierda, su sample) y la siguiente (derecha, el sample siguiente) suenan juntas con los parámetros y las notas de la primera. Pad 9 en cualquiera de las dos = deshacer. En la pista 8 sola, oscuro. Sin enlazar quedan el LFO y el scan libres de Stock+ y el WSOLA del stretch.
 
@@ -475,7 +484,7 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Copiar proyectos** | Duplicate + A, Duplicate + B en Projects, también a otro pack | [6.1 Projects y Packs](#projects) | Alpha 0.0 |
 | **Copiar samples** | Duplicate + A, Duplicate + B en Sample Rec | [4.2 Sample Rec](#samplerec) | Alpha 0.01 |
 | **Cuantizar** | Shift + Play sonando | [1.1 Transporte, metrónomo y cuantizar](#transporte) | Alpha 0.0 |
-| **Cuenta atrás** | un compás antes de grabar; Shift + Clear | [1.1 Transporte, metrónomo y cuantizar](#transporte) | Alpha 0.0 |
+| **Cuenta atrás** | un compás antes de grabar; Shift + Clear; desde 0.08 con el reloj de la música, también como esclavo | [1.1 Transporte, metrónomo y cuantizar](#transporte) | Alpha 0.0 |
 | **De-clicker de loops** | crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec | [4.1 Sample mode](#samplemode) | Alpha 0.04 |
 | **Dinámicas por paso** | velocity y retraso al azar dentro del paso; fila 3 de la probabilidad | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
 | **Distorsión en granular y sinte** | el knob de distorsión del original también en ellos | [2.2 El menú de pista](#menu) | Alpha 0.07 |
@@ -497,6 +506,7 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Marcas de Velocity** | en el paso marcado la automatización vuelve al knob; Shift + paso | [3.1 Velocity y Micro Step](#velocity) | Alpha 0.04 |
 | **Menú de pista** | tocar el botón de la pista elegida (se queda abierto) o mantener el de una pista | [2.2 El menú de pista](#menu) | Alpha 0.04 |
 | **Metrónomo** | cuatro estados con Shift + Clear | [1.1 Transporte, metrónomo y cuantizar](#transporte) | Alpha 0.0 |
+| **Metrónomo visual** | Clear destella en naranja en cada clic con el nivel del clic a 0 (K5 de Tempo / Swing) | [1.1 Transporte, metrónomo y cuantizar](#transporte) | Alpha 0.08 |
 | **Modo cue** | mezcla a la izquierda, cue a la derecha; Mixer, panoramas, Shift + knob | [5.1 Mixer](#mixer) | Alpha 0.04 |
 | **Mutación del sample** | a veces suena el vecino; fila 4 de la probabilidad | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
 | **Mute al compás** | Shift + pad de pista en el Mixer | [5.1 Mixer](#mixer) | Alpha 0.0 |
