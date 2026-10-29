@@ -31,9 +31,12 @@ MAGIC = 0x31545352                         # "RST1"
 SIZE2 = 0x800
 ST2 = ST - SIZE2                           # 0x2004EE60
 MAGIC2 = 0x32545352                        # "RST2"
+OUR_LIMIT = ST2                            # the heap limit once c_rst has run with ram2
 OFF2 = {                                   # module -> (offset, length) inside the second block
     "magic": (0, 4),
     "latdiag": (4, 224),                   # (RD24) the playback start's times: state, the start, the clock's first pass, 16 queue writes, the freeze
+    "clkci": (4, 52),                      # (RH56, mefisme's A0.04F) the count-in on the music's clock: flags, the held mode, the master, clicks,
+                                           # times, its log (in latdiag's room: latdiag is only in RD24-RD26, never with clkci)
     "startfix": (228, 12),                 # (RD25) tick 0 played at the start: ACT, the passes N, T0 (HAL tick)
     "clkprobe": (240, 112),                # (RD27) the clock timer's gaps: the switch, the time source, stats since the last internal start
     "stallprof": (352, 1072),              # (RD28) SysTick's samples of what runs while the timers' dispatcher is stalled
@@ -79,17 +82,26 @@ OFF = {                                    # module -> (offset, length) inside t
     "k8tick": (224, 4),                    # (RH38, stockplus k8sync) the sequencer's global tick last seen (the synced scans' phase written on a new one)                    # (RH35) frames since core 1's program was seen uploaded (stockplus writes to core 1 only after SP_WAIT)
     "stockplus": (218, 4),                 # (RH32) + 0 the tracks on the Stock+ page (bit t), + 1 the tracks to push to core 1, + 2 the round, + 3 Duplicate's source + 1
     "granpage": (228, 4),                  # (RH39) + 0 to push (bit 0 the granular's words to core 0, bit 1 the crossfade's to core 1), + 1 / + 2 their rounds
+    "vismet": (232, 4),                    # (RH56, mefisme's A0.04F) the visual metronome: the last silent beat or click (HAL tick, 0 = none)
     "smpcopy": (202, 12),                  # the sample copy: tag, source + 1, its pack, the slot asked about + 1, time, the last copy + 1, its pack, status, time
     "stereorec": (248, 8),                 # (RD23) Sample Rec in stereo: phase, A, B, STF written, our functors installed
 }
 
 
+SHARED = {"clkci": "latdiag"}               # slots that share a diagnostic module's room (never in the same build: the module's install checks)
+
+
 def check_layout():
     for off, size in ((OFF, SIZE), (OFF2, SIZE2)):
-        used = sorted(off.values())
-        for (a, n), (b2, _) in zip(used, used[1:]):
+        used = sorted((v, k) for k, v in off.items() if k not in SHARED)
+        for ((a, n), _), ((b2, _), _) in zip(used, used[1:]):
             assert a + n <= b2, f"rhstate offsets overlap at {b2}"
-        assert used[-1][0] + used[-1][1] <= size
+        for k, host in SHARED.items():
+            if k in off:
+                a, n = off[k]
+                ha, hn = off[host]
+                assert ha <= a and a + n <= ha + hn, f"rhstate: {k} must lie inside {host}"
+        assert used[-1][0][0] + used[-1][0][1] <= size
 
 
 def arm_code(base, ram2=False):

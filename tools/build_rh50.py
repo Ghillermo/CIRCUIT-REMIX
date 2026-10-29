@@ -19,6 +19,7 @@ def build(name=NAME, synth=False, **kw):
     synth) with synth0 / granular0 / granchain sp (their hooks; the granular's end to sp0's SPX)"""
     rh54 = kw.pop("rh54", False)
     rh55 = kw.pop("rh55", False)
+    rh56 = kw.pop("rh56", False)                                   # (RH56) linein srcdim: no FX into the line = dim
     assert not rh55 or (rh54 and synth)
     if rh54:
         kw["tcram"] = True
@@ -43,7 +44,7 @@ def build(name=NAME, synth=False, **kw):
                          gpx={"stereo": True, "multi": True, **env}, **kw)
     ui = {"ui": True} if kw.get("ui") else {}                         # (RH52: docs/INTERFAZ.md)
     b.add("cue", cue)
-    b.add("linein", linein, two=True, **ui, **({"fx": True} if rh54 else {}))
+    b.add("linein", linein, two=True, **ui, **({"fx": True} if rh54 else {}), **({"srcdim": True} if rh56 else {}))
     b.add("slink", slink, **ui)
     return b
 

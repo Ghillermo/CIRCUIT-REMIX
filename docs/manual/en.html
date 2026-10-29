@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.07 — manual</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.08 — manual</title><style>
 :root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
 :root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
@@ -23,9 +23,9 @@ footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
 p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
 p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
 </style></head><body>
-<header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.07</p><div class="bar"></div></header><main>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.08</p><div class="bar"></div></header><main>
 <p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.07 is experimental:</strong> what&#x27;s new (Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. <strong>Back up your SD card.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.08 is experimental:</strong> what&#x27;s new (the count-in on the clock, Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. <strong>Back up your SD card.</strong></p>
 <p>Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.</p>
 <nav class="toc"><h2>Contents</h2>
 <h3>0. Introduction</h3><ol>
@@ -76,7 +76,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = the 8 knobs. <strong>▲ / ▼</strong> = the arrow buttons.</li>
 <li><strong>Hold</strong> a button = press it and keep it down; <strong>A + B</strong> = B with A held.</li>
 <li><strong>★</strong> = exclusive to Circuit Remix (not in CIRCUIT-HACKS).</li>
-<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.07)</em>: new or changed in this release.</li>
+<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.08)</em>: new or changed in this release.</li>
 <li>At the end, the <strong><a href="#glosario">glossary</a></strong>: one entry per function, with its view and its gesture.</li>
 </ul>
 </section>
@@ -194,7 +194,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.</li>
 <li>Pick the version and send it to the device over USB.</li>
 </ol>
-<p><strong>S versions</strong> (A0.07S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.</p>
+<p><strong>S versions</strong> (A0.08S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.</p>
 <p><strong>Back to the official firmware:</strong> hold <strong>Sample Rec + Samples + Note</strong> while powering on (Novation&#x27;s bootloader mode) and send the official one with the installer (&quot;Official&quot;) or with Novation Components. Always back up your SD card.</p>
 </section>
 <h2 class="group">1. In any view</h2>
@@ -291,9 +291,19 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Shift + Clear</strong></td><td>metronome in four states; with Shift, the Clear LED: red = no metronome, green = metronome, magenta = count-in only, cyan = both <em>(since Alpha 0.0)</em></td></tr>
 <tr><td><strong>Record armed + Play</strong> (stopped, with count-in)</td><td>one bar of clicks at the tempo, then recording starts (Record blinks); Play during the count cancels it</td></tr>
 <tr><td><strong>Shift + Play</strong> (stopped)</td><td>the original&#x27;s: carry on from where it stopped; with count-in, the count and then carry on</td></tr>
+<tr><td><strong>Tempo / Swing view K5 at 0</strong> (click muted)</td><td>visual metronome: Clear flashes for 100 ms on each click of the count and, while playing with the metronome, on each beat, in orange (unlike the metronome colours Clear shows with Shift); not while Shift or Clear is held <em>(Alpha 0.08)</em></td></tr>
 <tr><td><strong>Shift + Play</strong> (playing)</td><td>quantizes the selected track&#x27;s pattern: micro steps 2-3 to the start of their step, 4-6 to the next one; rolls stay. Play LED with Shift: yellow; green after quantizing; red = nothing to quantize <em>(since Alpha 0.0)</em></td></tr>
 </tbody></table>
 <p>The count-in isn&#x27;t saved: at power-on it goes back to &quot;no count-in&quot;.</p>
+<p><strong>The count on the music&#x27;s clock</strong> <em>(Alpha 0.08)</em> (contributed by mefisme):</p>
+<ul>
+<li>The clicks follow the music&#x27;s clock: the project&#x27;s tempo, or the external MIDI clock when the Rhythm is a slave. Before, the LED task timed them, 0 to 10 ms late.</li>
+<li>Play goes through at the start of the count and the clock waits until the 1: Play&#x27;s work runs during the count and the 1 is on time.</li>
+<li>During the count nothing records, the Play LED shows stopped and Record flashes red on each click.</li>
+<li>As a slave, the first click comes on the master&#x27;s next bar if the Rhythm knows its position (it received its Start or Song Position); otherwise on the first pulse after Play. A Start from the master during the count stops it.</li>
+<li>Play loads the steps faster (the same result with a quarter of the calls).</li>
+<li><strong>Error light:</strong> if Clear blinks red (¼ s on, ¼ s off) without you pressing anything, these features have switched themselves off because the firmware isn&#x27;t the expected one. It should never show: if you see it, tell us on GitHub.</li>
+</ul>
 <p><strong>Fixes to the original</strong> (since Alpha 0.04): playback starts sooner (≈ 10 ms from Play to the first sound; the original ≈ 18 ms), the notes of one step sound together, no notes get lost with many tracks on the same step, and the clock no longer stumbles while a sample is saved.</p>
 </section>
 <h2 class="group">2. Track views</h2>
@@ -502,7 +512,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>12</strong></td><td>★ the track&#x27;s <strong>synth</strong>, on / off (up to 4 tracks); switched on, its page</td></tr>
 <tr><td><strong>13</strong></td><td>★ the <strong><a href="#entrada">line input</a></strong> as the track&#x27;s sound, on / off</td></tr>
 <tr><td><strong>14</strong></td><td>the input&#x27;s gate: dim = always sounds, bright = only with its notes, through the track&#x27;s VCA and filter (dark if the track isn&#x27;t an input track)</td></tr>
-<tr><td><strong>15</strong></td><td>the input&#x27;s source: the inputs (amber) → the reverb return (cream) → the delay return (peach) <em>(Alpha 0.06)</em></td></tr>
+<tr><td><strong>15</strong></td><td>the input&#x27;s source: the inputs (dim amber: no FX <em>(Alpha 0.08)</em>) → the reverb return (cream) → the delay return (peach) <em>(Alpha 0.06)</em></td></tr>
 </tbody></table>
 <ul>
 <li><strong>Opening it:</strong> a tap on the button of the track already selected leaves it open; it closes when you let go of a menu pad, tap the button again or press any other button. Holding a track&#x27;s button (¼ s) opens it only while held, like the original&#x27;s view buttons.</li>
@@ -1052,7 +1062,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <ul>
 <li>One input track: L + R. Two: the lower-numbered one is L, the higher R. Setting a third removes the first one set.</li>
 <li><strong>Pad 14, the gate:</strong> dim = always sounds; bright = only while its notes play, through the track&#x27;s VCA and filter (low-pass, high-pass, resonance; the filter since Alpha 0.06).</li>
-<li><strong>Pad 15, the source</strong> (Alpha 0.06): the inputs (amber) → the <strong>reverb return</strong> (cream) → the <strong>delay return</strong> (peach), in turn; each input track its own. The return arrives a block late (0.67 ms). Careful: sending that track to its own reverb or delay feeds back.</li>
+<li><strong>Pad 15, the source</strong> (Alpha 0.06): the inputs (dim amber, no FX; up to Alpha 0.07, amber) → the <strong>reverb return</strong> (cream) → the <strong>delay return</strong> (peach), in turn; each input track its own. The return arrives a block late (0.67 ms). Careful: sending that track to its own reverb or delay feeds back.</li>
 </ul>
 <p><strong>Stereo link</strong> (pad 9; since Alpha 0.04): the track (left, its sample) and the next one (right, the next sample) play together with the first one&#x27;s parameters and notes. Pad 9 on either = undo. Dark on track 8 alone. Not linked: Stock+&#x27;s free LFO and scan, and the stretch&#x27;s WSOLA.</p>
 <p>Both are saved with the project.</p>
@@ -1461,7 +1471,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Copy projects</strong></td><td>Duplicate + A, Duplicate + B in Projects, also to another pack</td><td><a href="#projects">6.1 Projects and Packs</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Copy samples</strong></td><td>Duplicate + A, Duplicate + B in Sample Rec</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Copy track parameters</strong></td><td>Duplicate + track A, track B</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Count-in</strong></td><td>a bar before recording; Shift + Clear</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Count-in</strong></td><td>a bar before recording; Shift + Clear; since 0.08 on the music&#x27;s clock, also as a slave</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Cue mode</strong></td><td>mix on the left, cue on the right; Mixer, pan, Shift + knob</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Delete a pack</strong></td><td>Clear + pack twice in Packs</td><td><a href="#projects">6.1 Projects and Packs</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Distortion on granular and synth</strong></td><td>the original&#x27;s distortion knob on them too</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.07</td></tr>
@@ -1509,6 +1519,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Track menu</strong></td><td>tap the selected track&#x27;s button (stays open) or hold a track&#x27;s button</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>USB merge</strong></td><td>DIN In also over USB; Advanced Setup, pad 23</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Velocity marks</strong></td><td>on a marked step automation returns to the knob; Shift + step</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Visual metronome</strong></td><td>Clear flashes orange on each click with the click&#x27;s level at 0 (Tempo / Swing K5)</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.08</td></tr>
 <tr><td><strong>Waveshaper</strong></td><td>soft, hard, fold or bitcrush on the granular and the synth; Stock+, K7 (Shift: the type)</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.07</td></tr>
 </tbody></table></section>
 <footer>Circuit Remix — MIT. No Novation code.</footer></main></body></html>

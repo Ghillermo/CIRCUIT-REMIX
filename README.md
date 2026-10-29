@@ -2,9 +2,9 @@
 
 Help me pay for tools and mantain the project: https://PayPal.me/ghillermo
 
-> 📢 **Alpha 0.07 (experimental)**: un port de las funciones de [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) al **Novation Circuit Rhythm**, con características exclusivas. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.07/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge ([cómo](#instalar-sin-compilar-toolsrm_uploaderhtml)). Novedades: [`CHANGELOG.md`](CHANGELOG.md).
+> 📢 **Alpha 0.08 (experimental)**: un port de las funciones de [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) al **Novation Circuit Rhythm**, con características exclusivas. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.08/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge ([cómo](#instalar-sin-compilar-toolsrm_uploaderhtml)). Novedades: [`CHANGELOG.md`](CHANGELOG.md).
 
-**⬇️ Descarga del parche de firmware (instalador): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.07/rm_uploader.zip)** · [todas las versiones](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
+**⬇️ Descarga del parche de firmware (instalador): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.08/rm_uploader.zip)** · [todas las versiones](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
 Nota legal: el firmware proporcionado por Novation es propietario, no está permitido instalarlo en cualquier dispositivo que no sea Circuit Rhythm. Este instalador lo comprueba y no permite instalar en ningún otro dispositivo.
 
@@ -22,8 +22,8 @@ Proyecto desarrollado usando Claude (Anthropic).
 > - Es una versión **alfa**: las funciones se han comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria) y en parte en el aparato; podría haber problemas que dañen proyectos o samples guardados.
 > - ⚠️ **Fallo conocido de Alpha 0.01, 0.01S, A0.01F y A01FS: pista 8.** Los valores de la página Stock+ (envolvente y LFO de tono) estaban en la memoria del DSP donde la pista 8 lee su sample mientras suena, y se escriben siempre, aunque no uses la página. Con algo sonando en la pista 8 puede oírse chirridos, clics o siseo, y el tono puede irse. **Arreglado en Alpha 0.02: actualiza.** Alpha 0.0 / 0.0S no lo tienen.
 > - ⚠️ **Fallo conocido de Alpha 0.01 / 0.01S / 0.02 / 0.02S (y A0.01F / A01FS): Stock+ tras encender.** Recién encendido el aparato (no tras instalar), la página Stock+ puede no hacer nada durante unos minutos. La causa está en el firmware original: una palabra de configuración del DSP de las voces no se inicializa al arrancar, y según lo que tenga la memoria al encender, su puerto de comunicación con el procesador principal queda en un modo equivocado. **Arreglado en Alpha 0.03: actualiza.**
-> - ⚠️ **Alpha 0.07 es experimental y necesita pulirse:** casi todo lo nuevo (Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX, el sinte, la interfaz nueva, granular en varias pistas, menú de pista, entrada de línea, enlace estéreo, modo cue, General MIDI…) se ha comprobado solo en emulación. Para tocar en serio, **Alpha 0.03** sigue en el instalador.
-> - Si prefieres no arriesgar la tarjeta, usa la **versión más segura, Alpha 0.07S** (o 0.03S): es Alpha 0.07 sin ninguna función que cree, modifique o borre ficheros en la SD por su cuenta (no tiene la copia de proyectos, el borrado de packs ni la copia de samples).
+> - ⚠️ **Alpha 0.08 es experimental y necesita pulirse:** casi todo lo nuevo (la cuenta atrás con el reloj, Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX, el sinte, la interfaz nueva, granular en varias pistas, menú de pista, entrada de línea, enlace estéreo, modo cue, General MIDI…) se ha comprobado solo en emulación. Para tocar en serio, **Alpha 0.03** sigue en el instalador.
+> - Si prefieres no arriesgar la tarjeta, usa la **versión más segura, Alpha 0.08S** (o 0.03S): es Alpha 0.08 sin ninguna función que cree, modifique o borre ficheros en la SD por su cuenta (no tiene la copia de proyectos, el borrado de packs ni la copia de samples).
 > - El mod nunca escribe en el pack de la memoria interna: sus funciones de escritura lo rechazan (LED de Save en rojo). Lo que guarda el firmware original sigue funcionando como siempre.
 > - El bootloader de Novation no se toca: **Sample Rec + Samples + Note** al encender permite volver al firmware oficial.
 
@@ -42,8 +42,8 @@ Este repositorio contiene **solo el trabajo propio del proyecto**:
 ### Instalar sin compilar: `tools/rm_uploader.html`
 
 1. **Descarga el firmware oficial** Circuit Rhythm 2.0.1 (build 5706) de Novation: [circuitrhythm-firmware-5706.syx](https://components.novationmusic.com/api/v2/firmwares/169/file). Es el enlace de descarga de Novation Components; la lista completa está en `https://components.novationmusic.com/api/v2/firmwares`, producto `circuit-rhythm`.
-2. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.07/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge (es el mismo [`tools/rm_uploader.html`](tools/rm_uploader.html) del repositorio).
-3. **Elige el `.syx` oficial y la versión**: Alpha 0.07 (experimental), la versión más segura Alpha 0.07S, las anteriores Alpha 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, u «Oficial» para volver atrás.
+2. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.08/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge (es el mismo [`tools/rm_uploader.html`](tools/rm_uploader.html) del repositorio).
+3. **Elige el `.syx` oficial y la versión**: Alpha 0.08 (experimental), la versión más segura Alpha 0.08S, las anteriores Alpha 0.07 / 0.07S / 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, u «Oficial» para volver atrás.
    - La página comprueba que el fichero es el firmware oficial (SHA-256) y lo parchea en el navegador.
    - Comprueba que el resultado es idéntico, bit a bit, al publicado (SHA-256 de la imagen y del `.syx`).
 4. **Conecta el Circuit Rhythm y pulsa Enviar.** Confirma con **Play** en el aparato.
@@ -56,11 +56,11 @@ La página no contiene código de Novation: solo los bytes del mod y las instruc
 
 ```bash
 python -m pip install -r tools/requirements.txt
-python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version A0.07
+python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version A0.08
 ```
 - El firmware oficial es el **Circuit Rhythm 2.0.1 (build 5706)** de Novation Components, en `.syx` o `.bin`; la herramienta comprueba su SHA-256 (`stock/SHA256SUMS.txt`).
 - Construye la versión en `firmware/<versión>/` y comprueba que el `.syx` es idéntico al publicado (`manifest.json`).
-- `--version A0.07S` = la versión más segura; `--list` enseña las versiones; `--all` las construye todas.
+- `--version A0.08S` = la versión más segura; `--list` enseña las versiones; `--all` las construye todas.
 - `python tools/verify_builds.py` vuelve a construir las versiones y las compara con sus manifiestos.
 - Para enviarlo, lo más sencillo es `tools/rm_uploader.html` con el `.syx` oficial: hace lo mismo en el navegador y comprueba el mismo SHA-256.
 
@@ -70,9 +70,11 @@ python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version
 
 **Incluido en Alpha 0.02.** **A0.01F** (Alpha 0.01 + el arreglo) y **A01FS** (Alpha 0.01S + el arreglo): con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Instalador: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Detalles y pruebas: [`docs/FIXEDREC.md`](docs/FIXEDREC.md).
 
-## Características (Alpha 0.07)
+## Características (Alpha 0.08)
 
 Manual completo, vista por vista y con un glosario de funciones: [`docs/MANUAL.md`](docs/MANUAL.md) (texto) o [ilustrado](docs/manual/index.html).
+
+**Nuevo en Alpha 0.08 (experimental):** **la cuenta atrás con el reloj de la música** (contribución de mefisme): los clics siguen el tempo o, como esclavo, el reloj MIDI externo (el primer clic en el compás del maestro), el 1 llega a tiempo, durante la cuenta no se graba nada; **metrónomo visual** (con el clic a 0, Clear destella en naranja en cada tiempo); Play carga los pasos más rápido; el pad 15 de la entrada sin FX, tenue.
 
 **Nuevo en Alpha 0.07 (experimental):** **Stock+ para todos los sonidos**: la página Stock+ (menú pad 2) también en el granular y el sinte (envolvente y LFO de tono, ring, filtros, **waveshaper en K7** con su tipo en Shift + K7, K8 = LFO de la posición de los granos / de la FM); el **knob de distorsión de la pista** también en el granular y el sinte.
 
@@ -108,7 +110,7 @@ Manual completo, vista por vista y con un glosario de funciones: [`docs/MANUAL.m
 - **Arpegiador de samples y de notas:** varios pads de sample mantenidos arpegian los samples (cada golpe es un sample flip); en la vista Note, las teclas mantenidas arpegian el sample de la pista; con Record, el arpegio se graba en el patrón.
 - **Escala propia por pista**, con una iteración por fila de pads (dos si caben).
 - **Página Stock+ de los knobs de pista** (desde Alpha 0.01; K5-K8 desde Alpha 0.02): pulsa otra vez el botón de la pista elegida (desde Alpha 0.04: mantén el botón, pad 2); K1 / K2 = envolvente de tono (cantidad y caída), K3 / K4 = LFO de tono (velocidad y profundidad), con Shift = ajuste fino; K5 ring mod (Shift: frecuencia), K6 pitch follow (Shift: tipo de filtro stock / 24 dB / comb), K7 **stretch** 0,25×-4× sin cambiar el tono (Shift: bitcrush), K8 scan del punto de inicio (Shift: profundidad); se guarda con el proyecto. Código propio en el DSP de las voces.
-- **Fixed Recording al tempo del reloj MIDI externo** (desde Alpha 0.02; el arreglo de mefisme).
+- **Fixed Recording al tempo del reloj MIDI externo** (desde Alpha 0.02; el arreglo de mefisme), y desde Alpha 0.08 la **cuenta atrás con el reloj de la música**, también de mefisme.
 - **Borrar un pack** desde el aparato (Packs: Clear + pack dos veces) y **copiar un sample** a otro hueco, también desde otro pack (Sample Rec: Duplicate + A, Duplicate + B) (desde Alpha 0.01; no en Alpha 0.01S).
 
 Circuit Rhythm, Components y Novation son marcas de Focusrite Audio Engineering Ltd. Este proyecto no está afiliado a ellos.
@@ -118,9 +120,9 @@ Circuit Rhythm, Components y Novation son marcas de Focusrite Audio Engineering 
 <a id="english"></a>
 # English
 
-> 📢 **Alpha 0.07 (experimental)**: a port of the [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) features to the **Novation Circuit Rhythm**, with exclusive features. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.07/rm_uploader.zip)** (`rm_uploader.zip`), unzip it and open `rm_uploader.html` in Chrome or Edge. What's new: [`CHANGELOG.md`](CHANGELOG.md).
+> 📢 **Alpha 0.08 (experimental)**: a port of the [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) features to the **Novation Circuit Rhythm**, with exclusive features. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.08/rm_uploader.zip)** (`rm_uploader.zip`), unzip it and open `rm_uploader.html` in Chrome or Edge. What's new: [`CHANGELOG.md`](CHANGELOG.md).
 
-**⬇️ Firmware patch download (installer): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.07/rm_uploader.zip)** · [all versions](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
+**⬇️ Firmware patch download (installer): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.08/rm_uploader.zip)** · [all versions](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
 Legal note: the firmware provided by Novation is proprietary; installing it on any device other than a Circuit Rhythm is not allowed. This installer checks it and does not allow installing it on any other device.
 
@@ -134,8 +136,8 @@ Developed using Claude (Anthropic).
 > - This is an **alpha**: the features were checked in emulation (the device's code run on a dump of its memory) and partly on the device; there could be problems that damage stored projects or samples.
 > - ⚠️ **Known bug in Alpha 0.01, 0.01S, A0.01F and A01FS: track 8.** The Stock+ page's values (pitch envelope and LFO) sat in the DSP memory where track 8 reads its sample while it plays, and they are written all the time, even if you never use the page. With something playing on track 8 you may hear chirps, clicks or hiss, and its pitch may drift. **Fixed in Alpha 0.02: please update.** Alpha 0.0 / 0.0S are not affected.
 > - ⚠️ **Known bug in Alpha 0.01 / 0.01S / 0.02 / 0.02S (and A0.01F / A01FS): Stock+ after power-on.** Right after switching the device on (not after installing), the Stock+ page may do nothing for a few minutes. The cause is in the original firmware: a configuration word of the voices' DSP is not initialised at start-up, and depending on what the memory holds at power-on, its link to the main processor is left in the wrong mode. **Fixed in Alpha 0.03: please update.**
-> - ⚠️ **Alpha 0.07 is experimental and needs refinement:** almost everything new (Stock+ on the granular and the synth, the envelope, the line input from the FX returns, the synth, the new interface, granular on several tracks, track menu, line input, stereo link, cue mode, General MIDI…) has only been checked in emulation. For serious playing, **Alpha 0.03** is still in the installer.
-> - If you would rather not risk the card, use the **safer build, Alpha 0.07S** (or 0.03S): Alpha 0.07 without any feature that creates, changes or deletes files on the SD card by itself (no project copy, pack delete or sample copy).
+> - ⚠️ **Alpha 0.08 is experimental and needs refinement:** almost everything new (the count-in on the clock, Stock+ on the granular and the synth, the envelope, the line input from the FX returns, the synth, the new interface, granular on several tracks, track menu, line input, stereo link, cue mode, General MIDI…) has only been checked in emulation. For serious playing, **Alpha 0.03** is still in the installer.
+> - If you would rather not risk the card, use the **safer build, Alpha 0.08S** (or 0.03S): Alpha 0.08 without any feature that creates, changes or deletes files on the SD card by itself (no project copy, pack delete or sample copy).
 > - The mod never writes to the internal memory pack: its write features refuse it (Save LED red). Saving from the original firmware works as always.
 > - Novation's bootloader is not touched: **Sample Rec + Samples + Note** at power-on lets you go back to the official firmware.
 
@@ -148,8 +150,8 @@ This repository holds **only the project's own work**: the builders of the versi
 ### Install without building: `tools/rm_uploader.html`
 
 1. **Download the official firmware** Circuit Rhythm 2.0.1 (build 5706) from Novation: [circuitrhythm-firmware-5706.syx](https://components.novationmusic.com/api/v2/firmwares/169/file) (Novation Components' download link; the full list is at `https://components.novationmusic.com/api/v2/firmwares`, product `circuit-rhythm`).
-2. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.07/rm_uploader.zip)**, unzip it and open `rm_uploader.html` in Chrome or Edge (the same [`tools/rm_uploader.html`](tools/rm_uploader.html) as in the repository).
-3. **Pick the official `.syx` and the version**: Alpha 0.07 (experimental), the safer Alpha 0.07S, the earlier Alpha 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, or “Official” to go back. The page checks that the file is the official firmware (SHA-256), patches it in the browser and checks that the result is bit for bit the published one (SHA-256 of the image and of the `.syx`).
+2. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.08/rm_uploader.zip)**, unzip it and open `rm_uploader.html` in Chrome or Edge (the same [`tools/rm_uploader.html`](tools/rm_uploader.html) as in the repository).
+3. **Pick the official `.syx` and the version**: Alpha 0.08 (experimental), the safer Alpha 0.08S, the earlier Alpha 0.07 / 0.07S / 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, or “Official” to go back. The page checks that the file is the official firmware (SHA-256), patches it in the browser and checks that the result is bit for bit the published one (SHA-256 of the image and of the `.syx`).
 4. **Connect the Circuit Rhythm and press Send.** Confirm with **Play** on the device.
 
 The page contains no Novation code: only the mod's bytes and the instructions to copy the rest of the official firmware you provide (no run of our own bytes repeats 8 consecutive bytes of the official firmware). **Back up the SD card first.**
@@ -160,9 +162,9 @@ The page contains no Novation code: only the mod's bytes and the instructions to
 
 ```bash
 python -m pip install -r tools/requirements.txt
-python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version A0.07
+python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version A0.08
 ```
-The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.07S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds the versions and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
+The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.08S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds the versions and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
 
 ### Fixed Recording at the external clock's tempo: A0.01F / A01FS
 
@@ -170,9 +172,11 @@ The tool checks the official firmware's SHA-256, builds the version in `firmware
 
 **Included in Alpha 0.02.** **A0.01F** (Alpha 0.01 + the fix) and **A01FS** (Alpha 0.01S + the fix): with an external MIDI clock, Fixed Recording uses the clock's tempo, not the project tempo. Installer: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Details and tests: [`docs/FIXEDREC_EN.md`](docs/FIXEDREC_EN.md).
 
-## Features (Alpha 0.07)
+## Features (Alpha 0.08)
 
 Full manual, view by view, with a glossary of functions: [`docs/MANUAL_EN.md`](docs/MANUAL_EN.md) (text) or [illustrated](docs/manual/en.html).
+
+**New in Alpha 0.08 (experimental):** **the count-in on the music's clock** (contributed by mefisme): the clicks follow the tempo or, as a slave, the external MIDI clock (the first click on the master's bar), the 1 is on time, nothing records during the count; a **visual metronome** (with the click at 0, Clear flashes orange on each beat); Play loads the steps faster; the line input's pad 15 with no FX, dim.
 
 **New in Alpha 0.07 (experimental):** **Stock+ for every sound**: the Stock+ page (menu pad 2) on the granular and the synth too (pitch envelope and LFO, ring, filters, **a waveshaper on K7** with its type on Shift + K7, K8 = an LFO on the grains' position / the FM); the **track's distortion knob** on the granular and the synth too.
 
@@ -184,6 +188,6 @@ Full manual, view by view, with a glossary of functions: [`docs/MANUAL_EN.md`](d
 
 **Ported from CIRCUIT-HACKS:** metronome with count-in (Shift + Clear); quantize (Shift + Play while playing); Mixer: mute on the next bar (Shift + track pad), Shift + knob = level 100 / 0, scene repeats (Shift + pads 9-16); Clear + track button = its knobs to default and its automation cleared; Pattern Settings: Nudge (pad 26), fractal and deconstructed orders (pads 27 / 28); per step: frequency, dynamics and sample mutation; pattern chains with rules; Sidechain view knobs (sidechain of the track, soft clip, master compressor attack / release); FX view keys and reverb / delay parameters, master filter resonance, reset; Clear + knob = default in the FX and Sidechain views; arpeggiator (order, rate, recorded with Record); custom scale with a free period; project copy to another slot or pack (not in Alpha 0.01S); master compressor threshold on K5 of the Sidechain view, the playing scene repeat shown white in the Mixer with Shift, dynamics recorded into the step with Record (since Alpha 0.01); MIDI Thru Merge / Filter; Program Change channels; knob brightness = value.
 
-**Exclusive to Circuit Remix:** copy a track to another (Duplicate + track A, then track B: parameters and selected sample); reset a track (Clear + track button: the other parameters and the sample back to how the project was loaded); sample and note arpeggiator on the sample tracks (each hit a sample flip; in the Note view, the held keys arpeggiate the track's sample; recorded with Record); a custom scale per track, one iteration per pad row; **the Stock+ track knob page** (since Alpha 0.01, K5-K8 since Alpha 0.02: press the selected track's button again (since Alpha 0.04: hold the button, pad 2); K1 / K2 = pitch envelope amount and decay, K3 / K4 = pitch LFO rate and depth, Shift = fine control; K5 ring mod (Shift: frequency), K6 pitch follow (Shift: filter type stock / 24 dB / comb), K7 **stretch** 0.25×-4× without changing pitch (Shift: bitcrush), K8 start-point scan (Shift: depth); saved with the project; its own code in the voices' DSP); **Fixed Recording at the external MIDI clock's tempo** (since Alpha 0.02, mefisme's fix); **delete a pack** on the device (Packs: Clear + pack twice) and **copy a sample** to another slot, also from another pack (Sample Rec: Duplicate + A, Duplicate + B) (since Alpha 0.01; not in Alpha 0.01S).
+**Exclusive to Circuit Remix:** copy a track to another (Duplicate + track A, then track B: parameters and selected sample); reset a track (Clear + track button: the other parameters and the sample back to how the project was loaded); sample and note arpeggiator on the sample tracks (each hit a sample flip; in the Note view, the held keys arpeggiate the track's sample; recorded with Record); a custom scale per track, one iteration per pad row; **the Stock+ track knob page** (since Alpha 0.01, K5-K8 since Alpha 0.02: press the selected track's button again (since Alpha 0.04: hold the button, pad 2); K1 / K2 = pitch envelope amount and decay, K3 / K4 = pitch LFO rate and depth, Shift = fine control; K5 ring mod (Shift: frequency), K6 pitch follow (Shift: filter type stock / 24 dB / comb), K7 **stretch** 0.25×-4× without changing pitch (Shift: bitcrush), K8 start-point scan (Shift: depth); saved with the project; its own code in the voices' DSP); **Fixed Recording at the external MIDI clock's tempo** (since Alpha 0.02, mefisme's fix) and since Alpha 0.08 the **count-in on the music's clock**, also by mefisme; **delete a pack** on the device (Packs: Clear + pack twice) and **copy a sample** to another slot, also from another pack (Sample Rec: Duplicate + A, Duplicate + B) (since Alpha 0.01; not in Alpha 0.01S).
 
 Circuit Rhythm, Components and Novation are trademarks of Focusrite Audio Engineering Ltd. This project is not affiliated with them.

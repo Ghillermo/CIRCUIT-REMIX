@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.07 — manual</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.08 — manual</title><style>
 :root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
 :root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
@@ -23,9 +23,9 @@ footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
 p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
 p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
 </style></head><body>
-<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.07</p><div class="bar"></div></header><main>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.08</p><div class="bar"></div></header><main>
 <p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.07 es experimental:</strong> lo nuevo (Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.08 es experimental:</strong> lo nuevo (la cuenta atrás con el reloj, Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX y casi todo lo de Alpha 0.04-0.06) se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
 <p>Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.</p>
 <nav class="toc"><h2>Índice</h2>
 <h3>0. Introducción</h3><ol>
@@ -76,7 +76,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = los 8 knobs. <strong>▲ / ▼</strong> = los botones de flecha.</li>
 <li><strong>Mantener</strong> un botón = pulsarlo y no soltarlo; <strong>A + B</strong> = B con A mantenido.</li>
 <li><strong>★</strong> = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).</li>
-<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.07)</em> es nuevo o cambia en esta versión.</li>
+<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.08)</em> es nuevo o cambia en esta versión.</li>
 <li>Al final, el <strong><a href="#glosario">glosario</a></strong>: una entrada por función, con su vista y su gesto.</li>
 </ul>
 </section>
@@ -194,7 +194,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.</li>
 <li>Elige la versión y envíala al aparato por USB.</li>
 </ol>
-<p><strong>Versiones S</strong> (A0.07S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.</p>
+<p><strong>Versiones S</strong> (A0.08S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.</p>
 <p><strong>Volver al firmware oficial:</strong> mantén <strong>Sample Rec + Samples + Note</strong> al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.</p>
 </section>
 <h2 class="group">1. En cualquier vista</h2>
@@ -291,9 +291,19 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Shift + Clear</strong></td><td>metrónomo en cuatro estados; con Shift, el LED de Clear: rojo = sin metrónomo, verde = metrónomo, magenta = solo cuenta atrás, cian = las dos <em>(desde Alpha 0.0)</em></td></tr>
 <tr><td><strong>Record armado + Play</strong> (parado, con cuenta atrás)</td><td>un compás de clics al tempo y arranca grabando (Record parpadea); Play durante la cuenta la cancela</td></tr>
 <tr><td><strong>Shift + Play</strong> (parado)</td><td>el del original: sigue desde donde se paró; con cuenta atrás, la cuenta y luego sigue</td></tr>
+<tr><td><strong>K5 de la vista Tempo / Swing a 0</strong> (clic sin volumen)</td><td>metrónomo visual: Clear destella 100 ms en cada clic de la cuenta y, sonando con el metrónomo, en cada tiempo, en naranja (distinto de los colores del metrónomo que muestra Clear con Shift); no mientras se mantiene Shift o Clear <em>(Alpha 0.08)</em></td></tr>
 <tr><td><strong>Shift + Play</strong> (sonando)</td><td>cuantiza el patrón de la pista elegida: los micropasos 2-3 al comienzo de su paso, 4-6 al del siguiente; los redobles se quedan. LED de Play con Shift: amarillo; verde tras cuantizar; rojo = nada que cuantizar <em>(desde Alpha 0.0)</em></td></tr>
 </tbody></table>
 <p>La cuenta atrás no se guarda: al encender vuelve a «sin cuenta atrás».</p>
+<p><strong>La cuenta con el reloj de la música</strong> <em>(Alpha 0.08)</em> (contribución de mefisme):</p>
+<ul>
+<li>Los clics siguen el reloj de la música: el tempo del proyecto, o el reloj MIDI externo si el Rhythm es esclavo. Antes los contaba la tarea de los LEDs, de 0 a 10 ms tarde.</li>
+<li>Play entra al empezar la cuenta y el reloj espera hasta el 1: el trabajo de Play se hace durante la cuenta y el 1 llega a tiempo.</li>
+<li>Durante la cuenta no se graba nada, el LED de Play se ve parado y Record destella en rojo en cada clic.</li>
+<li>Como esclavo, el primer clic cae en el compás siguiente del maestro si el Rhythm conoce su posición (recibió su Start o Song Position); si no, en el primer pulso tras pulsar Play. Un Start del maestro durante la cuenta la para.</li>
+<li>Play carga los pasos más rápido (el mismo resultado con la cuarta parte de las llamadas).</li>
+<li><strong>Luz de error:</strong> si Clear parpadea en rojo (¼ s encendido, ¼ s apagado) sin pulsar nada, estas funciones se han apagado porque el firmware no es el esperado. No debería verse nunca: si lo ves, avísanos en GitHub.</li>
+</ul>
 <p><strong>Arreglos del original</strong> (desde Alpha 0.04): la reproducción empieza antes (≈ 10 ms de Play al primer sonido; el original ≈ 18 ms), las notas de un mismo paso suenan juntas, no se pierden notas con muchas pistas en el mismo paso y el reloj no tropieza al guardar un sample.</p>
 </section>
 <h2 class="group">2. Vistas de pista</h2>
@@ -502,7 +512,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>12</strong></td><td>★ el <strong>sinte</strong> de la pista, sí / no (hasta 4 pistas); encendido, su página</td></tr>
 <tr><td><strong>13</strong></td><td>★ la <strong><a href="#entrada">entrada de línea</a></strong> como sonido de la pista, sí / no</td></tr>
 <tr><td><strong>14</strong></td><td>el gate de la entrada: tenue = siempre suena, brillante = solo con sus notas, por el VCA y el filtro de la pista (oscuro si la pista no es de entrada)</td></tr>
-<tr><td><strong>15</strong></td><td>la fuente de la entrada: las entradas (ámbar) → el retorno de reverb (crema) → el de delay (melocotón) <em>(Alpha 0.06)</em></td></tr>
+<tr><td><strong>15</strong></td><td>la fuente de la entrada: las entradas (ámbar tenue: sin FX <em>(Alpha 0.08)</em>) → el retorno de reverb (crema) → el de delay (melocotón) <em>(Alpha 0.06)</em></td></tr>
 </tbody></table>
 <ul>
 <li><strong>Abrirlo:</strong> un toque en el botón de la pista que ya está elegida lo deja abierto; se cierra al soltar un pad del menú, al tocar otra vez el botón o al pulsar cualquier otro botón. Mantener el botón de una pista (¼ s) lo abre solo mientras lo mantienes, como los botones de vista del original.</li>
@@ -1052,7 +1062,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <ul>
 <li>Una pista de entrada: L + R. Dos: la de número menor es L, la mayor R. En una tercera, sale la primera puesta.</li>
 <li><strong>Pad 14, el gate:</strong> tenue = siempre suena; brillante = solo mientras suenan sus notas, por el VCA y el filtro de la pista (paso bajo, paso alto, resonancia; el filtro desde Alpha 0.06).</li>
-<li><strong>Pad 15, la fuente</strong> (Alpha 0.06): las entradas (ámbar) → el <strong>retorno de reverb</strong> (crema) → el <strong>de delay</strong> (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms). Ojo: mandar esa pista a su propia reverb o delay realimenta.</li>
+<li><strong>Pad 15, la fuente</strong> (Alpha 0.06): las entradas (ámbar tenue, sin FX; hasta Alpha 0.07, ámbar) → el <strong>retorno de reverb</strong> (crema) → el <strong>de delay</strong> (melocotón), por turnos; cada pista de entrada la suya. El retorno llega un bloque tarde (0,67 ms). Ojo: mandar esa pista a su propia reverb o delay realimenta.</li>
 </ul>
 <p><strong>Enlace estéreo</strong> (pad 9; desde Alpha 0.04): la pista (izquierda, su sample) y la siguiente (derecha, el sample siguiente) suenan juntas con los parámetros y las notas de la primera. Pad 9 en cualquiera de las dos = deshacer. En la pista 8 sola, oscuro. Sin enlazar quedan el LFO y el scan libres de Stock+ y el WSOLA del stretch.</p>
 <p>Las dos se guardan con el proyecto.</p>
@@ -1466,7 +1476,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Copiar proyectos</strong></td><td>Duplicate + A, Duplicate + B en Projects, también a otro pack</td><td><a href="#projects">6.1 Projects y Packs</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Copiar samples</strong></td><td>Duplicate + A, Duplicate + B en Sample Rec</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Cuantizar</strong></td><td>Shift + Play sonando</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Cuenta atrás</strong></td><td>un compás antes de grabar; Shift + Clear</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Cuenta atrás</strong></td><td>un compás antes de grabar; Shift + Clear; desde 0.08 con el reloj de la música, también como esclavo</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>De-clicker de loops</strong></td><td>crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Dinámicas por paso</strong></td><td>velocity y retraso al azar dentro del paso; fila 3 de la probabilidad</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Distorsión en granular y sinte</strong></td><td>el knob de distorsión del original también en ellos</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.07</td></tr>
@@ -1488,6 +1498,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Marcas de Velocity</strong></td><td>en el paso marcado la automatización vuelve al knob; Shift + paso</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Menú de pista</strong></td><td>tocar el botón de la pista elegida (se queda abierto) o mantener el de una pista</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Metrónomo</strong></td><td>cuatro estados con Shift + Clear</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Metrónomo visual</strong></td><td>Clear destella en naranja en cada clic con el nivel del clic a 0 (K5 de Tempo / Swing)</td><td><a href="#transporte">1.1 Transporte, metrónomo y cuantizar</a></td><td>Alpha 0.08</td></tr>
 <tr><td><strong>Modo cue</strong></td><td>mezcla a la izquierda, cue a la derecha; Mixer, panoramas, Shift + knob</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Mutación del sample</strong></td><td>a veces suena el vecino; fila 4 de la probabilidad</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Mute al compás</strong></td><td>Shift + pad de pista en el Mixer</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>

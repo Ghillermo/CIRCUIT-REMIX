@@ -1,8 +1,8 @@
-# Circuit Remix Alpha 0.07 — manual
+# Circuit Remix Alpha 0.08 — manual
 
 [Español](MANUAL.md) · [illustrated version](manual/en.html)
 
-> ⚠️ **Alpha 0.07 is experimental:** what's new (Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**
+> ⚠️ **Alpha 0.08 is experimental:** what's new (the count-in on the clock, Stock+ on the granular and the synth, the envelope, the line input from the FX returns, and most of Alpha 0.04-0.06) has mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**
 
 Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.
 
@@ -68,7 +68,7 @@ Each chapter is a view of the device: how you get there, and what its pads, knob
 - **K1-K8** = the 8 knobs. **▲ / ▼** = the arrow buttons.
 - **Hold** a button = press it and keep it down; **A + B** = B with A held.
 - **★** = exclusive to Circuit Remix (not in CIRCUIT-HACKS).
-- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.07)*: new or changed in this release.
+- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.08)*: new or changed in this release.
 - At the end, the **[glossary](#glosario)**: one entry per function, with its view and its gesture.
 
 <a id="colores"></a>
@@ -104,7 +104,7 @@ Each knob page of a track has its own colour, the same on its knobs, on the trac
 2. Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.
 3. Pick the version and send it to the device over USB.
 
-**S versions** (A0.07S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
+**S versions** (A0.08S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
 
 **Back to the official firmware:** hold **Sample Rec + Samples + Note** while powering on (Novation's bootloader mode) and send the official one with the installer ("Official") or with Novation Components. Always back up your SD card.
 
@@ -120,9 +120,18 @@ Each knob page of a track has its own colour, the same on its knobs, on the trac
 | **Shift + Clear** | metronome in four states; with Shift, the Clear LED: red = no metronome, green = metronome, magenta = count-in only, cyan = both *(since Alpha 0.0)* |
 | **Record armed + Play** (stopped, with count-in) | one bar of clicks at the tempo, then recording starts (Record blinks); Play during the count cancels it |
 | **Shift + Play** (stopped) | the original's: carry on from where it stopped; with count-in, the count and then carry on |
+| **Tempo / Swing view K5 at 0** (click muted) | visual metronome: Clear flashes for 100 ms on each click of the count and, while playing with the metronome, on each beat, in orange (unlike the metronome colours Clear shows with Shift); not while Shift or Clear is held *(Alpha 0.08)* |
 | **Shift + Play** (playing) | quantizes the selected track's pattern: micro steps 2-3 to the start of their step, 4-6 to the next one; rolls stay. Play LED with Shift: yellow; green after quantizing; red = nothing to quantize *(since Alpha 0.0)* |
 
 The count-in isn't saved: at power-on it goes back to "no count-in".
+
+**The count on the music's clock** *(Alpha 0.08)* (contributed by mefisme):
+- The clicks follow the music's clock: the project's tempo, or the external MIDI clock when the Rhythm is a slave. Before, the LED task timed them, 0 to 10 ms late.
+- Play goes through at the start of the count and the clock waits until the 1: Play's work runs during the count and the 1 is on time.
+- During the count nothing records, the Play LED shows stopped and Record flashes red on each click.
+- As a slave, the first click comes on the master's next bar if the Rhythm knows its position (it received its Start or Song Position); otherwise on the first pulse after Play. A Start from the master during the count stops it.
+- Play loads the steps faster (the same result with a quarter of the calls).
+- **Error light:** if Clear blinks red (¼ s on, ¼ s off) without you pressing anything, these features have switched themselves off because the firmware isn't the expected one. It should never show: if you see it, tell us on GitHub.
 
 **Fixes to the original** (since Alpha 0.04): playback starts sooner (≈ 10 ms from Play to the first sound; the original ≈ 18 ms), the notes of one step sound together, no notes get lost with many tracks on the same step, and the clock no longer stumbles while a sample is saved.
 
@@ -161,7 +170,7 @@ The pads become that track's menu *(Alpha 0.06)*:
 | **12** | ★ the track's **synth**, on / off (up to 4 tracks); switched on, its page |
 | **13** | ★ the **[line input](#entrada)** as the track's sound, on / off |
 | **14** | the input's gate: dim = always sounds, bright = only with its notes, through the track's VCA and filter (dark if the track isn't an input track) |
-| **15** | the input's source: the inputs (amber) → the reverb return (cream) → the delay return (peach) *(Alpha 0.06)* |
+| **15** | the input's source: the inputs (dim amber: no FX *(Alpha 0.08)*) → the reverb return (cream) → the delay return (peach) *(Alpha 0.06)* |
 
 - **Opening it:** a tap on the button of the track already selected leaves it open; it closes when you let go of a menu pad, tap the button again or press any other button. Holding a track's button (¼ s) opens it only while held, like the original's view buttons.
 - Row 1, the track's **pages**: only those of its sound (sample: stock and Stock+; granular: stock, Stock+, Granular and Envelope; synth: stock, Stock+, Synth and Envelope; input: stock); the others dark. Bright = the one shown. **Holding** a page pad (½ s or more) shows it only until you let go, then the previous one returns.
@@ -276,7 +285,7 @@ Lilac with the value as brightness (K4, K5 and Shift + K5: the distance from the
 **Line input** (pad 13; since Alpha 0.04): the audio input plays as the track's sound, with its level, pan, sends, filter and envelope.
 - One input track: L + R. Two: the lower-numbered one is L, the higher R. Setting a third removes the first one set.
 - **Pad 14, the gate:** dim = always sounds; bright = only while its notes play, through the track's VCA and filter (low-pass, high-pass, resonance; the filter since Alpha 0.06).
-- **Pad 15, the source** (Alpha 0.06): the inputs (amber) → the **reverb return** (cream) → the **delay return** (peach), in turn; each input track its own. The return arrives a block late (0.67 ms). Careful: sending that track to its own reverb or delay feeds back.
+- **Pad 15, the source** (Alpha 0.06): the inputs (dim amber, no FX; up to Alpha 0.07, amber) → the **reverb return** (cream) → the **delay return** (peach), in turn; each input track its own. The return arrives a block late (0.67 ms). Careful: sending that track to its own reverb or delay feeds back.
 
 **Stereo link** (pad 9; since Alpha 0.04): the track (left, its sample) and the next one (right, the next sample) play together with the first one's parameters and notes. Pad 9 on either = undo. Dark on track 8 alone. Not linked: Stock+'s free LFO and scan, and the stretch's WSOLA.
 
@@ -470,7 +479,7 @@ The new knobs move the original's parameters with their usual MIDI (Circuit Rhyt
 | **Copy projects** | Duplicate + A, Duplicate + B in Projects, also to another pack | [6.1 Projects and Packs](#projects) | Alpha 0.0 |
 | **Copy samples** | Duplicate + A, Duplicate + B in Sample Rec | [4.2 Sample Rec](#samplerec) | Alpha 0.01 |
 | **Copy track parameters** | Duplicate + track A, track B | [2.1 The track button](#pista) | Alpha 0.0 |
-| **Count-in** | a bar before recording; Shift + Clear | [1.1 Transport, metronome and quantize](#transporte) | Alpha 0.0 |
+| **Count-in** | a bar before recording; Shift + Clear; since 0.08 on the music's clock, also as a slave | [1.1 Transport, metronome and quantize](#transporte) | Alpha 0.0 |
 | **Cue mode** | mix on the left, cue on the right; Mixer, pan, Shift + knob | [5.1 Mixer](#mixer) | Alpha 0.04 |
 | **Delete a pack** | Clear + pack twice in Packs | [6.1 Projects and Packs](#projects) | Alpha 0.01 |
 | **Distortion on granular and synth** | the original's distortion knob on them too | [2.2 The track menu](#menu) | Alpha 0.07 |
@@ -518,4 +527,5 @@ The new knobs move the original's parameters with their usual MIDI (Circuit Rhyt
 | **Track menu** | tap the selected track's button (stays open) or hold a track's button | [2.2 The track menu](#menu) | Alpha 0.04 |
 | **USB merge** | DIN In also over USB; Advanced Setup, pad 23 | [6.2 Setup and Advanced Setup](#setup) | Alpha 0.04 |
 | **Velocity marks** | on a marked step automation returns to the knob; Shift + step | [3.1 Velocity and Micro Step](#velocity) | Alpha 0.04 |
+| **Visual metronome** | Clear flashes orange on each click with the click's level at 0 (Tempo / Swing K5) | [1.1 Transport, metronome and quantize](#transporte) | Alpha 0.08 |
 | **Waveshaper** | soft, hard, fold or bitcrush on the granular and the synth; Stock+, K7 (Shift: the type) | [2.3 Stock+ page](#stockplus) | Alpha 0.07 |
