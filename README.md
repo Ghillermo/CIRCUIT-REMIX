@@ -82,6 +82,21 @@ python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version
 
 **Incluido en Alpha 0.02.** **A0.01F** (Alpha 0.01 + el arreglo) y **A01FS** (Alpha 0.01S + el arreglo): con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Instalador: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Detalles y pruebas: [`docs/FIXEDREC.md`](docs/FIXEDREC.md).
 
+### App de la tarjeta y del aparato: `tools/rm_sd_app.html`
+
+Una página para ordenar packs, samples y patrones desde el ordenador, con la microSD o con el Circuit Rhythm conectado por USB. Funciona también con el firmware oficial.
+
+1. **[Descarga la app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_sd_app.zip)** (`rm_sd_app.zip`), descomprímela y abre `rm_sd_app.html` en Chrome o Edge (es el mismo [`tools/rm_sd_app.html`](tools/rm_sd_app.html) del repositorio). No necesita instalación ni servidor.
+2. **Elige de dónde leer:**
+   - **Abrir carpeta…**: la carpeta `Rhythm` de la tarjeta o de una copia en el ordenador.
+   - **Aparato…**: el Circuit Rhythm por USB. Cierra Components y acepta el permiso de MIDI. El transporte se para y el panel queda bloqueado hasta **Desconectar aparato**.
+3. **Trabaja con las dos columnas:** pestañas **Packs**, **Samples** (los 128, con escucha) y **Patrones**. **Copiar** y **Mover** pasan lo elegido a la otra columna.
+4. **Patrones** enseña las ocho pistas con su vista previa y, con el aparato conectado, su canal. Con doble clic se abre el editor: un golpe por paso, con nota, velocity, duración, probabilidad, sample flip, micropasos y los 12 carriles de automatización.
+5. **Exportar…** guarda lo elegido en el ordenador sin hacer un volcado completo: samples (`.wav`), patrones (`.mid` y `.rmpat`) y packs enteros. Lo exportado todavía no se puede volver a cargar desde la app.
+6. **Snapshot…** y **Restaurar…** (con el aparato conectado) guardan en el ordenador todos los packs y el pack interno, y devuelven al aparato solo lo que haya cambiado, tras enseñarte un plan. El pack interno no se escribe de vuelta, y los packs que no estén en el snapshot se quedan. No incluye los ajustes del aparato ni lo que no hayas guardado del proyecto.
+
+**Antes de escribir:** la app guarda lo que sustituye en una carpeta tuya del ordenador, nunca en la tarjeta: el aparato busca los ficheros por su prefijo `NN_` y una copia dentro de un pack puede ocupar el lugar del original. Por USB, cada escritura borra primero el fichero antiguo. **Esta versión aún no se ha probado en un Circuit Rhythm real:** se ha comprobado en emulación, contra el código del firmware 5706 y de Alpha 0.09 (la de Circuit Tracks sí se ha usado en un aparato). Haz antes un snapshot o una copia de la tarjeta.
+
 ## Características (Alpha 0.09)
 
 Manual completo, vista por vista y con un glosario de funciones: [`docs/MANUAL.md`](docs/MANUAL.md) (texto) o [ilustrado](docs/manual/index.html).
@@ -185,6 +200,21 @@ The tool checks the official firmware's SHA-256, builds the version in `firmware
 > ⚠️ **Known bug in Alpha 0.01, 0.01S, A0.01F and A01FS: track 8.** The Stock+ page's values (pitch envelope and LFO) sat in the DSP memory where track 8 reads its sample while it plays, and they are written all the time, even if you never use the page. With something playing on track 8 you may hear chirps, clicks or hiss, and its pitch may drift. **Fixed in Alpha 0.02: please update.** Alpha 0.0 / 0.0S are not affected.
 
 **Included in Alpha 0.02.** **A0.01F** (Alpha 0.01 + the fix) and **A01FS** (Alpha 0.01S + the fix): with an external MIDI clock, Fixed Recording uses the clock's tempo, not the project tempo. Installer: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Details and tests: [`docs/FIXEDREC_EN.md`](docs/FIXEDREC_EN.md).
+
+### Card and device app: `tools/rm_sd_app.html`
+
+A page to organise packs, samples and patterns from the computer, with the microSD card or with the Circuit Rhythm connected by USB. It also works with the official firmware.
+
+1. **[Download the app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_sd_app.zip)** (`rm_sd_app.zip`), unzip it and open `rm_sd_app.html` in Chrome or Edge (it is the repository's [`tools/rm_sd_app.html`](tools/rm_sd_app.html)). It needs no installation and no server.
+2. **Choose where to read from:**
+   - **Open folder…**: the `Rhythm` folder of the card or of a copy on the computer.
+   - **Device…**: the Circuit Rhythm over USB. Close Components and accept the MIDI permission. The transport stops and the panel stays locked until **Disconnect device**.
+3. **Work with the two columns:** tabs **Packs**, **Samples** (all 128, with listening) and **Patterns**. **Copy** and **Move** send what you chose to the other column.
+4. **Patterns** shows the eight tracks with their preview and, with the device connected, their channel. Double click opens the editor: one hit per step, with note, velocity, length, probability, sample flip, micro steps and the 12 automation lanes.
+5. **Export…** saves what you chose on the computer without a full dump: samples (`.wav`), patterns (`.mid` and `.rmpat`) and whole packs. What is exported cannot be loaded back from the app yet.
+6. **Snapshot…** and **Restore…** (with the device connected) save all the packs and the internal pack on the computer, and send back only what changed, after showing you a plan. The internal pack is not written back, and packs that are not in the snapshot stay. It does not include the device's settings or whatever is unsaved in the project.
+
+**Before writing:** the app keeps what it replaces in a folder of yours on the computer, never on the card: the device finds files by their `NN_` prefix and a copy inside a pack can take the original's place. Over USB, each write deletes the old file first. **This version has not been tried on a real Circuit Rhythm yet:** it was checked in emulation, against the code of firmware 5706 and of Alpha 0.09 (the Circuit Tracks version has been used on a device). Take a snapshot or a copy of the card first.
 
 ## Features (Alpha 0.09)
 

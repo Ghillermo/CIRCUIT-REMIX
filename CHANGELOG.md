@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## App de la tarjeta (2026-11-02)
+
+**Español.** `tools/rm_sd_app.html`: la app de la tarjeta de CIRCUIT-HACKS, para el Circuit Rhythm: packs, los 128 samples con escucha y patrones de las ocho pistas con editor, desde la microSD o por USB; exportar, snapshot y restaurar. Sin instalación (Chrome o Edge). Comprobada en emulación contra el firmware 5706 y Alpha 0.09; aún no en un aparato real. Instrucciones en el README.
+
+**English.** `tools/rm_sd_app.html`: CIRCUIT-HACKS' card app, for the Circuit Rhythm: packs, all 128 samples with listening and the patterns of the eight tracks with an editor, from the microSD card or over USB; export, snapshot and restore. No installation (Chrome or Edge). Checked in emulation against firmware 5706 and Alpha 0.09; not yet on a real device. Instructions in the README.
+
 ## Alpha 0.09 (2026-10-29) — experimental
 
 > ⚠️ **Experimental: necesita pulirse.** Todo lo nuevo se ha comprobado solo en emulación (el código del aparato ejecutado sobre un volcado de su memoria). Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
