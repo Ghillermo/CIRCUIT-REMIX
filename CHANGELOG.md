@@ -8,6 +8,10 @@
 
 ## Alpha 0.09 (2026-10-29) — experimental
 
+> ⛔ **Alpha 0.09 / 0.09S: posiblemente defectuosas.** En el aparato, Alpha 0.09 entra en un bucle de arranque al encenderla (se reinicia sin parar); 0.09S comparte su código y no se ha probado. **Alpha 0.08 (y 0.08S) es la última versión que funciona:** arranca en frío y tras reiniciar. Si instalaste 0.09 y no arranca: mantén **Sample Rec + Samples + Note** al encender e instala Alpha 0.08 o el firmware oficial.
+
+> ⛔ **Alpha 0.09 / 0.09S: potentially flawed.** On the device, Alpha 0.09 boot-loops when switched on (it keeps restarting); 0.09S shares its code and has not been tested. **Alpha 0.08 (and 0.08S) is the last working version:** it boots cold and after a restart. If you installed 0.09 and it does not start: hold **Sample Rec + Samples + Note** while switching on and install Alpha 0.08 or the official firmware.
+
 > ⚠️ **Experimental: necesita pulirse.** Todo lo nuevo se ha comprobado solo en emulación (el código del aparato ejecutado sobre un volcado de su memoria). Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
 
 **Español.** Dos versiones nuevas: **Alpha 0.09** (marca `A0.09`) y **Alpha 0.09S** (marca `A0.09S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
@@ -47,6 +51,8 @@ What's new:
 - **No more blinking:** the track's button no longer blinks on the Stock+, Granular, Synth and Envelope pages (it also lit the Samples button).
 
 ## Alpha 0.08 (2026-10-29) — experimental
+
+> ✅ **La última versión que funciona** (arranca en frío y tras reiniciar). / **The last working version** (boots cold and after a restart).
 
 > ⚠️ **Experimental: necesita pulirse.** La cuenta atrás con el reloj se probó en el aparato sobre Alpha 0.04 (A0.04F, de mefisme); sobre lo de ahora solo se ha comprobado en emulación, como casi todo lo de Alpha 0.04-0.07. Puede haber fallos, ruidos o cuelgues: para tocar en serio, sigue con **Alpha 0.03** (sigue en el instalador). **Haz una copia de la tarjeta SD.**
 
