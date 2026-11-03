@@ -78,7 +78,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = the 8 knobs. <strong>▲ / ▼</strong> = the arrow buttons.</li>
 <li><strong>Hold</strong> a button = press it and keep it down; <strong>A + B</strong> = B with A held.</li>
 <li><strong>★</strong> = exclusive to Circuit Remix (not in CIRCUIT-HACKS).</li>
-<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.11)</em>: new or changed in this release.</li>
+<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.10)</em> or <em>(Alpha 0.11)</em>: new or changed in these releases (0.11 = 0.10 + Arrhythmia&#x27;s modules).</li>
 <li>At the end, the <strong><a href="#glosario">glossary</a></strong>: one entry per function, with its view and its gesture.</li>
 </ul>
 </section>
@@ -196,7 +196,8 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.</li>
 <li>Pick the version and send it to the device over USB.</li>
 </ol>
-<p><strong>S versions</strong> (A0.11S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.</p>
+<p><strong>S versions</strong> (A0.11S, A0.10S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.</p>
+<p><strong>Alpha 0.10 / 0.10S</strong> = Alpha 0.11 / 0.11S without the <a href="#modulos">Arrhythmia modules</a>.</p>
 <p><strong>Back to the official firmware:</strong> hold <strong>Sample Rec + Samples + Note</strong> while powering on (Novation&#x27;s bootloader mode) and send the official one with the installer (&quot;Official&quot;) or with Novation Components. Always back up your SD card.</p>
 </section>
 <h2 class="group">1. In any view</h2>
@@ -315,7 +316,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Clear + the track&#x27;s button</strong></td><td>★ its knobs to their defaults and their automation cleared; the rest (level, pan, sends, sidechain, sample) as when the project was loaded <em>(since Alpha 0.0)</em></td></tr>
 <tr><td><strong>Duplicate + track A, then track B</strong></td><td>★ B gets A&#x27;s parameters and sample; with Duplicate held, more tracks <em>(since Alpha 0.0)</em></td></tr>
 <tr><td><strong>Hold the track&#x27;s button</strong> (¼ s)</td><td>opens the <a href="#menu">track menu</a> on the pads <em>(since Alpha 0.04)</em></td></tr>
-<tr><td><strong>Shift held</strong> (in any view)</td><td>★ each track&#x27;s button flashes white for 100 ms each time it plays <em>(Alpha 0.11)</em></td></tr>
+<tr><td><strong>Shift held</strong> (in any view)</td><td>★ each track&#x27;s button flashes white for 100 ms each time it plays <em>(Alpha 0.10)</em></td></tr>
 <tr><td><strong>Sample pads held</strong> (arpeggiator on)</td><td>★ arpeggio of the held samples (one also works): each hit changes the sample, with its pad&#x27;s velocity; recorded with Record and Play <em>(since Alpha 0.0)</em></td></tr>
 </tbody></table>
 <p>Pressing the button without holding selects the track, as in the original. From the Mixer, Clear + track does the original&#x27;s. The arpeggiator is switched on in <a href="#patternsettings">Pattern Settings</a> (Shift + pad 25).</p>
@@ -507,10 +508,10 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>3</strong></td><td>the <strong><a href="#granular">Granular</a></strong> page (with the granular)</td></tr>
 <tr><td><strong>4</strong></td><td>the <strong><a href="#sinte">Synth</a></strong> page (with the synth)</td></tr>
 <tr><td><strong>5</strong></td><td>the <strong><a href="#envolvente">Envelope</a></strong> page (with the synth or the granular) <em>(Alpha 0.06)</em></td></tr>
-<tr><td><strong>6</strong></td><td>★ the <strong><a href="#matriz">Matrix</a></strong> page <em>(Alpha 0.11)</em></td></tr>
-<tr><td><strong>7</strong></td><td>★ the <strong><a href="#matriz">Sequenceable</a></strong> page <em>(Alpha 0.11)</em></td></tr>
-<tr><td><strong>8</strong></td><td>★ the track&#x27;s voice back to <strong>Project init</strong> (red): K1-K8 and the rest of the voice as the project was last loaded or saved; level, pan, sends and sidechain are left alone <em>(Alpha 0.09)</em>. Stock+ (with the waveshaper) and the Granular, Synth and Envelope pages also go back to factory values <em>(Alpha 0.11)</em></td></tr>
-<tr><td><strong>16</strong></td><td>★ the <strong><a href="#matriz">Non-sequenceable</a></strong> page <em>(Alpha 0.11)</em></td></tr>
+<tr><td><strong>6</strong></td><td>★ the <strong><a href="#matriz">Matrix</a></strong> page <em>(Alpha 0.10)</em></td></tr>
+<tr><td><strong>7</strong></td><td>★ the <strong><a href="#matriz">Sequenceable</a></strong> page <em>(Alpha 0.10)</em></td></tr>
+<tr><td><strong>8</strong></td><td>★ the track&#x27;s voice back to <strong>Project init</strong> (red): K1-K8 and the rest of the voice as the project was last loaded or saved; level, pan, sends and sidechain are left alone <em>(Alpha 0.09)</em>. Stock+ (with the waveshaper) and the Granular, Synth and Envelope pages also go back to factory values <em>(Alpha 0.10)</em></td></tr>
+<tr><td><strong>16</strong></td><td>★ the <strong><a href="#matriz">Non-sequenceable</a></strong> page <em>(Alpha 0.10)</em></td></tr>
 </tbody></table>
 <p><strong>The track&#x27;s sound, the stereo link and the line input</strong> moved to <a href="#samplemode">Sample mode</a> <em>(Alpha 0.09)</em>: its pads 5-8, 14, 15 and 16.</p>
 <ul>
@@ -1059,7 +1060,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </section>
 <section class="feat" id="matriz"><h3><span class="code">2.7</span>Matrix, Sequenceable and Non-sequenceable</h3>
 <div class="summary"><p><strong>How to get there:</strong> track menu, pads 6, 7 and 16 (any track)</p></div>
-<p>★ Three pages to modulate and automate <em>(Alpha 0.11)</em>. A tap latches the page, holding lasts until you let go, and again removes it.</p>
+<p>★ Three pages to modulate and automate <em>(Alpha 0.10)</em>. A tap latches the page, holding lasts until you let go, and again removes it.</p>
 <p><strong>Destinations (32 per track):</strong> row 1 = the original&#x27;s K1-K8; row 2 = Stock+&#x27;s K1-K8 (K7: stretch on a sample, the waveshaper on the granular and the synth); rows 3-4 = the sound&#x27;s page (synth 16 values, granular 13, sample Stock+&#x27;s Shift + K5-K8). An input track only has the original&#x27;s. When you pick one, the pads show where it is for 1.5 s, in its page&#x27;s colour.</p>
 <p><strong>Matrix (pad 6):</strong> K1-K8 are the sources.</p>
 <table><thead><tr><th>Knob</th><th>Source</th><th>With Shift</th></tr></thead><tbody>
@@ -1087,7 +1088,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>One input track: L + R. Two: the lower-numbered one is L, the higher R. Setting a third removes the first one set.</li>
 <li><strong>Pad 16, the gate:</strong> dim = always sounds; bright = only while its notes play, through the track&#x27;s VCA and filter (low-pass, high-pass, resonance; the filter since Alpha 0.06).</li>
 <li><strong>Pad 15, the source</strong> (Alpha 0.06): the inputs (dim amber, no FX; up to Alpha 0.07, amber) → the <strong>reverb return</strong> (cream) → the <strong>delay return</strong> (peach), in turn; each input track its own. The return arrives a block late (0.67 ms).</li>
-<li><strong>An FX into an input</strong> <em>(Alpha 0.09)</em>: the return an input track takes no longer goes to the master; it only sounds through the track. That track&#x27;s send into its own effect is at three quarters <em>(Alpha 0.11)</em> (the full knob = three quarters of a send; half in Alpha 0.09), so the feedback stays contained; its send into the other effect is whole. Up to Alpha 0.08 the return also sounded through the master and the send into its own effect fed back.</li>
+<li><strong>An FX into an input</strong> <em>(Alpha 0.09)</em>: the return an input track takes no longer goes to the master; it only sounds through the track. That track&#x27;s send into its own effect is at three quarters <em>(Alpha 0.10)</em> (the full knob = three quarters of a send; half in Alpha 0.09), so the feedback stays contained; its send into the other effect is whole. Up to Alpha 0.08 the return also sounded through the master and the send into its own effect fed back.</li>
 </ul>
 <p><strong>Stereo link</strong> (pad 14; since Alpha 0.04): the track (left) and the next one (right) play together with the first one&#x27;s notes. Pad 14 on either = undo. Dark on track 8 alone. Not linked: Stock+&#x27;s free LFO and scan, and the stretch&#x27;s WSOLA.</p>
 <ul>
@@ -1205,7 +1206,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>Velocity</td><td><strong>Shift + another step</strong></td><td>marks the step <em>(since Alpha 0.04)</em>: when it plays, automation is silent there and automated parameters go back to <strong>Project init</strong> <em>(Alpha 0.09)</em> (up to Alpha 0.08, to their knob&#x27;s position); a knob turned by hand stays where you left it. Again = unmark</td></tr>
 <tr><td>Velocity</td><td><strong>Velocity again</strong></td><td>★ the automation view <strong>latched</strong>, without holding Shift <em>(Alpha 0.09)</em>: a tap on a yellow step listens to it, on another marks it. Velocity again, or another view, removes it (what you were listening to goes back). Shift + Velocity is still the original&#x27;s fixed velocity</td></tr>
 <tr><td>Velocity</td><td><strong>Clear + step</strong> (with or without Shift; Clear first)</td><td>★ erases that step&#x27;s knob automation; its notes, its mark and the Mixer&#x27;s lanes stay <em>(Alpha 0.09)</em></td></tr>
-<tr><td>Velocity</td><td><strong>Yellow step held + another step</strong> (automation view)</td><td>★ <strong>ramp</strong> <em>(Alpha 0.11)</em>: each knob lane with a value at either end gets the straight line between them, micro step by micro step; an end without a value uses the current value</td></tr>
+<tr><td>Velocity</td><td><strong>Yellow step held + another step</strong> (automation view)</td><td>★ <strong>ramp</strong> <em>(Alpha 0.10)</em>: each knob lane with a value at either end gets the straight line between them, micro step by micro step; an end without a value uses the current value</td></tr>
 <tr><td>Track view (Samples)</td><td><strong>Record held + step</strong></td><td>★ <strong>snapshot</strong> <em>(Alpha 0.09)</em>: each knob not at Project init goes into that step (its 6 micro steps); the step&#x27;s pad yellow while you hold it; when you let go of Record, recording as it was</td></tr>
 <tr><td>Micro Step</td><td><strong>pad 31</strong></td><td>fixed length: off → the selector on pads 17-32 (1-16 steps; picking one switches it on); on → off (orange bright / dim) <em>(since Alpha 0.04)</em></td></tr>
 <tr><td>Micro Step</td><td><strong>pad 32</strong></td><td>gate by press: the hit lasts as long as you hold the step&#x27;s pad; holding an empty step 300 ms or more also creates it (green bright / dim) <em>(since Alpha 0.04)</em></td></tr>
@@ -1309,16 +1310,16 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="44.5" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Shift</text>
 </svg><figcaption>Pattern Settings with Shift: the arpeggiator.</figcaption></figure>
 <table><thead><tr><th>Gesture</th><th>What it does</th></tr></thead><tbody>
-<tr><td><strong>Pad 26</strong> (blue)</td><td>Nudge: moves the chosen range one step back; with Shift, forward. Steps, lanes and per-step values go with it <em>(Alpha 0.11)</em></td></tr>
+<tr><td><strong>Pad 26</strong> (blue)</td><td>Nudge: moves the chosen range one step back; with Shift, forward. Steps, lanes and per-step values go with it <em>(Alpha 0.10)</em></td></tr>
 <tr><td><strong>Pad 27 / 28</strong></td><td><strong>fractal</strong> (1 · 1 2 · 1 2 3 …) and <strong>deconstructed</strong> (1 6 11 16 · 2 7 12 13 …) orders; a direction pad goes back to the original <em>(since Alpha 0.0)</em></td></tr>
 <tr><td><strong>Pad 25</strong> (grey)</td><td>probability view, mode 2: pick a step; <strong>row 3 = dynamics</strong> (velocity and delay within the step; with Record, each step with dynamics is written as it played), <strong>row 4 (25-28) = sample mutation</strong> (sometimes its neighbour plays) <em>(since Alpha 0.0)</em></td></tr>
-<tr><td><strong>Pattern Settings twice</strong></td><td>probability view, mode 1: <strong>row 4 = frequency</strong> of the step: it plays on the last of every n passes <em>(Alpha 0.11)</em>; each pattern of a chain keeps its own count, and when it does not play, the previous note rings on <em>(since Alpha 0.0)</em></td></tr>
+<tr><td><strong>Pattern Settings twice</strong></td><td>probability view, mode 1: <strong>row 4 = frequency</strong> of the step: it plays on the last of every n passes <em>(Alpha 0.10)</em>; each pattern of a chain keeps its own count, and when it does not play, the previous note rings on <em>(since Alpha 0.0)</em></td></tr>
 <tr><td><strong>Clear + pad 25</strong></td><td>clears the pattern&#x27;s dynamics and mutation (frequency stays) <em>(since Alpha 0.04)</em></td></tr>
 <tr><td><strong>Shift + pad 25</strong></td><td>★ the track&#x27;s arpeggiator on / off (green bright / dim) <em>(since Alpha 0.0)</em></td></tr>
-<tr><td><strong>Shift + pads 1-4</strong> (arpeggiator on)</td><td>★ octave spread: none, +1, +1 / −1, +2 / −1 <em>(Alpha 0.11)</em></td></tr>
-<tr><td><strong>Shift + pads 5-8</strong> (arpeggiator on)</td><td>★ when the octave changes: after a cycle, every note, every 3, every 4 <em>(Alpha 0.11)</em></td></tr>
-<tr><td><strong>Shift + pads 9-12</strong> (arpeggiator on)</td><td>★ groove: none, note / dotted note, swing, each note twice <em>(Alpha 0.11)</em></td></tr>
-<tr><td><strong>Shift + pads 13-16</strong> (arpeggiator on)</td><td>★ restart: none, after 1 / 3 / 5 notes of the second cycle <em>(Alpha 0.11)</em></td></tr>
+<tr><td><strong>Shift + pads 1-4</strong> (arpeggiator on)</td><td>★ octave spread: none, +1, +1 / −1, +2 / −1 <em>(Alpha 0.10)</em></td></tr>
+<tr><td><strong>Shift + pads 5-8</strong> (arpeggiator on)</td><td>★ when the octave changes: after a cycle, every note, every 3, every 4 <em>(Alpha 0.10)</em></td></tr>
+<tr><td><strong>Shift + pads 9-12</strong> (arpeggiator on)</td><td>★ groove: none, note / dotted note, swing, each note twice <em>(Alpha 0.10)</em></td></tr>
+<tr><td><strong>Shift + pads 13-16</strong> (arpeggiator on)</td><td>★ restart: none, after 1 / 3 / 5 notes of the second cycle <em>(Alpha 0.10)</em></td></tr>
 <tr><td><strong>Shift + pads 27-32</strong></td><td>arpeggio order: fractal, deconstructed, up, down, ping-pong, random</td></tr>
 <tr><td><strong>Shift + pads 17-24</strong></td><td>arpeggio resolution (1/4 … 1/32T); the same one again = the track&#x27;s sync rate</td></tr>
 </tbody></table>
@@ -1501,8 +1502,8 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>Setup</td><td><strong>K1-K8</strong>, with GM mode</td><td>each track&#x27;s GM note (35-81, two clicks a note; each new note plays once). Factory: 36, 38, 42, 46, 39, 37, 45, 49</td></tr>
 <tr><td>Advanced</td><td><strong>Pad 22</strong></td><td>★ external keyboard into the arpeggiator: notes coming in on the channel of a track with its arpeggiator on are arpeggiated (green bright / dim) <em>(since Alpha 0.04)</em></td></tr>
 <tr><td>Advanced</td><td><strong>Pad 23</strong></td><td>★ USB merge: what comes in on DIN In also goes out over USB (green bright / dim) <em>(since Alpha 0.04)</em></td></tr>
-<tr><td>Advanced</td><td><strong>Pad 24</strong></td><td>★ <strong>save on stop</strong> (green bright / dim; off from the factory): while playing, Save waits for the stop and blinks yellow <em>(Alpha 0.11)</em></td></tr>
-<tr><td>Advanced</td><td><strong>K1</strong></td><td>★ <strong>velocity curve</strong>: −8 .. +8, 2 clicks a step, centre = the original; to the right soft hits sound louder, to the left the opposite <em>(Alpha 0.11)</em></td></tr>
+<tr><td>Advanced</td><td><strong>Pad 24</strong></td><td>★ <strong>save on stop</strong> (green bright / dim; off from the factory): while playing, Save waits for the stop and blinks yellow <em>(Alpha 0.10)</em></td></tr>
+<tr><td>Advanced</td><td><strong>K1</strong></td><td>★ <strong>velocity curve</strong>: −8 .. +8, 2 clicks a step, centre = the original; to the right soft hits sound louder, to the left the opposite <em>(Alpha 0.10)</em></td></tr>
 </tbody></table>
 <p>Everything is saved in the device&#x27;s settings, except GM mode, which goes with the project. If the two Program Change channels differ, the received one is forwarded on the send channel.</p>
 </section>
@@ -1520,7 +1521,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </section>
 <section class="feat" id="modulos"><h3><span class="code">A.3</span>Arrhythmia modules (proof of concept)</h3>
 <div class="summary"><p><strong>How to get there:</strong> from the computer, over USB</p></div>
-<p>★ <em>(Alpha 0.11)</em> <strong>A proof of concept.</strong> Circuit Remix runs <strong><a href="https://github.com/llcoolkm/arrhythmia">Arrhythmia</a>&#x27;s modules</strong> (by llcoolkm, MIT licence): small programs (<code>.mod</code>) that take over the lights, pads and buttons and can play notes, move parameters and send MIDI. The modules, their interface and its documentation are Arrhythmia&#x27;s; Circuit Remix brings its own code for that interface, so the same file works on both firmwares. The modules are not in this repository: <strong>download them from <a href="https://github.com/llcoolkm/arrhythmia/releases">Arrhythmia&#x27;s releases</a></strong> and see their controls in <a href="https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md">its modules guide</a>.</p>
+<p>★ <em>(Alpha 0.11)</em> <strong>A proof of concept.</strong> Not in Alpha 0.10 / 0.10S. Circuit Remix runs <strong><a href="https://github.com/llcoolkm/arrhythmia">Arrhythmia</a>&#x27;s modules</strong> (by llcoolkm, MIT licence): small programs (<code>.mod</code>) that take over the lights, pads and buttons and can play notes, move parameters and send MIDI. The modules, their interface and its documentation are Arrhythmia&#x27;s; Circuit Remix brings its own code for that interface, so the same file works on both firmwares. The modules are not in this repository: <strong>download them from <a href="https://github.com/llcoolkm/arrhythmia/releases">Arrhythmia&#x27;s releases</a></strong> and see their controls in <a href="https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md">its modules guide</a>.</p>
 <ul>
 <li><strong>Upload and start:</strong> in the <a href="https://github.com/Ghillermo/CIRCUIT-REMIX#card-and-device-app-toolsrm_sd_apphtml">card app</a>, button <strong>Modules (proof of concept)…</strong>: pick the <code>.mod</code>, the app checks it (header and CRC), uploads it, reads it back and starts it.</li>
 <li><strong>While it runs:</strong> a module with an input takes the pads and buttons; <strong>Shift</strong> and the knobs stay the original&#x27;s, <strong>Play</strong> still drives the transport. <strong>Shift + Sample Rec</strong> stops it and gives everything back.</li>
@@ -1529,7 +1530,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </ul>
 </section>
 <h2 class="group" id="glosario">Glossary of functions</h2><section class="feat"><table><thead><tr><th>Function</th><th>What it is / gesture</th><th>Chapter</th><th>Since</th></tr></thead><tbody>
-<tr><td><strong>Arpeggio modifiers</strong></td><td>octaves, groove and restart; Pattern Settings, Shift + pads 1-16</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Arpeggio modifiers</strong></td><td>octaves, groove and restart; Pattern Settings, Shift + pads 1-16</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Arrhythmia modules</strong></td><td>proof of concept: its <code>.mod</code> files over USB from the card app; Shift + Sample Rec stops</td><td><a href="#modulos">A.3 Arrhythmia modules (proof of concept)</a></td><td>Alpha 0.11</td></tr>
 <tr><td><strong>Automation view</strong></td><td>steps with knob automation in yellow, and listening to them; Velocity + Shift, or Velocity again (latched)</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.09</td></tr>
 <tr><td><strong>Bitcrush</strong></td><td>Stock+, Shift + K7</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
@@ -1544,7 +1545,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Distortion on granular and synth</strong></td><td>the original&#x27;s distortion knob on them too</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.07</td></tr>
 <tr><td><strong>Envelope by play mode</strong></td><td>start, length, slope and → filter of the synth and the granular; menu, pad 5</td><td><a href="#envolvente">2.6 Envelope page</a></td><td>Alpha 0.06</td></tr>
 <tr><td><strong>External keyboard into the arpeggiator</strong></td><td>Advanced Setup, pad 22</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
-<tr><td><strong>Extra lane</strong></td><td>a ninth automation, one value per step</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Extra lane</strong></td><td>a ninth automation, one value per step</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Filter type (24 dB, comb)</strong></td><td>Stock+, Shift + K6</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Fixed length</strong></td><td>hand-entered hits with a set length; Micro Step, pad 31</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Fixed Recording with external clock</strong></td><td>the length at the incoming MIDI clock&#x27;s tempo</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.02</td></tr>
@@ -1561,9 +1562,9 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Master compressor</strong></td><td>threshold, soft clip, attack and release in the Sidechain view</td><td><a href="#fx">5.2 FX and Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Master resonance</strong></td><td>Shift + ▲ / ▼ in the FX view</td><td><a href="#fx">5.2 FX and Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Metronome</strong></td><td>four states with Shift + Clear</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Modulation matrix</strong></td><td>8 sources per track to 32 destinations; menu, pad 6</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Modulation matrix</strong></td><td>8 sources per track to 32 destinations; menu, pad 6</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Mute at the bar</strong></td><td>Shift + track pad in the Mixer</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Non-sequenceable</strong></td><td>8 knobs that are never recorded; menu, pad 16</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Non-sequenceable</strong></td><td>8 knobs that are never recorded; menu, pad 16</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Note arpeggiator</strong></td><td>arpeggiates the keys held in the Note view</td><td><a href="#note">2.9 Note view</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Nudge</strong></td><td>moves the chosen range one step; Pattern Settings pad 26</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Own scale</strong></td><td>a scale per track; Shift in the Note view</td><td><a href="#note">2.9 Note view</a></td><td>Alpha 0.0</td></tr>
@@ -1574,15 +1575,15 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Program Change</strong></td><td>listen and send channels; Setup, pads 29 / 30</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Project init</strong></td><td>the track&#x27;s voice as loaded or saved; menu, pad 8 (red)</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.09</td></tr>
 <tr><td><strong>Quantize</strong></td><td>Shift + Play while playing</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Ramps</strong></td><td>yellow step held + another step, in the automation view</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Ramps</strong></td><td>yellow step held + another step, in the automation view</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Repeat the scene</strong></td><td>the current scene 1-8 times; Mixer, Shift + pads 9-16</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Ring mod</strong></td><td>Stock+, K5 (Shift: the frequency)</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Rule chains</strong></td><td>patterns chained &quot;n times A, then B&quot;</td><td><a href="#patterns">3.3 Patterns: chains</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Sample arpeggiator</strong></td><td>arpeggiates the held sample pads; Shift + Pattern Settings pad 25 switches it on</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Sample mutation</strong></td><td>sometimes the neighbour plays; probability row 4</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Save on stop</strong></td><td>Save waits for the stop; Advanced Setup, pad 24</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Save on stop</strong></td><td>Save waits for the stop; Advanced Setup, pad 24</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Scan</strong></td><td>moves each note&#x27;s or the loop&#x27;s start; Stock+, K8</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
-<tr><td><strong>Sequenceable</strong></td><td>the 8 automation lanes with their own destination; menu, pad 7</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Sequenceable</strong></td><td>the 8 automation lanes with their own destination; menu, pad 7</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Sidechain on the knobs</strong></td><td>Sidechain view K1-K4</td><td><a href="#fx">5.2 FX and Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Snapshot</strong></td><td>the moved knobs into a step; Record held + step</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.09</td></tr>
 <tr><td><strong>Start and length on the granular</strong></td><td>the original&#x27;s start adds to the position, the length narrows the zone</td><td><a href="#granular">2.4 Granular page</a></td><td>Alpha 0.09</td></tr>
@@ -1593,11 +1594,11 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Synth</strong></td><td>two oscillators with FM on up to 4 tracks; Sample mode pad 7, menu pad 4</td><td><a href="#sinte">2.5 Synth page</a></td><td>Alpha 0.05</td></tr>
 <tr><td><strong>Synth morph and unison</strong></td><td>the original&#x27;s start and length on the synth</td><td><a href="#sinte">2.5 Synth page</a></td><td>Alpha 0.09</td></tr>
 <tr><td><strong>Thru: Out 2 / Merge / Filter</strong></td><td>Duplicate in Advanced Setup</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Track flash</strong></td><td>with Shift, each track&#x27;s button flashes white when it plays</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Track flash</strong></td><td>with Shift, each track&#x27;s button flashes white when it plays</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Track knobs reset</strong></td><td>Clear + the track&#x27;s button</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Track menu</strong></td><td>tap the selected track&#x27;s button (stays open) or hold a track&#x27;s button</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>USB merge</strong></td><td>DIN In also over USB; Advanced Setup, pad 23</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
-<tr><td><strong>Velocity curve</strong></td><td>Advanced Setup, K1</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.11</td></tr>
+<tr><td><strong>Velocity curve</strong></td><td>Advanced Setup, K1</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Velocity marks</strong></td><td>on a marked step the parameters go back to Project init (up to 0.08, to the knob); Shift + step</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Visual metronome</strong></td><td>Clear flashes orange on each click with the click&#x27;s level at 0 (Tempo / Swing K5)</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.08</td></tr>
 <tr><td><strong>Waveshaper</strong></td><td>soft, hard, fold or bitcrush on the granular and the synth; Stock+, K7 (Shift: the type)</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.07</td></tr>
