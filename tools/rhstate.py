@@ -32,6 +32,17 @@ SIZE2 = 0x800
 ST2 = ST - SIZE2                           # 0x2004EE60
 MAGIC2 = 0x32545352                        # "RST2"
 OUR_LIMIT = ST2                            # the heap limit once c_rst has run with ram2
+# ---- (RH67, install(ram3=True)) a third block below the second: modhost's state (Arrhythmia's module host).  456 B stay between it and
+# the stock's last allocation (0x2004EA98).
+SIZE3 = 0x200
+ST3 = ST2 - SIZE3                          # 0x2004EC60
+MAGIC3 = 0x33545352                        # "RST3"
+
+
+def our_limit():
+    """The heap limit once c_rst has run with ram2, at build time: ST3 with modhost's third block (RH67+), else ST2 (OUR_LIMIT)"""
+    import rhbuild
+    return ST3 if rhbuild.OPT.get("modhost") else OUR_LIMIT
 OFF2 = {                                   # module -> (offset, length) inside the second block
     "magic": (0, 4),
     "latdiag": (4, 224),                   # (RD24) the playback start's times: state, the start, the clock's first pass, 16 queue writes, the freeze
@@ -43,6 +54,14 @@ OFF2 = {                                   # module -> (offset, length) inside t
                                            # plays the menu's (16 B) (in latdiag's room)
     "fxroute": (108, 4),                   # (RH58) the line bytes last seen (two), seen once (in latdiag's room)
     "autoinit": (112, 32),                 # (RH58) the pads swallowed, the preview (its track, kept / shown knobs and values), Record (latdiag's room)
+    "dqchain": (144, 64),                  # (RH60) drumpat's passes per pattern: + 8 t + p, mod 240 (latdiag's room)
+    "trigflash": (208, 16),                # (RH60) each track's last note-on, the HAL tick's low 16 bits (latdiag's room)
+    "savedefer": (240, 4),                 # (RH63) + 0 a project save kept, + 1 its slot, + 2 its flag (clkprobe's room: clkprobe is only in RD27-RD29)
+    "velcurve": (244, 4),                  # (RH63) + 0 Advanced Setup K1's accumulator
+    "modmx": (352, 1072),                  # (RH64) the matrix: pages, sources, offsets: modmx.R_*
+    "arpmods": (248, 12),                  # (RH63) the arpeggio's modifiers running: arpmods.X_*
+    "dspgate": (260, 12),                  # (RH66) + 0 in a PCM upload's bulk interval, + 4 the intervals, + 8 our DSP writes dropped (clkprobe's room)
+    "itcm": (288, 20),                     # (RH66) the ITCM canary: + 0 state, + 4 the next word, + 8 bad words, + 12 the first, + 16 full sweeps (clkprobe's room)
     "startfix": (228, 12),                 # (RD25) tick 0 played at the start: ACT, the passes N, T0 (HAL tick)
     "clkprobe": (240, 112),                # (RD27) the clock timer's gaps: the switch, the time source, stats since the last internal start
     "stallprof": (352, 1072),              # (RD28) SysTick's samples of what runs while the timers' dispatcher is stalled
@@ -94,7 +113,8 @@ OFF = {                                    # module -> (offset, length) inside t
 }
 
 
-SHARED = {"clkci": "latdiag", "slinkofs": "latdiag", "smodes": "latdiag", "fxroute": "latdiag", "autoinit": "latdiag"}               # slots that share a diagnostic module's room (never in the same build: the module's install checks)
+SHARED = {"dspgate": "clkprobe","itcm": "clkprobe", "modmx": "stallprof", "savedefer": "clkprobe", "velcurve": "clkprobe", "arpmods": "clkprobe", "clkci": "latdiag", "slinkofs": "latdiag", "smodes": "latdiag", "fxroute": "latdiag", "autoinit": "latdiag", "dqchain": "latdiag",
+          "trigflash": "latdiag"}               # slots that share a diagnostic module's room (never in the same build: the module's install checks)
 
 
 def check_layout():
@@ -110,12 +130,12 @@ def check_layout():
         assert used[-1][0][0] + used[-1][0][1] <= size
 
 
-def arm_code(base, ram2=False):
+def arm_code(base, ram2=False, ram3=False):
     """ram2 (RH41): c_rst claims both blocks at once (the limit = ST2) and takes the limit ST2 as its own; c_rram() -> r0 = the second
-    block (or 0, as c_rst)"""
+    block (or 0, as c_rst).  ram3 (RH67): the three blocks at once, the limit = ST3"""
     check_layout()
     if ram2:
-        return arm_code2(base)
+        return arm_code2(base, ram3)
     a = Asm(base)
     E = a.emit
 
@@ -160,9 +180,10 @@ def arm_code(base, ram2=False):
     return a.assemble()
 
 
-def arm_code2(base):
+def arm_code2(base, ram3=False):
     a = Asm(base)
     E = a.emit
+    LOW = ST3 if ram3 else ST2                                 # the lowest block: the limit once ours
 
     def imm32(rd, v):
         E(movw, rd, v & 0xFFFF)
@@ -172,13 +193,19 @@ def arm_code2(base):
     imm32(0, ST)
     imm32(3, HEAP_LIMIT_PTR)
     E(ldr_imm, 1, 3, 0)                                        # the limit
-    imm32(2, ST2)
+    imm32(2, LOW)
     E(cmp_reg, 1, 2)
     E(b_cond, "r2_res", "ne")
     E(ldr_imm, 1, 0, 0)                                        # the limit is already ours: ready unless a magic is gone
     imm32(2, MAGIC)
     E(cmp_reg, 1, 2)
     E(b_cond, "r2_in", "ne")
+    if ram3:
+        imm32(2, ST3)
+        E(ldr_imm, 1, 2, 0)
+        imm32(2, MAGIC3)
+        E(cmp_reg, 1, 2)
+        E(b_cond, "r2_in", "ne")
     imm32(2, ST2)
     E(ldr_imm, 1, 2, 0)
     imm32(2, MAGIC2)
@@ -190,12 +217,12 @@ def arm_code2(base):
     E(cmp_reg, 1, 2)
     E(b_cond, "r2_off", "ne")                                  # an unexpected limit: stay off
     E(ldr_imm, 1, 3, 4)                                        # the current
-    imm32(2, ST2)
+    imm32(2, LOW)
     E(cmp_reg, 1, 2)
     E(b_cond, "r2_off", "hi")                                  # already allocated into the blocks: stay off
-    E(str_imm, 2, 3, 0)                                        # limit = the second block: both reserved
+    E(str_imm, 2, 3, 0)                                        # limit = the lowest block: all reserved
     a.label("r2_in")
-    imm32(2, ST2)                                              # both blocks zeroed (ST2 .. ST + SIZE), their magics
+    imm32(2, LOW)                                              # the blocks zeroed (LOW .. ST + SIZE), their magics
     imm32(3, ST + SIZE)
     E(movs_imm, 1, 0)
     a.label("r2_clr")
@@ -208,6 +235,10 @@ def arm_code2(base):
     imm32(1, ST2)
     imm32(2, MAGIC2)
     E(str_imm, 2, 1, 0)
+    if ram3:
+        imm32(1, ST3)
+        imm32(2, MAGIC3)
+        E(str_imm, 2, 1, 0)
     a.label("r2_ok")
     E(raw, h(0x4770))
     a.label("r2_off")
@@ -228,11 +259,15 @@ def arm_code2(base):
 def install(img, report, base_addr, ram2=False):
     import rh_fw
     BASE = rh_fw.APP_BASE
-    code, labels = arm_code(base_addr, ram2=ram2)
+    import rhbuild
+    ram3 = bool(rhbuild.OPT.get("modhost"))                    # (RH67) modhost's block
+    assert ram2 or not ram3
+    code, labels = arm_code(base_addr, ram2=ram2, ram3=ram3)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
     report["rhstate"] = dict(block=hex(ST), size=SIZE, off={k: v[0] for k, v in OFF.items()},
                              **({"block2": hex(ST2), "size2": SIZE2, "off2": {k: v[0] for k, v in OFF2.items()}} if ram2 else {}),
+                             **({"block3": hex(ST3), "size3": SIZE3} if ram3 else {}),
                              labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     return labels, code

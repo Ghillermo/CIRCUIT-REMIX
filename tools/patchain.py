@@ -6,7 +6,8 @@ puts it back when it starts; a scene ends when its longest chain ends (the stock
 
 Where it lives (the Rhythm):
   * the rule: bytes 4 / 5 / 6 of the pattern's 40 settings bytes (n 1..8, B + 1, C + 1 or 0): the record R + 0x2E4 + 0x5140 t + 0xA28 p + 0x104;
-    zero in the 64 patterns of the dump, outside the stock's settings store (it writes + 0..3);
+    zero in the 64 patterns of the dump, outside the stock's settings store (it writes + 0..3); (armods, RH63) the high nibbles of + 5 / + 6 are
+    arpmods', so the rule's B + 1 and C + 1 are their low nibbles;
   * per project, in the record's tail (rhrec "patchain"): "CTC1", a checksum, the tracks that follow the rules, 16 scene flags, 16 scene repeats
     (a tail without the mark or with a wrong sum = none of ours); the running state (counts, the pattern to come back to, which of B / C is next,
     the mode, the rule being edited) in 64 bytes further on, rebuilt for each loaded project (rhstate "patchain" = 0 after the stock applies a
@@ -92,6 +93,8 @@ POP_LR, BX_LR = h(0xF85D) + h(0xEB04), h(0x4770)
 
 
 def arm_code(base, L, prev, iterled=False):
+    import rhbuild
+    NIB = rhbuild.OPT.get("armods", False)                                # (RH63) the high nibbles of B + 1 and C + 1 are arpmods'
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -303,6 +306,10 @@ def arm_code(base, L, prev, iterled=False):
     E(ldrb_imm, 1, 0, 0)
     E(ldrb_imm, 2, 0, 1)
     E(ldrb_imm, 3, 0, 2)
+    if NIB:
+        for r in (2, 3):
+            E(lsls_imm, r, r, 28)
+            E(lsrs_imm, r, r, 28)
     E(cmp_imm, 1, 0)
     E(b_cond, "ge_0", "eq")
     E(cmp_imm, 1, MAX_N)
@@ -334,8 +341,15 @@ def arm_code(base, L, prev, iterled=False):
     E(b_cond, "zr_x", "eq")
     E(movs_imm, 1, 0)
     E(strb_imm, 1, 0, 0)
-    E(strb_imm, 1, 0, 1)
-    E(strb_imm, 1, 0, 2)
+    if NIB:
+        for o in (1, 2):
+            E(ldrb_imm, 1, 0, o)
+            E(lsrs_imm, 1, 1, 4)
+            E(lsls_imm, 1, 1, 4)
+            E(strb_imm, 1, 0, o)
+    else:
+        E(strb_imm, 1, 0, 1)
+        E(strb_imm, 1, 0, 2)
     a.label("zr_x")
     E(pop_list, [4], pc=True)
 
@@ -925,11 +939,21 @@ def arm_code(base, L, prev, iterled=False):
     E(ldrb_imm, 0, 6, S_STAGE)
     E(cmp_imm, 0, 0)
     E(b_cond, "pp_c", "ne")
+    if NIB:
+        E(ldrb_imm, 0, 7, 1)
+        E(lsrs_imm, 0, 0, 4)
+        E(lsls_imm, 0, 0, 4)
+        E(orrs_reg, 1, 0)
     E(strb_imm, 1, 7, 1)
     E(movs_imm, 0, 1)
     E(strb_imm, 0, 6, S_STAGE)
     E(b, "pp_x")
     a.label("pp_c")
+    if NIB:
+        E(ldrb_imm, 0, 7, 2)
+        E(lsrs_imm, 0, 0, 4)
+        E(lsls_imm, 0, 0, 4)
+        E(orrs_reg, 1, 0)
     E(strb_imm, 1, 7, 2)
     E(movs_imm, 0, 2)
     E(strb_imm, 0, 6, S_STAGE)
@@ -958,9 +982,16 @@ def arm_code(base, L, prev, iterled=False):
     E(b_cond, "pp_f0", "eq")
     E(movs_imm, 1, 1)
     E(strb_imm, 1, 0, 0)
-    E(movs_imm, 1, 0)
-    E(strb_imm, 1, 0, 1)
-    E(strb_imm, 1, 0, 2)
+    if NIB:
+        for o in (1, 2):
+            E(ldrb_imm, 1, 0, o)
+            E(lsrs_imm, 1, 1, 4)
+            E(lsls_imm, 1, 1, 4)
+            E(strb_imm, 1, 0, o)
+    else:
+        E(movs_imm, 1, 0)
+        E(strb_imm, 1, 0, 1)
+        E(strb_imm, 1, 0, 2)
     a.label("pp_f0")
     E(movs_imm, 1, 0)
     a.label("pp_st")
@@ -1095,12 +1126,18 @@ def arm_code(base, L, prev, iterled=False):
     a.label("lt_b")
     E(adds_imm8, 1, 1)
     E(ldrb_imm, 2, 0, 1)
+    if NIB:
+        E(lsls_imm, 2, 2, 28)
+        E(lsrs_imm, 2, 2, 28)
     E(cmp_reg, 2, 1)
     E(b_cond, "lt_c", "ne")
     E(movs_imm, 2, COL_B)
     E(b, "lt_p")
     a.label("lt_c")
     E(ldrb_imm, 2, 0, 2)
+    if NIB:
+        E(lsls_imm, 2, 2, 28)
+        E(lsrs_imm, 2, 2, 28)
     E(cmp_reg, 2, 1)
     E(b_cond, "lt_n", "ne")
     E(movs_imm, 2, COL_C)

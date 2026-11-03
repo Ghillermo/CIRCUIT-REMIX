@@ -31,6 +31,7 @@ from thumb import (Asm, adds_imm8, adds_reg, b, b_cond, b_w, bics_reg, bl, cmp_i
                    subs_imm8, tst_reg, ldrb_w, strb_w)
 import countin as CI  # noqa: E402
 import patchain as PC  # noqa: E402
+import rhbuild  # noqa: E402
 import rhrec  # noqa: E402
 import rhstate  # noqa: E402
 import sckn as SK  # noqa: E402
@@ -39,6 +40,7 @@ CTRL = CI.CTRL
 DP0, DP_SZ, O_SEL = 0x200470D4, 0x190, 0x60
 WPTR, COMMIT = 0x0803FD26, 0x0803FBEC
 N_PAR, KNOB_LO, KNOB_HI = 0x19, 6, 13
+ROUTER = 0x20043740                                   # (RH62, OPT trkrouter) vtable[0](router, 0x10 t + k, v) writes the view's store and the group
 CONT = 0x20048B9C
 BIT_CLEAR, BIT_DUP = 23, 24
 BLK, BLK_LEN = rhrec.OFF["trkcopy"]
@@ -120,6 +122,18 @@ def arm_code(base, L, prev, ram=False):
     E(raw, h(0x4008))                                                     # ands r0, r1
     E(pop_list, [4], pc=True)
     a.label("c_tcset")
+    if rhbuild.OPT.get("trkrouter"):                                      # the knobs: as a turn, or their view keeps the old values
+        E(mov_reg, 3, 1)
+        E(subs_imm8, 3, KNOB_LO)
+        E(cmp_imm, 3, 8)
+        E(b_cond, "cs_g", "hs")
+        E(lsls_imm, 0, 0, 4)
+        E(adds_reg, 1, 0, 3)
+        imm32(0, ROUTER)
+        E(ldr_imm, 3, 0, 0)
+        E(ldr_imm, 3, 3, 0)
+        E(raw, h(0x4718))                                                 # bx r3
+        a.label("cs_g")
     E(mov_reg, 3, 2)
     E(mov_reg, 2, 1)
     E(mov_reg, 1, 0)

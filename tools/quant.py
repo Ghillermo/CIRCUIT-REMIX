@@ -60,6 +60,8 @@ def packed(m, write):
 
 
 def arm_code(base, L, prev, v2=False):
+    import rhbuild
+    MXX = rhbuild.OPT.get("mxx", False)                                   # (RH65) byte 7 of the step (the mark, the extra lane) goes with it
     a = Asm(base)
     E = a.emit
 
@@ -171,7 +173,7 @@ def arm_code(base, L, prev, v2=False):
     E(ldrb_reg, 1, 4, 3)
     E(strb_reg, 1, 6, 3)
     E(adds_imm8, 3, 1)
-    E(cmp_imm, 3, 7)
+    E(cmp_imm, 3, 8 if MXX else 7)
     E(b_cond, "qh_c", "lo")
     E(movs_imm, 1, 0)
     a.label("qh_d")
@@ -195,6 +197,12 @@ def arm_code(base, L, prev, v2=False):
         a.label("qh_b0")
         E(movs_imm, 5, 0)
         E(strb_imm, 5, 2, 0)
+    if MXX:                                                               # (RH65) onto another hit: the old step keeps its byte 7
+        E(ldrb_imm, 5, 4, 7)
+        E(cmp_imm, 1, 0)
+        E(b_cond, "qh_k", "ne")
+        E(movs_imm, 5, 0)
+        a.label("qh_k")
     E(movs_imm, 3, 1)
     E(orrs_reg, 1, 3)
     E(strb_imm, 1, 6, 2)
@@ -202,6 +210,8 @@ def arm_code(base, L, prev, v2=False):
     E(str_imm, 1, 4, 0)
     imm32(1, EMPTY[1])
     E(str_imm, 1, 4, 4)
+    if MXX:
+        E(strb_imm, 5, 4, 7)
     a.label("qh_x")
     E(pop_list, [4, 5, 6], pc=True)
 

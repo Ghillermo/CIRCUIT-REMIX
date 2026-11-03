@@ -113,6 +113,7 @@ def model_block(vals=None):
 
 
 def arm_code(base, L, prev, tabs):
+    import rhbuild
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -194,6 +195,12 @@ def arm_code(base, L, prev, tabs):
     E(ldrh_imm, 0, 0, 2)
     a.label("wg_x")
     E(pop_list, [4, 5], pc=True)
+
+    WSV = "c_wsget"
+    if rhbuild.OPT.get("mxsink"):                                         # (RH64) the matrix's offset
+        WSV = "c_wsvd"
+        a.label("c_wsvd")
+        E(b_w, "c_wsget")
 
     # ---- c_wsset(r0 = track, r1 = k, r2 = value): stored, the check byte, the track's Stock+ words to push; clobbers r0-r3
     a.label("c_wsset")
@@ -289,7 +296,7 @@ def arm_code(base, L, prev, tabs):
     def val(k):
         E(mov_reg, 0, 4)
         E(movs_imm, 1, k)
-        E(bl, L["c_spval"])
+        E(bl, L.get("c_spvd", L["c_spval"]))
 
     def put(off):
         E(movs_imm, 1, off)
@@ -337,7 +344,7 @@ def arm_code(base, L, prev, tabs):
     put(S0.C_FOL)
     E(mov_reg, 0, 4)                                                      # K7: the waveshaper (amount 0 = off)
     E(movs_imm, 1, 0)
-    E(bl, "c_wsget")
+    E(bl, WSV)
     E(mov_reg, 6, 0)                                                      # r6 = the amount
     E(mov_reg, 0, 4)
     E(movs_imm, 1, 1)
@@ -567,6 +574,8 @@ def install(img, report, base_addr):
     spl = {k: lab("stockplus", k) for k in ("c_spst", "c_spview", "c_spheld", "c_spshift", "c_spval", "c_spint", "c_spw", "c_spdsp",
                                            "c_spdirty", "c_spreset", "c_k3r", "c_k8r", "c_k3sync", "c_k8sync", "c_spgrain", "c_spled",
                                            "c_spbtn", "c_spknob")}
+    if "c_spvd" in report["stockplus"]["labels"]:                         # (RH64) the matrix's offsets
+        spl["c_spvd"] = lab("stockplus", "c_spvd")
     L = dict(c_rst=lab("rhstate", "c_rst"), c_rrt=lab("rhrec", "c_rrt"), c_ciok=lab("countin", "c_ciok"), c_sysnd=lab("synthpage", "c_sysnd"),
              c_gpw=lab("granpage", "c_gpw"), **spl)
     tb = int(rs["tables"], 16)                                                 # stockplus's tables (v2: decay, rate, defaults, ring, speed, scan)

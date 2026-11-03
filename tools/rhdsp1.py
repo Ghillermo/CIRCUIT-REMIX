@@ -158,7 +158,7 @@ def install(img, report, base_addr, code, key, low=None, landing=None):
             E(bl, SEND)
         a.label("up_x")
         E(pop_list, [4], pc=True)
-        return a.assemble()
+        return a.assemble(plain=True)
     size = len(gen([0] * len(blks))[0])                                   # (fixed size: imm32 is always movw + movt)
     ats, at = [], (base_addr + size + 3) & ~3
     for blk in blks:

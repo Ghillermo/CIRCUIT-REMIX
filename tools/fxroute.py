@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from thumb import (Asm, adds_imm8, adds_reg, b_cond, b_w, bl, cmp_imm, cmp_reg, h, ldr_imm, ldrb_imm, ldrb_w, lsls_imm, lsrs_imm, lsrs_reg, mov_reg,  # noqa: E402
+from thumb import (Asm, adds_imm8, adds_reg, b_cond, b_w, bl, cmp_imm, cmp_reg, h, ldr_imm, ldrb_imm, ldrb_w, lsls_imm, lsrs_imm, lsrs_reg, mov_reg, subs_reg,  # noqa: E402
                    movs_imm, movt, movw, orrs_reg, pop_list, push_list, raw, str_imm, strb_imm, subs_imm3)
 import core0 as C0  # noqa: E402
 import countin as CI  # noqa: E402
@@ -68,12 +68,15 @@ def segs():
     return [(FXZ_AT, code()[0])]
 
 
-def model_send(i, v, src):
-    """the send the DSP gets for (index, value) on a line track with this source (0 inputs, 1 reverb, 2 delay; None = not a line track)"""
-    return v >> 1 if (i == I_RV and src == LI.SRC_RV) or (i == I_DL and src == LI.SRC_DL) else v
+def model_send(i, v, src, more=False):
+    """the send the DSP gets for (index, value) on a line track with this source (0 inputs, 1 reverb, 2 delay; None = not a line track);
+    (more, RH60: «allow a bit more feedback») three quarters instead of a half"""
+    if (i == I_RV and src == LI.SRC_RV) or (i == I_DL and src == LI.SRC_DL):
+        return v - (v >> 2) if more else v >> 1
+    return v
 
 
-def arm_code(base, L, prev):
+def arm_code(base, L, prev, more=False):
     a = Asm(base)
     E = a.emit
 
@@ -115,7 +118,11 @@ def arm_code(base, L, prev):
     E(cmp_reg, 0, 1)
     E(b_cond, "fp_q", "ne")                                               # the other effect's (the crossfeed): as it is
     E(raw, GP.popw([0, 1, 2, 4], lr=True))
-    E(lsrs_imm, 2, 2, 1)                                                  # the feedback: halved
+    if more:                                                              # (RH60) the feedback: three quarters
+        E(lsrs_imm, 3, 2, 2)
+        E(subs_reg, 2, 2, 3)
+    else:
+        E(lsrs_imm, 2, 2, 1)                                              # the feedback: halved
     E(b_w, prev["param"])
     a.label("fp_q")
     E(raw, GP.popw([0, 1, 2, 4], lr=True))
@@ -209,7 +216,7 @@ def arm_code(base, L, prev):
     return a.assemble()
 
 
-def install(img, report, base_addr):
+def install(img, report, base_addr, more=False):
     """The flusher's bl (in front of slinkofs's), the LED calls.  Needs linein two fx excl (FXH -> FXZ) and FXZ on core 0 (segs()),
     smodes (c_smline), cthresh, rhstate ram2; not latdiag."""
     import rhbuild
@@ -221,7 +228,7 @@ def install(img, report, base_addr):
     prev = dict(param=rhbuild.bl_target(img, SL.FLUSH_CALL), ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert prev["param"] == lab("slinkofs", "c_sop")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code_, labels = arm_code(base_addr, L, prev)
+    code_, labels = arm_code(base_addr, L, prev, more)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
@@ -229,5 +236,5 @@ def install(img, report, base_addr):
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_frled"]))
     report["fxroute"] = dict(prev={k: hex(v) for k, v in prev.items()}, fxz=hex(FXZ_AT),
-                             labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+                             labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")}, **({"more": True} if more else {}))
     return labels, code_

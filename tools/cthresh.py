@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from thumb import (Asm, adds_imm8, adds_reg, b, b_cond, b_w, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldrb_imm, ldrb_reg, lsls_imm,  # noqa: E402
+from thumb import (Asm, adds_imm8, adds_reg, b, b_cond, b_w, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldrb_imm, ldrb_reg, ldrh_imm, lsls_imm,  # noqa: E402
                    lsrs_imm, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list, push_list, raw, strb_imm, ldrb_w, strb_w, strh_w_imm,
                    strh_imm)
 import countin as CI  # noqa: E402
@@ -74,13 +74,33 @@ def curve(step, g0):
     return out
 
 
+def gen_tables(g0):
+    """(RH62, OPT thgen) the 15 tables in 288 B: gain = min(g0, C[step] x P[i]): P[i] = (i / 128) ^ (1 / RATIO - 1) x 1024 (u16, i = 0 the top),
+    C[step] = g0 x t ^ (1 - 1 / RATIO) x 65536 (u16); the word = C x P >> 3.  Against curve(): within 0.06 %, 0.005 dB"""
+    p = [0xFFFF] + [round((i / 128) ** (1 / RATIO - 1) * 1024) for i in range(1, TAB_N)]
+    c = [round(g0 * (T_TOP * 10 ** (-DB_STEP * (STEPS - 1 - s) / 20)) ** (1 - 1 / RATIO) * 65536) for s in range(STEPS - 1)]
+    return p, c
+
+
+def curve_gen(step, g0):
+    """the words c_thwrite works out for a step (RH62)"""
+    p, c = gen_tables(g0)
+    w0 = round(g0 * (1 << 23))
+    return [min(w0, c[step] * x >> 3) for x in p]
+
+
+def curve_of(report, step, g0):
+    """the step's words in a build"""
+    return (curve_gen if report["cthresh"].get("gen") else curve)(step, g0)
+
+
 def tables(g0):
     """steps 0..14 as the words 0x08031200 takes (value << 8, little-endian): not the DSP's 3-byte format (the flat part of a table in that
     format repeats the Tracks image's own compressor table, which provenance() refuses)"""
     return b"".join((w << 8).to_bytes(4, "little") for s in range(STEPS - 1) for w in curve(s, g0))
 
 
-def arm_code(base, L, prev, g0):
+def arm_code(base, L, prev, g0, gen=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -96,7 +116,12 @@ def arm_code(base, L, prev, g0):
         E(b, target)
         a.label(n)
     t_tabs = base
-    E(raw, tables(g0))
+    if gen:
+        tp, tc = gen_tables(g0)
+        E(raw, b"".join(x.to_bytes(2, "little") for x in tp + tc))
+        t_c = base + 2 * TAB_N
+    else:
+        E(raw, tables(g0))
 
     # ---- c_thblk() -> r0 = our block in the record's tail, 0 without a record; clobbers r1, r2
     a.label("c_thblk")
@@ -143,18 +168,37 @@ def arm_code(base, L, prev, g0):
     E(movs_imm, 6, 0)                                                     # r6 = 0: the stock's words in flash (3 bytes, big-endian)
     E(cmp_imm, 0, STEPS - 1)
     E(b_cond, "tw_g", "hs")                                               # step 15: the stock's
-    E(movw, 1, 4 * TAB_N)
-    E(muls, 0, 1)
-    imm32(4, t_tabs)
-    E(adds_reg, 4, 4, 0)                                                  # r4 = the step's words (value << 8)
-    E(movs_imm, 6, 1)
+    if gen:
+        E(lsls_imm, 0, 0, 1)
+        imm32(1, t_c)
+        E(adds_reg, 1, 1, 0)
+        E(ldrh_imm, 6, 1, 0)                                              # r6 = C of the step (<> 0)
+        imm32(4, t_tabs)                                                  # r4 = P
+    else:
+        E(movw, 1, 4 * TAB_N)
+        E(muls, 0, 1)
+        imm32(4, t_tabs)
+        E(adds_reg, 4, 4, 0)                                              # r4 = the step's words (value << 8)
+        E(movs_imm, 6, 1)
     a.label("tw_g")
     E(movs_imm, 5, 0)                                                     # r5 = the word
     a.label("tw_l")
     E(cmp_imm, 6, 0)
     E(b_cond, "tw_s", "eq")
-    E(ldr_imm, 1, 4, 0)
-    E(adds_imm8, 4, 4)
+    if gen:
+        E(ldrh_imm, 1, 4, 0)
+        E(adds_imm8, 4, 2)
+        E(muls, 1, 6)
+        E(lsrs_imm, 1, 1, 3)
+        imm32(2, round(g0 * (1 << 23)))
+        E(cmp_reg, 1, 2)
+        E(b_cond, "tw_c", "ls")
+        E(mov_reg, 1, 2)
+        a.label("tw_c")
+        E(lsls_imm, 1, 1, 8)
+    else:
+        E(ldr_imm, 1, 4, 0)
+        E(adds_imm8, 4, 4)
     E(b, "tw_w")
     a.label("tw_s")
     E(ldrb_imm, 1, 4, 0)
@@ -309,7 +353,8 @@ def install(img, report, base_addr):
         assert bytes(img[c - 2 - BASE:c - BASE]) == bytes([mode, 0x20]), hex(c)          # movs r0, #mode
     prev = dict(knob=u(SK.SLOT_KNOB) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code, labels = arm_code(base_addr, L, prev, g0)
+    gen = rhbuild.OPT.get("thgen", False)
+    code, labels = arm_code(base_addr, L, prev, g0, gen)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
@@ -320,4 +365,6 @@ def install(img, report, base_addr):
         rhbuild.patch(img, c, f"bl #{UPLOAD:#x}", bl(c, labels[f"c_thup{mode}"]))
     report["cthresh"] = dict(prev={k: hex(v) for k, v in prev.items()}, g0=g0, tables=hex(base_addr),
                              labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
+    if gen:
+        report["cthresh"]["gen"] = True
     return labels, code

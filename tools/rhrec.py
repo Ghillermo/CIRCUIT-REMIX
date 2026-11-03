@@ -23,6 +23,7 @@ FREE_LEN = 0x372                           # the last 2 bytes of the record are 
 OFF = {                                    # module -> (offset, length) in the tail
     "drumpat": (0, 2),
     "granmulti": (2, 58),                  # (RH50) "N", a check byte, 4 granular slots x 14 B: the track + 1 (0 = free), the 13 values >> 7                     # "DQ": the project's step bytes (pattern + 0x108 + step) are ours
+    "xlane": (60, 4),                      # (RH65) the extra lane's destinations + 1, low nibbles (bit 4: the block "MX"'s byte 3, bit t)
     "patchain": (64, 128),                 # + 0..47 "CTC1", sum, the tracks on the rules, 16 scene flags, 16 scene repeats; + 64..127 the running part
     "sckn": (192, 40),                     # "SK", sum, the tracks whose side-chain values are ours, 8 x 4 values, the compressor's flag + 3 values
     "drumarp": (232, 68),                  # "AD", sum, the arpeggiator's setting of each track and pattern (8 x 8)
@@ -46,6 +47,7 @@ OFF = {                                    # module -> (offset, length) in the t
 REUSE = (328, 212)
 OFF54 = {
     "envelope": (328, 22),                 # (RH54) "E", a check byte, the synth slots' slope (4 B), the granular slots' start, length, slope, env -> filter (4 x 4 B)
+    "modmx": (384, 156),                   # (RH64) "MX", a version, 0, 8 tracks x 19 B (tools/modmx.py)
     "waveshape": (350, 34),                # (RH55) "W", a check byte, 8 tracks x (the waveshaper's amount, its type) halfwords: Stock+ K7 of a granular / synth track
 }
 

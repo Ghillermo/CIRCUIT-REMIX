@@ -41,6 +41,7 @@ import countin as CI  # noqa: E402
 import cthresh as TH  # noqa: E402
 import pitchmod as PM  # noqa: E402
 import rhrec  # noqa: E402
+import rhbuild  # noqa: E402
 import rhstate  # noqa: E402
 import sckn as SK  # noqa: E402
 
@@ -875,11 +876,16 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
     E(pop_list, [4], pc=True)
 
     # ---- c_spdsp(r0 = track): its four words into core 1; clobbers r0-r3, r12
+    SPV = "c_spval"
+    if rhbuild.OPT.get("mxsink"):                                         # (RH64) the matrix's offsets
+        SPV = "c_spvd"
+        a.label("c_spvd")
+        E(b_w, "c_spval")
     a.label("c_spdsp")
     E(push_list, [3, 4, 5], lr=True)
     E(mov_reg, 4, 0)
     E(movs_imm, 1, 0)
-    E(bl, "c_spval")
+    E(bl, SPV)
     E(movw, 1, 8192)
     E(subs_reg, 0, 0, 1)
     E(movs_imm, 1, A_SCALE)
@@ -890,7 +896,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
     for k, tab, off in ((1, t_dec, PM.OFF_D),) + (() if k3sync else ((2, t_rate, PM.OFF_R),)):
         E(mov_reg, 0, 4)
         E(movs_imm, 1, k)
-        E(bl, "c_spval")
+        E(bl, SPV)
         E(mov_reg, 1, 0)
         imm32(0, tab)
         E(bl, "c_spint")
@@ -913,7 +919,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         a.label("sd_k3")
     E(mov_reg, 0, 4)
     E(movs_imm, 1, 3)
-    E(bl, "c_spval")
+    E(bl, SPV)
     E(movs_imm, 1, L_SCALE)
     E(muls, 0, 1)
     E(movw, 1, YB + PM.OFF_L)
@@ -928,7 +934,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         def val(k):
             E(mov_reg, 0, 4)
             E(movs_imm, 1, k)
-            E(bl, "c_spval")
+            E(bl, SPV)
 
         def put(addr):                                                    # r0 = the word -> Y:addr + t
             E(movw, 1, addr)
@@ -1039,7 +1045,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         a.label("c_k8r")
         E(push_list, [4], lr=True)
         E(movs_imm, 1, K8)
-        E(bl, "c_spval")
+        E(bl, SPV)
         E(movw, 1, X7)
         E(subs_reg, 0, 0, 1)
         E(b_cond, "kr_l", "lt")
@@ -1095,7 +1101,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         a.label("ks_t")
         E(mov_reg, 0, 4)
         E(movs_imm, 1, K8)
-        E(bl, "c_spval")
+        E(bl, SPV)
         E(movw, 1, X7)
         E(subs_reg, 0, 0, 1)
         E(b_cond, "ks_n", "ge")                                           # the middle or free: not ours
@@ -1131,7 +1137,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         a.label("c_k3r")
         E(push_list, [4], lr=True)
         E(movs_imm, 1, K3)
-        E(bl, "c_spval")
+        E(bl, SPV)
         E(movw, 1, X7)
         E(subs_reg, 0, 0, 1)
         E(b_cond, "k3_l", "lt")
@@ -1187,7 +1193,7 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         a.label("k3s_t")
         E(mov_reg, 0, 4)
         E(movs_imm, 1, K3)
-        E(bl, "c_spval")
+        E(bl, SPV)
         E(movw, 1, X7)
         E(subs_reg, 0, 0, 1)
         E(b_cond, "k3s_n", "ge")                                          # the middle or free: not ours

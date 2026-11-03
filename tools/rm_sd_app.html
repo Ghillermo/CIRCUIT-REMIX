@@ -65,6 +65,7 @@
   #prog[hidden], #progtxt[hidden] { display:none; }
   #progtxt { font-size:.8rem; color:var(--dim); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
   #log { height:84px; overflow:auto; background:#0b0d10; border:1px solid var(--line); border-radius:6px; padding:5px 8px; font:12px/1.4 ui-monospace,Consolas,monospace; white-space:pre-wrap; }
+  dialog a { color:var(--acc); }
   dialog { background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:16px; max-width:560px; }
   dialog::backdrop { background:rgba(0,0,0,.6); }
   dialog h3 { margin:0 0 8px; font-size:1rem; }
@@ -102,6 +103,7 @@
     <button id="bSnap" type="button" hidden></button>
     <button id="bRest" type="button" hidden></button>
     <button id="bDev" type="button" class="dng" hidden></button>
+    <button id="bMods" type="button"></button>
     <button id="bBackup" type="button"></button>
     <div class="lang" role="group" aria-label="Idioma / Language"><button type="button" data-lang="es">Español</button><button type="button" data-lang="en">English</button></div>
   </div>
@@ -112,6 +114,7 @@
 <footer><progress id="prog" hidden></progress><div id="progtxt" hidden></div><div id="log" role="log"></div></footer>
 <dialog id="dlg"></dialog>
 <dialog id="ed" class="wide"></dialog>
+<dialog id="mods"></dialog>
 
 <script id="core">
 /* The microSD card of a Circuit Rhythm, read and written from the browser (File System Access API).  No DOM here: the interface is the next script,
@@ -329,6 +332,69 @@ const Samples = {
     pack._samples = null; pack._info = null;
   },
 };
+
+// ---------------------------------------------------------------- renaming: only the name after NN_ changes, the slot stays
+// What would break the data: a name FAT stores differently from how it was asked (trailing spaces or dots dropped, characters it refuses), a name the
+// device's protocol refuses (printable ASCII, 31 B with the number), longer than the app's own limits (a pack folder of 30, a sample of 26 before .wav),
+// or the same file as another one of the folder (FAT does not tell case apart).  The NN_ prefix, by which the firmware finds the file, never changes.
+const RENAME_TMP = "~rename";                               // no NN_ prefix: neither the firmware nor Card.scan takes it
+function nameMax(kind, slot) { return kind === "pack" ? FOLDER_MAX - 3 : 26 - (slot >= 100 ? 4 : 3); }
+function nameProblem(kind, slot, name, others) {            // -> null, or the reason (rename-*)
+  if (!name) return "rename-empty";
+  if (name !== name.trim() || name.endsWith(".")) return "rename-edge";
+  if (!/^[ -~]+$/.test(name)) return "rename-ascii";
+  if (/[\\/:*?"<>|]/.test(name)) return "rename-char";
+  if (name.length > nameMax(kind, slot)) return "rename-long";
+  const full = (pad2(slot) + "_" + name + (kind === "pack" ? "" : ".wav")).toLowerCase();
+  if (others.some(o => o.toLowerCase() === full)) return "rename-taken";
+  return null;
+}
+async function moveHandle(h, to) {                          // a PC file or folder renamed in place; false when this browser cannot (the caller copies)
+  if (typeof h.move !== "function") return false;
+  try { await h.move(to); return true; }
+  catch (e) { if (e.name === "NotSupportedError" || e.name === "TypeError" || e.name === "InvalidModificationError") return false; throw e; }
+}
+async function renameSample(pl, n, name, ctx = {}) {
+  const pack = pl.pack, m = await samplesOf(pack), old = m.get(n), d = await subdir(pack.dir, "PCM");
+  const bad = nameProblem("sample", n, name, [...m.values()].filter(e => e !== old).map(e => e.file));
+  if (!old) throw new Error("rename-gone");
+  if (bad) throw new Error(bad);
+  const file = pad2(n) + "_" + name + ".wav";
+  if (old.file === file) return;
+  if (d.renameEntry) await d.renameEntry(old.file, file);  // the device: its own rename
+  else if (!await moveHandle(old.handle, file)) {           // a copy under a temporary name first, checked; then the old one goes
+    const bytes = await readHandle(old.handle);
+    await writeFile(d, RENAME_TMP, bytes);
+    if ((await (await d.getFileHandle(RENAME_TMP)).getFile()).size !== bytes.length) { await d.removeEntry(RENAME_TMP); throw new Error("verify"); }
+    await d.removeEntry(old.file);
+    await writeFile(d, file, bytes);
+    await d.removeEntry(RENAME_TMP);
+  }
+  pack._samples = null; pack._info = null;
+  if (ctx.progress) ctx.progress(file, 1, 1);
+}
+async function renamePack(pack, name, ctx = {}) {
+  const card = pack.card, bad = nameProblem("pack", pack.slot, name, card.packs.filter(x => x !== pack).map(x => x.folder));
+  if (bad) throw new Error(bad);
+  const to = folderName(pack.slot, name);
+  if (to === pack.folder) return pack;
+  if (card.top.renameEntry) await card.top.renameEntry(pack.folder, to);       // the device
+  else if (!await moveHandle(pack.dir, to)) {               // a copy under a temporary name, checked; the old folder goes; the copy takes the new name
+    if (await subdir(card.top, RENAME_TMP)) throw new Error("rename-left");
+    const tmp = await card.top.getDirectoryHandle(RENAME_TMP, {create: true}), all = await treeInfo(pack.dir);
+    let done = 0;
+    const tick = n => { done++; if (ctx.progress) ctx.progress(n, done, 2 * all.files); };
+    try { await copyTree(pack.dir, tmp, tick); if (!await sameTree(pack.dir, tmp)) throw new Error("verify"); }
+    catch (e) { await card.top.removeEntry(RENAME_TMP, {recursive: true}); throw e; }
+    await card.top.removeEntry(pack.folder, {recursive: true});
+    const dst = await card.top.getDirectoryHandle(to, {create: true});
+    await copyTree(tmp, dst, tick);
+    if (!await sameTree(tmp, dst)) throw new Error("rename-half");                 // the data stays in ~rename
+    await card.top.removeEntry(RENAME_TMP, {recursive: true});
+  }
+  await card.reset();
+  return card.pack(pack.slot);
+}
 
 // ---------------------------------------------------------------- the patterns: a session is read whole, changed in RAM and written once
 async function sessionsOf(pack) {
@@ -770,7 +836,7 @@ async function transfer(K, src, from, dst, to, opt = {}, ctx = {}) {
 
 return {NSAMPLES, NSESS, NPACKS, SESS_SIZE, NPATS, TRACK_NAME, SAMPLE_MAX, copyTree, patMidi, PAT, NSTEPS, STEP, SETT, LANE0, NLANES, MICRO, STEP_EMPTY,
   entries, subdir, readHandle, writeFile, treeInfo, Backup, Card, Pack, folderName, packInfo, copyPack, movePack, deletePack, audit, Samples, Patterns, SNAP_FILE, snapshot, restorePlan, restoreApply,
-  Device, DevRoot, enc7, dec7, crc32, sessionsOf, openSession, samplesOf, wavInfo, patParse, patBuild, patEmpty, patMerge, patSummary, patOff, transfer, same, latin, pad2};
+  Device, DevRoot, enc7, dec7, crc32, nameMax, nameProblem, renamePack, renameSample, sessionsOf, openSession, samplesOf, wavInfo, patParse, patBuild, patEmpty, patMerge, patSummary, patOff, transfer, same, latin, pad2};
 })();
 if (typeof window !== "undefined") window.SD = SD;
 </script>
@@ -804,7 +870,16 @@ const NOTE = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = n => NOTE[n % 12] + (Math.floor(n / 12) - 2);
 const mb = b => (b / 1048576).toLocaleString(LANG, {maximumFractionDigits: 1}) + " MB";
 const errText = e => ({"no-packs": T("En esa carpeta no hay packs (NN_Nombre con PCM o Sessions). Elige la carpeta Rhythm de la tarjeta.", "No packs in that folder (NN_Name with PCM or Sessions). Choose the card's Rhythm folder."),
-  "slot-used": T("Ese hueco de pack ya está ocupado.", "That pack slot is taken."), "verify": T("La copia no coincide con el original: se ha quitado.", "The copy does not match the original: it was removed."),
+  "slot-used": T("Ese hueco de pack ya está ocupado.", "That pack slot is taken."),
+  "rename-empty": T("Escribe un nombre.", "Type a name."),
+  "rename-edge": T("Sin espacios ni punto al principio o al final: la tarjeta (FAT) los quita y el nombre no sería el escrito.", "No spaces or dot at the start or end: the card (FAT) drops them and the name would not be the one typed."),
+  "rename-ascii": T("Solo letras, números y signos ASCII: el aparato no acepta tildes, ñ ni otros caracteres.", "Only ASCII letters, digits and signs: the device takes no accents or other characters."),
+  "rename-char": T("La tarjeta no acepta \\ / : * ? \" < > |.", "The card does not take \\ / : * ? \" < > |."),
+  "rename-long": T("Demasiado largo: hasta {max} caracteres.", "Too long: up to {max} characters."),
+  "rename-taken": T("Ya hay otro con ese nombre (la tarjeta no distingue mayúsculas).", "Another one has that name (the card does not tell upper and lower case apart)."),
+  "rename-gone": T("Ese fichero ya no está.", "That file is gone."),
+  "rename-left": T("Hay una carpeta ~rename de un renombrado anterior que no terminó: revisa su contenido y quítala desde el PC.", "There is a ~rename folder from an earlier rename that did not finish: check its content and remove it from the PC."),
+  "rename-half": T("La copia final no coincide: los datos del pack están en la carpeta ~rename de la tarjeta. No la borres.", "The final copy does not match: the pack's data is in the card's ~rename folder. Do not delete it."), "verify": T("La copia no coincide con el original: se ha quitado.", "The copy does not match the original: it was removed."),
   "no-webmidi": T("Este navegador no tiene Web MIDI: usa Chrome o Edge.", "This browser has no Web MIDI: use Chrome or Edge."),
   "no-device": T("No aparece el Circuit Rhythm. Conéctalo por USB y cierra lo que pueda tener sus puertos.", "No Circuit Rhythm found. Connect it by USB and close whatever may hold its ports."),
   "device-other": T("Lo conectado no es un Circuit Rhythm.", "What is connected is not a Circuit Rhythm."),
@@ -963,9 +1038,9 @@ function headHtml(p) {
   }
   if (tab === "samples" && pack) s += `<div class="prow dim" data-gauge></div>`;
   if (p.issues.length) s += `<div class="prow warn"><button type="button" data-act="issues">⚠ ${p.issues.length} ${T("ficheros que pueden tapar a los del pack", "files that can hide the pack's own")}</button></div>`;
-  const canEdit = tab === "patterns";
+  const canEdit = tab === "patterns", canRename = tab !== "patterns";
   s += `<div class="tool"><button type="button" class="pri" data-act="copy">${p.i ? side + " " : ""}${T("Copiar", "Copy")}${p.i ? "" : " " + side}</button><button type="button" data-act="move">${p.i ? side + " " : ""}${T("Mover", "Move")}${p.i ? "" : " " + side}</button>` +
-       `<button type="button" data-act="export">${T("Exportar…", "Export…")}</button><button type="button" class="dng" data-act="del">${T("Eliminar", "Delete")}</button>${canEdit ? `<button type="button" data-act="edit">${T("Editar", "Edit")}</button>` : ""}<span class="hint" data-hint></span></div>`;
+       `<button type="button" data-act="export">${T("Exportar…", "Export…")}</button><button type="button" class="dng" data-act="del">${T("Eliminar", "Delete")}</button>${canRename ? `<button type="button" data-act="rename">${T("Renombrar…", "Rename…")}</button>` : ""}${canEdit ? `<button type="button" data-act="edit">${T("Editar", "Edit")}</button>` : ""}<span class="hint" data-hint></span></div>`;
   return s;
 }
 async function loadItems(p) {
@@ -1431,10 +1506,134 @@ async function exportAct(p) {
     }
   });
 }
+async function renameAct(p) {
+  const tab = state.tab, from = selected(p);
+  if (from.length !== 1) return say(T("Elige una fila", "Choose one row"), T("Elige un pack o un sample (solo uno) para renombrarlo.", "Choose one pack or sample to rename it."));
+  const n = from[0], kind = tab === "packs" ? "pack" : "sample";
+  let pack, cur, others;
+  if (kind === "pack") { pack = p.card.pack(n); cur = pack.name; others = p.card.packs.filter(x => x !== pack).map(x => x.folder); }
+  else { pack = p.place().pack; const m = await SD.samplesOf(pack), e = m.get(n); if (!e) return; cur = e.name; others = [...m.values()].filter(x => x !== e).map(x => x.file); }
+  const max = SD.nameMax(kind, n), pre = SD.pad2(n) + "_", ext = kind === "pack" ? "" : ".wav";
+  const d = $("dlg");
+  d.innerHTML = `<h3>${kind === "pack" ? T("Renombrar pack", "Rename pack") : T("Renombrar sample", "Rename sample")}</h3><div class="body">
+    <p class="dim">${T("Cambia solo el nombre: el número", "Only the name changes: the number")} <b>${esc(pre)}</b> ${T("se queda (el aparato busca los ficheros por él).", "stays (the device finds the files by it).")}</p>
+    <div class="prow"><span>${esc(pre)}</span><input type="text" id="rnName" maxlength="${max}" style="flex:1" value="${esc(cur)}"><span>${esc(ext)}</span></div>
+    <p id="rnWhy" class="dim"></p></div>
+    <div class="btns"><button type="button" class="pri" data-r="ok">${T("Renombrar", "Rename")}</button><button type="button" data-r="no">${T("Cancelar", "Cancel")}</button></div>`;
+  const inp = $("rnName"), why = $("rnWhy"), ok = d.querySelector("[data-r=ok]");
+  const check = () => {
+    const v = inp.value, bad = v === cur ? "same" : SD.nameProblem(kind, n, v, others);
+    ok.disabled = !!bad;
+    why.className = bad && bad !== "same" ? "bad" : "dim";
+    why.textContent = bad === "same" ? "" : bad ? errText(new Error(bad)).replace("{max}", max) : `${T("Quedará", "It becomes")} ${pre}${v}${ext}`;
+  };
+  inp.oninput = check; check();
+  const name = await new Promise(res => {
+    d.onclick = e => { const r = e.target.dataset ? e.target.dataset.r : null; if (!r || (r === "ok" && ok.disabled)) return; d.close(); res(r === "ok" ? inp.value : null); };
+    inp.onkeydown = e => { if (e.key === "Enter" && !ok.disabled) { d.close(); res(inp.value); } };
+    d.oncancel = () => res(null);
+    d.showModal(); inp.focus(); inp.select();
+  });
+  if (name === null || !await ready(p.card)) return;
+  if (kind === "sample" && !await loadedOK(pack)) return;
+  if (kind === "pack" && p.card.device && p.card.device.loaded === n + 1) return say(T("Es el pack cargado", "It is the loaded pack"), T("No renombres por USB el pack que el aparato tiene cargado: carga otro antes.", "Do not rename over USB the pack the device has loaded: load another one first."));
+  p.sel.clear();
+  await run(`${T("Renombrar", "Rename")} ${pre}${cur} → ${pre}${name}`, ctx => kind === "pack" ? SD.renamePack(pack, name, ctx) : SD.renameSample(p.place(), n, name, ctx));
+}
 async function editAct(p) {
   const n = p.sel.size ? Math.min(...p.sel) : null;
   if (n === null) return say(T("Nada elegido", "Nothing chosen"), T("Elige una fila.", "Choose a row."));
   if (state.tab === "patterns") return editPattern(p, n);
+}
+
+// ---- Arrhythmia's modules: a proof of concept.  The module files (.mod) are Arrhythmia's (llcoolkm, MIT; github.com/llcoolkm/arrhythmia): Circuit
+// Remix 0.11 (RH67) and later run them with our host of its interface (ABI 3, tools/modhost.py), over the SysEx of its module host: 04 write, 7D read
+// back, 05 start (status 7F), 00 stop, 0A the controls.  Its own connection: the file session above stops the transport and locks the panel.
+const ARR = "https://github.com/llcoolkm/arrhythmia", MPRE = [0xF0, 0x00, 0x20, 0x29, 0x00, 0x60];
+const g7 = (b, a, n) => { let v = 0; for (let i = a; i < a + n; i++) v = v * 128 + b[i]; return v; };
+const p7 = (v, n) => Array.from({length: n}, (_, i) => Math.floor(v / 128 ** (n - 1 - i)) & 0x7F);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function modCheck(b) {                                      // the unit's checks before a start: magic, size, CRC-32
+  const magic = String.fromCharCode(...b.subarray(0, 4)), hdr = {CRM1: 24, CRM2: 28}[magic];
+  if (!hdr) return T("no es un módulo (cabecera ", "not a module (header ") + esc(magic) + ")";
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength), size = dv.getUint32(4, true), crc = dv.getUint32(8, true);
+  if (size !== b.length || size < hdr + 2 || size > 0x3C00) return T("tamaño ", "size ") + size;
+  const z = b.slice(); z.fill(0, 8, 12);
+  return SD.crc32(z) === crc ? null : T("CRC-32 erróneo", "bad CRC-32");
+}
+class ModHost {
+  constructor(tx) { this.tx = tx; this.q = []; this.wake = null; tx.onmessage = m => { this.q.push(m); if (this.wake) { const w = this.wake; this.wake = null; w(); } }; }
+  send(cmd, args = []) { this.tx.send(Uint8Array.from([...MPRE, cmd, ...args, 0xF7])); }
+  async reply(cmd, ms) {
+    const end = Date.now() + ms;
+    for (;;) {
+      while (this.q.length) { const m = this.q.shift(); if (MPRE.every((x, i) => m[i] === x) && m[6] === cmd) return m; }
+      const left = end - Date.now();
+      if (left <= 0) throw new Error("mod-timeout");
+      await new Promise(res => { const t = setTimeout(() => { this.wake = null; res(); }, left); this.wake = () => { clearTimeout(t); res(); }; });
+    }
+  }
+  async ask(cmd, args = [], rcmd = cmd, ms = 2000) { this.q.length = 0; this.send(cmd, args); return this.reply(rcmd, ms); }
+  st(r) { if (r.length !== 20) throw new Error("mod-reply"); return {mode: r[7], owned: !!(r[8] & 2), frames: g7(r, 14, 4), module: r[18]}; }
+  async status() { return this.st(await this.ask(0x7F)); }
+  async upload(b, tick) {
+    for (let o = 0; o < b.length; o += 32) {                 // 50 ms apart: 5 ms (as Arrhythmia's module.py) loses messages on the unit
+      this.send(0x04, [...p7(o, 3), ...[...b.subarray(o, o + 32)].flatMap(x => [x >> 4, x & 15])]);
+      tick(o, b.length); await sleep(50);
+    }
+    for (let a = 0x400; a < 0x400 + b.length; a += 32) {
+      const r = await this.ask(0x7D, p7(a, 5));
+      if (r.length !== 77 || g7(r, 7, 5) !== a) throw new Error("mod-readback");
+      for (let k = 0; k < 32 && a - 0x400 + k < b.length; k++) if ((r[12 + 2 * k] << 4 | r[13 + 2 * k]) !== b[a - 0x400 + k]) throw new Error("mod-readback");
+    }
+    return this.st(await this.ask(0x05, [], 0x7F));
+  }
+}
+const MODULE = s => [T("ninguno", "none"), T("válido", "valid"), T("erróneo", "bad"), T("ITCM no disponible", "ITCM unavailable")][s.module] || s.module;
+async function modsAct() {
+  if (state.busy) return;
+  if (state.dev) return say(T("Módulos", "Modules"), T("Desconecta antes el aparato: la sesión de ficheros para el transporte y bloquea el panel.", "Disconnect the device first: the file session stops the transport and locks the panel."));
+  const d = $("mods"), a = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+  d.innerHTML = `<h3>${T("Módulos de Arrhythmia · prueba de concepto", "Arrhythmia modules · proof of concept")}</h3><div class="body">
+    <p>${T(`Los módulos son de ${a(ARR, "Arrhythmia")} (llcoolkm, licencia MIT): su interfaz, sus ficheros y su documentación. Circuit Remix 0.11 o posterior los acepta por USB con la misma interfaz, así que un mismo <code>.mod</code> corre en las dos firmwares.`,
+      `The modules are ${a(ARR, "Arrhythmia")}'s (llcoolkm, MIT licence): its interface, its files and its documentation. Circuit Remix 0.11 or later takes them over USB through the same interface, so one <code>.mod</code> runs on both firmwares.`)}</p>
+    <p>${T(`Descarga los <code>.mod</code> de las ${a(ARR + "/releases", "releases de Arrhythmia")}; qué hace cada uno: ${a(ARR + "/blob/main/docs/user/modules.md", "su guía de módulos")}.`,
+      `Download the <code>.mod</code> files from ${a(ARR + "/releases", "Arrhythmia's releases")}; what each one does: ${a(ARR + "/blob/main/docs/user/modules.md", "its modules guide")}.`)}</p>
+    <p class="warn">${T("Prueba de concepto: sin el selector de la tarjeta de Arrhythmia; el módulo se pierde al apagar. Un módulo corre como código nativo en el aparato: usa solo módulos de confianza. Para salir: Parar, o Shift + Sample Rec en el aparato.",
+      "Proof of concept: without Arrhythmia's card picker; the module is gone at power-off. A module runs as native code on the unit: use only modules you trust. To leave it: Stop, or Shift + Sample Rec on the unit.")}</p>
+    <div class="prow"><input type="file" id="modFile" accept=".mod"></div>
+    <div class="prow" style="margin-top:8px"><button type="button" class="pri" data-m="up">${T("Subir y arrancar", "Upload and start")}</button><button type="button" data-m="stop">${T("Parar", "Stop")}</button><button type="button" data-m="own">${T("Controles: módulo / aparato", "Controls: module / unit")}</button><button type="button" data-m="st">${T("Estado", "Status")}</button></div>
+    <p id="modSt" class="dim"></p></div><div class="btns"><button type="button" data-m="close">${T("Cerrar", "Close")}</button></div>`;
+  let host = null, busy = false;
+  const show = (t, cls = "dim") => { const e = $("modSt"); e.className = cls; e.textContent = t; };
+  const desc = s => `${s.mode === 3 ? T("módulo en marcha", "module running") : T("normal", "normal")} · ${T("controles", "controls")}: ${s.owned ? T("el módulo", "the module") : T("el aparato", "the unit")} · ${T("fotogramas", "frames")} ${s.frames} · ${T("módulo en ITCM", "module in ITCM")}: ${MODULE(s)}`;
+  const fail = e => show(e.message === "mod-timeout" ? T("Sin respuesta: hace falta Circuit Remix 0.11 o posterior conectado por USB (y cerrar Components).", "No reply: Circuit Remix 0.11 or later must be connected by USB (and Components closed).")
+    : e.message === "mod-readback" ? T("La lectura de vuelta no coincide: vuelve a subirlo.", "The read-back does not match: upload it again.") : errText(e), "bad");
+  d.onclick = async e => {
+    const m = e.target.dataset ? e.target.dataset.m : null;
+    if (!m) return;
+    if (m === "close") { d.close(); return; }
+    if (busy) return;
+    busy = true;
+    try {
+      if (!host) host = new ModHost(await openMidi());
+      const h = host;
+      if (m === "st") show(desc(await h.status()));
+      else if (m === "stop") { h.send(0x00); await sleep(100); show(desc(await h.status())); }
+      else if (m === "own") { const s = await h.status(); show(desc(h.st(await h.ask(0x0A, [s.owned ? 0 : 1], 0x7F)))); }
+      else if (m === "up") {
+        const f = $("modFile").files[0];
+        if (!f) { show(T("Elige un fichero .mod.", "Choose a .mod file."), "warn"); return; }
+        const b = new Uint8Array(await f.arrayBuffer()), bad = modCheck(b);
+        if (bad) { show(`${f.name}: ${bad}`, "bad"); return; }
+        const s = await h.upload(b, (o, n) => show(`${T("Subiendo", "Uploading")} ${f.name}: ${o} / ${n} B`));
+        show(`${f.name}: ${T("subido y comprobado", "uploaded and verified")} (${b.length} B) · ${desc(s)}`, s.mode === 3 ? "ok" : "bad");
+      }
+    } catch (err) { fail(err); }
+    finally { busy = false; }
+  };
+  d.onclose = () => { if (host) host.tx.close(); host = null; d.innerHTML = ""; };
+  d.showModal();
 }
 
 // ---- events
@@ -1449,6 +1648,7 @@ for (const p of panes) {
     if (act === "copy") return transferAct(p, false);
     if (act === "move") return transferAct(p, true);
     if (act === "del") return deleteAct(p);
+    if (act === "rename") return renameAct(p);
     if (act === "export") return exportAct(p);
     if (act === "edit") return editAct(p);
     if (act === "issues") {
@@ -1481,6 +1681,7 @@ function drawChrome() {
   for (const b of document.querySelectorAll(".lang button")) b.classList.toggle("on", b.dataset.lang === LANG);
   $("notice").textContent = state.dev ? T("Aparato conectado: transporte parado y panel bloqueado hasta Desconectar.", "Device connected: transport stopped and panel locked until Disconnect.")
     : window.showDirectoryPicker ? "" : T("Este navegador no puede abrir carpetas: usa Chrome o Edge en un ordenador.", "This browser cannot open folders: use Chrome or Edge on a computer.");
+  $("bMods").textContent = T("Módulos (prueba de concepto)…", "Modules (proof of concept)…");
   $("bDev").hidden = !state.dev; $("bDev").textContent = T("Desconectar aparato", "Disconnect device");
   $("bSnap").hidden = $("bRest").hidden = !state.dev; $("bSnap").textContent = T("Snapshot…", "Snapshot…"); $("bRest").textContent = T("Restaurar…", "Restore…");
   paintBackup();
@@ -1498,6 +1699,7 @@ document.querySelector(".lang").addEventListener("click", async e => {
   drawChrome(); await renderAll();
 });
 $("bBackup").addEventListener("click", pickBackup);
+$("bMods").addEventListener("click", modsAct);
 $("bDev").addEventListener("click", disconnect);
 $("bSnap").addEventListener("click", snapAct);
 $("bRest").addEventListener("click", restAct);

@@ -31,6 +31,7 @@ AFTER = 2                                          # ms of waiting before we yie
 
 
 def arm_code(base):
+    import rhbuild
     a = Asm(base)
     E = a.emit
 
@@ -63,6 +64,11 @@ def arm_code(base):
     E(subs_reg, 1, 3, 1)
     E(cmp_imm, 1, AFTER)
     E(b_cond, "y_loop", "lo")
+    if rhbuild.OPT.get("sdbulk"):                             # (RH66) in a PCM upload's bulk interval no yield: as the stock (tools/dspgate.py)
+        imm32(0, rhstate.ST2 + rhstate.OFF2["dspgate"][0])
+        E(ldrb_imm, 0, 0, 0)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "y_loop", "ne")
     imm32(0, SCHED_ON)                                        # the stock's yield (its sleep's)
     E(ldrb_imm, 0, 0, 0)
     E(cmp_imm, 0, 0)

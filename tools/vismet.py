@@ -59,10 +59,11 @@ def arm_code(base, prev_led, L):
         imm32(rd, rhstate.ST)
         imm32(s1, rhstate.HEAP_LIMIT_PTR)
         E(ldr_imm, s1, s1, 0)
-        if LIMIT == rhstate.ST:
+        lim = rhstate.our_limit() if hasattr(rhstate, "our_limit") else LIMIT      # (RH67) modhost's third block lowers it
+        if lim == rhstate.ST:
             E(cmp_reg, s1, rd)
         else:
-            imm32(s2, LIMIT)
+            imm32(s2, lim)
             E(cmp_reg, s1, s2)
         E(b_cond, out, "ne")
         E(ldr_imm, s1, rd, 0)

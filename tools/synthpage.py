@@ -34,6 +34,7 @@ import countin as CI  # noqa: E402
 import cthresh as TH  # noqa: E402
 import granpage as GP  # noqa: E402
 import rhrec  # noqa: E402
+import rhbuild  # noqa: E402
 import rhstate  # noqa: E402
 import sckn as SK  # noqa: E402
 import stockplus as SP  # noqa: E402
@@ -783,6 +784,11 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(pop_list, [4], pc=True)
 
     # ---- c_syword(r0 = slot, r1 = i) -> r0 = its control word i (tools/synth0.py C_*: synthpage.model_words); clobbers r1-r3
+    SYV = "c_syv"
+    if rhbuild.OPT.get("mxsink"):                                         # (RH64) the matrix's offsets
+        SYV = "c_sywv"
+        a.label("c_sywv")
+        E(b_w, "c_syv")
     a.label("c_syword")
     E(push_list, [4, 5, 6], lr=True)
     E(mov_reg, 4, 0)
@@ -791,7 +797,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     def val(k, rd=0):
         E(mov_reg, 0, 4)
         E(movs_imm, 1, k)
-        E(bl, "c_syv")
+        E(bl, SYV)
         if rd != 0:
             E(mov_reg, rd, 0)
 

@@ -35,6 +35,7 @@ from thumb import (Asm, adds_imm8, adds_reg, b, b_cond, b_w, bl, cmp_imm, cmp_re
                    strh_imm, subs_reg, tst_reg)
 import countin as CI  # noqa: E402
 import rhrec  # noqa: E402
+import rhbuild  # noqa: E402
 import rhstate  # noqa: E402
 import sckn as SK  # noqa: E402
 import stepgate as SG  # noqa: E402
@@ -219,6 +220,7 @@ def arm_code(base, L, prev, ui=False, keep=False, init=False):
     E(raw, ldrb_reg(1, 1, 5))
     E(mov_reg, 0, 6)
     E(adds_imm8, 0, 0x10)
+    a.label("c_arbg")
     E(bl, GROUP_GET)
     E(adds_reg, 1, 7, 5)
     E(strb_imm, 0, 1, T_BASE)
@@ -278,6 +280,10 @@ def arm_code(base, L, prev, ui=False, keep=False, init=False):
     E(ldrb_imm, 2, 2, T_BASE)
     if init:                                                              # (init, RH58) Project init: trkcopy's photo (as loaded / saved) when valid
         E(push_list, [0, 1, 2])
+        if rhbuild.OPT.get("mxlane"):                                     # (RH64) a lane with another destination: its own base
+            E(bl, "c_arrem")
+            E(cmp_imm, 0, 0)
+            E(b_cond, "ai_b", "ne")
         E(bl, L["c_rram"])
         E(cmp_imm, 0, 0)
         E(b_cond, "ai_b", "eq")
@@ -316,6 +322,10 @@ def arm_code(base, L, prev, ui=False, keep=False, init=False):
     E(movs_imm, 0, 0)
     E(strh_imm, 0, 7, T_FLAGS)
     E(pop_list, [4, 6], pc=True)
+    if init and rhbuild.OPT.get("mxlane"):                                # (RH64) modmx's c_mxrem goes here (a b.w)
+        a.label("c_arrem")
+        E(movs_imm, 0, 0)
+        E(raw, h(0x4770))
 
     # ---- c_arvel() -> r0 = 1 when the Velocity view is on the screen and Shift held; clobbers r1-r3
     a.label("c_arvel")

@@ -355,10 +355,12 @@ def arm_code(base, L, prev, noblink=False):
     # a synth slot: start / length its values 15 / 13, the slope our block's, the track its block's
     E(mov_reg, 0, 4)
     E(movs_imm, 1, SY.K_SPARE)
+    a.label("c_evk1")
     E(bl, L["c_syv"])
     E(mov_reg, 6, 0)                                                      # r6 = start
     E(mov_reg, 0, 4)
     E(movs_imm, 1, SY.K_REL)
+    a.label("c_evk2")
     E(bl, L["c_syv"])
     E(mov_reg, 7, 0)                                                      # r7 = length
     imm32(1, t_soff)

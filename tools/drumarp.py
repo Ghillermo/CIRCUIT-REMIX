@@ -37,6 +37,7 @@ from thumb import (Asm, adds_imm8, adds_reg, ands_reg, b, b_cond, b_w, bics_reg,
 import countin as CI  # noqa: E402
 import drumpat as DQ  # noqa: E402
 import playmode as PM  # noqa: E402
+import rhbuild  # noqa: E402
 import rhrec  # noqa: E402
 import rhstate  # noqa: E402
 
@@ -105,6 +106,12 @@ def arm_code(base, L, prev):
 
     t_ord = base
     E(raw, bytes(ORD_OF_PAD) + bytes([PS_PAD_ORD + ORD_OF_PAD.index(m) for m in range(6)]))
+    AM = rhbuild.OPT.get("armods", False)
+    if AM:
+        import arpmods
+        t_am = base + 12
+        E(raw, arpmods.tables())
+        L["tail"] = rhrec.TAIL
 
     # ---- c_dablk() -> r0 = our block in the tail when valid, else 0; c_daraw() -> r0 = its place (0 without a record); clobber r1-r3
     a.label("c_daraw")
@@ -237,6 +244,10 @@ def arm_code(base, L, prev):
     E(strb_imm, 4, 0, S_TRK)
     E(movs_imm, 1, 0xFF)
     E(strb_imm, 1, 0, S_FIRST)
+    if AM:                                                                # (RH63) the modifiers' running state
+        E(mov_reg, 4, 0)
+        E(bl, "c_amz")
+        E(mov_reg, 0, 4)
     a.label("di_x")
     E(pop_list, [4], pc=True)
 
@@ -521,7 +532,7 @@ def arm_code(base, L, prev):
     E(movs_imm, 1, 7)
     E(ands_reg, 1, 0)
     E(mov_reg, 0, 4)
-    E(bl, "c_arord")
+    E(bl, "c_amo" if AM else "c_arord")
     E(adds_reg, 0, 0, 4)
     E(ldrb_imm, 5, 0, S_SMP)
     E(ldrb_imm, 6, 0, S_VEL)
@@ -538,6 +549,16 @@ def arm_code(base, L, prev):
         E(bl, "c_dasmp")
         E(movs_imm, 5, NOTE)
         a.label("fi_n")
+        if AM:                                                            # (RH63) the hit's octave
+            E(mov_reg, 1, 5)
+            E(bl, "c_amoct")
+            E(mov_reg, 5, 1)
+            if REC:
+                E(ldrb_imm, 0, 4, S_FL)
+                E(lsls_imm, 0, 0, 30)
+                E(b_cond, "fi_o", "pl")
+                E(strb_imm, 5, 4, S_RVAL)
+                a.label("fi_o")
         E(strb_imm, 5, 4, S_LAST)
         E(ldrb_imm, 0, 4, S_TRK)
         E(mov_reg, 1, 6)
@@ -908,6 +929,13 @@ def arm_code(base, L, prev):
     E(mov_reg, 6, 0)
     E(mov_reg, 0, 5)
     E(bl, "c_dati")
+    if AM:                                                                # (RH63) a groove: the accumulator decides
+        E(mov_reg, 1, 6)
+        E(bl, "c_amdue")
+        E(cmp_imm, 1, 1)
+        bc("dp_h", "eq")
+        E(cmp_imm, 1, 2)
+        bc("dp_x", "eq")
     E(movs_imm, 1, 6)
     E(muls, 1, 0)                                                         # r1 = 6 x the arpeggio's ticks
     E(ldr_sp, 0, 8)
@@ -920,6 +948,8 @@ def arm_code(base, L, prev):
     E(raw, mls_(0, 2, 1, 0))
     E(cmp_imm, 0, 0)
     bc("dp_x", "ne")
+    if AM:
+        a.label("dp_h")
     if SINGLE:                                                            # the first grid point after a single press: not within half a step of its hit
         E(ldrb_imm, 0, 4, S_FL)
         E(movs_imm, 1, F_FRESH)
@@ -941,6 +971,10 @@ def arm_code(base, L, prev):
         a.label("dp_f")
     E(mov_reg, 0, 4)
     E(bl, "c_dafire")
+    if AM:
+        E(mov_reg, 0, 5)
+        E(bl, "c_dati")
+        E(bl, "c_amrun")
     if REC:
         emit_rec(a, E, L, imm32, bc)
     a.label("dp_x")
@@ -1003,6 +1037,12 @@ def arm_code(base, L, prev):
     imm32(0, 2500)
     E(muls, 0, 6)
     E(raw, udiv(0, 0, 1))
+    if AM:                                                                # (RH63) x the groove's factor
+        E(mov_reg, 6, 0)
+        E(bl, "c_amG")
+        E(muls, 0, 6)
+        E(movs_imm, 1, 6)
+        E(raw, udiv(0, 0, 1))
     E(ldr_imm, 1, 4, S_NEXT)
     E(adds_reg, 1, 1, 0)
     E(subs_reg, 2, 5, 1)
@@ -1125,19 +1165,29 @@ def arm_code(base, L, prev):
     E(movs_imm, 2, 15)
     E(ands_reg, 0, 2)
     E(cmp_imm, 0, 0)
-    E(b_cond, "pb_x", "eq")
+    E(b_cond, "pb_m" if AM else "pb_x", "eq")
     E(cmp_imm, 0, 8)
-    E(b_cond, "pb_x", "hi")
+    E(b_cond, "pb_m" if AM else "pb_x", "hi")
     E(movs_imm, 2, PS_PAD_RATE + 8)
     E(subs_reg, 0, 2, 0)
     E(lsls_imm, 0, 0, 1)
     E(strh_reg, 1, 6, 0)
+    if AM:                                                                # (RH63) pads 1-16, the arpeggiator on
+        a.label("pb_m")
+        E(lsls_imm, 0, 4, 24)
+        E(b_cond, "pb_x", "pl")
+        E(ldr_sp, 0, 0)
+        E(bl, L["c_pmtrk"])
+        E(mov_reg, 1, 6)
+        E(bl, "c_amled")
     a.label("pb_x")
     E(mov_reg, 0, 5)
     E(raw, h(0xB001))                                                     # add sp, #4
     E(pop_list, [4, 5, 6, 7], pc=True)
     if NOTES:
         emit_notes(a, E, L, prev, imm32, bc)
+    if AM:
+        arpmods.emit(a, E, L, imm32, bc, t_am, S_N, S_K, S_FG, S_FP, S_TRK, M_DOWN, M_PP, M_FRAC, udiv)
     return a.assemble()
 
 
@@ -1449,7 +1499,7 @@ def install(img, report, base_addr, notes=False, rec=False, single=False, bpm0=F
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])
-    names = dict(pad="c_dapad", rel="c_darel", leds="c_daleds", pspad="c_dapspad", psled="c_dapsled", play="c_daplay",
+    names = dict(pad="c_dapad", rel="c_darel", leds="c_daleds", pspad="c_ampspad" if rhbuild.OPT.get("armods") else "c_dapspad", psled="c_dapsled", play="c_daplay",
                  npad="c_danpad", nrel="c_danrel", nleds="c_danleds")
     for k, (vt, s) in slots.items():
         rhbuild.patch_word(img, vt + 4 * s, old[k], labels[names[k]] | 1)
