@@ -1,8 +1,14 @@
 # CHANGELOG
 
+## Alpha 0.10 (2026-11-04) — sin los módulos de Arrhythmia (experimental)
+
+**Español.** **Alpha 0.10** (marca `A0.10`) y **Alpha 0.10S** (marca `A0.10S`) son **Alpha 0.11 / 0.11S sin los módulos de Arrhythmia**: lo mismo (el arreglo del bucle de arranque de 0.09, la matriz de modulación, los carriles con destino propio, el carril extra y las rampas, los modificadores del arpegio, el Nudge de tramo, guardar al parar, la curva de velocity, el «1 de n» en las cadenas, el destello de las pistas), sin el código que ejecuta módulos. Para quien no quiera ese código en el aparato. Arranca en frío y tras reiniciar. Experimental: **haz una copia de la tarjeta SD.** Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+**English.** **Alpha 0.10** (marker `A0.10`) and **Alpha 0.10S** (marker `A0.10S`) are **Alpha 0.11 / 0.11S without Arrhythmia's modules**: the same (the fix for 0.09's boot loop, the modulation matrix, lanes with their own destination, the extra lane and ramps, arpeggio modifiers, range Nudge, save on stop, the velocity curve, 1-in-n in chains, the track flash) without the code that runs modules. For anyone who would rather not have that code on the device. It boots cold and after a restart. Experimental: **back up your SD card.** Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
 ## Alpha 0.11 (2026-11-04) — Arrhythmia modules proof of concept (experimental)
 
-> ⚠️ **Experimental: necesita pulirse.** Alpha 0.11 arranca en frío y tras reiniciar en el aparato, y los módulos de Arrhythmia se han probado en él; el resto de lo nuevo se ha comprobado sobre todo en emulación (el código del aparato ejecutado sobre un volcado de su memoria). Puede haber fallos, ruidos o cuelgues. **Haz una copia de la tarjeta SD.** (Alpha 0.10 no se publicó: lo suyo va en 0.11.)
+> ⚠️ **Experimental: necesita pulirse.** Alpha 0.11 arranca en frío y tras reiniciar en el aparato, y los módulos de Arrhythmia se han probado en él; el resto de lo nuevo se ha comprobado sobre todo en emulación (el código del aparato ejecutado sobre un volcado de su memoria). Puede haber fallos, ruidos o cuelgues. **Haz una copia de la tarjeta SD.** (Lo mismo sin los módulos: Alpha 0.10 / 0.10S.)
 
 **Español.** Dos versiones nuevas: **Alpha 0.11** (marca `A0.11`) y **Alpha 0.11S** (marca `A0.11S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
 
@@ -25,7 +31,7 @@ Novedades:
 
 **English.** Two new versions: **Alpha 0.11** (marker `A0.11`) and **Alpha 0.11S** (marker `A0.11S`: without the project copy, the pack delete or the sample copy). Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
 
-> ⚠️ **Experimental: needs refinement.** Alpha 0.11 boots cold and after a restart on the device, and Arrhythmia's modules were tried on it; the rest of what's new has mostly been checked in emulation (the device's code run on a dump of its memory). There may be bugs, noises or hangs. **Back up your SD card.** (Alpha 0.10 was not published: its changes are in 0.11.)
+> ⚠️ **Experimental: needs refinement.** Alpha 0.11 boots cold and after a restart on the device, and Arrhythmia's modules were tried on it; the rest of what's new has mostly been checked in emulation (the device's code run on a dump of its memory). There may be bugs, noises or hangs. **Back up your SD card.** (The same without the modules: Alpha 0.10 / 0.10S.)
 
 What's new:
 - **Alpha 0.09's boot loop fixed:** the Project init snapshot was taken during start-up, before the tracks existed, and read power-on garbage. It now waits until the device has started.

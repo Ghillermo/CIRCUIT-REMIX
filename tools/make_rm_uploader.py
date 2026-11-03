@@ -1,7 +1,7 @@
 """tools/rm_uploader.html: the Circuit Remix installer, a web page that takes the OFFICIAL Circuit Rhythm firmware from the user, patches it in
 the browser and sends it (no Novation code inside; MIT, from CIRCUIT-HACKS' make_rc_uploader.py).
 
-    python tools/make_rm_uploader.py [VERSION ...]          (default: A0.11 A0.11S A0.08 A0.08S A0.09 A0.09S A0.07 A0.07S A0.06 A0.06S A0.05 A0.05S A0.04 A0.04S A0.03 A0.03S A0.02 A0.02S A0.01 A0.01S A0.0 A0.0S; needs firmware/<dir>/*.bin and the stock image of a full checkout)
+    python tools/make_rm_uploader.py [VERSION ...]          (default: A0.11 A0.11S A0.10 A0.10S A0.08 A0.08S A0.09 A0.09S A0.07 A0.07S A0.06 A0.06S A0.05 A0.05S A0.04 A0.04S A0.03 A0.03S A0.02 A0.02S A0.01 A0.01S A0.0 A0.0S; needs firmware/<dir>/*.bin and the stock image of a full checkout)
 Each version becomes a patch against the official image: COPY (offset, length) from the user's official image, or ADD (our bytes).  The matching is greedy
 on 8-byte keys, so an ADD run never holds 8 or more consecutive bytes that also occur in the official image: the page carries only our own work
 (checked again below).  The page:
@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.11", "A0.11S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -96,6 +96,10 @@ DESC = {"A0.11": ("⚠️ experimental, necesita pulirse — Alpha 0.11 — la v
                   "⚠️ experimental, needs refinement — Alpha 0.11 — full build: Alpha 0.09 plus the fix for its boot loop, the modulation matrix, automation lanes with their own destination, the extra lane and ramps, arpeggio modifiers, range Nudge, save on stop, the velocity curve and Arrhythmia's modules over USB (proof of concept); the project and sample copy and the pack delete write to the card"),
         "A0.11S": ("⚠️ experimental, necesita pulirse — Alpha 0.11S — versión más segura: Alpha 0.11 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "⚠️ experimental, needs refinement — Alpha 0.11S — safer build: Alpha 0.11 without the project copy, pack delete or sample copy; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
+        "A0.10": ("⚠️ experimental, necesita pulirse — Alpha 0.10 — Alpha 0.11 sin los módulos de Arrhythmia: el arreglo del bucle de arranque de 0.09, la matriz de modulación, los carriles de automatización con destino propio, el carril extra y las rampas, los modificadores del arpegio, el Nudge de tramo, guardar al parar y la curva de velocity; la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
+                  "⚠️ experimental, needs refinement — Alpha 0.10 — Alpha 0.11 without Arrhythmia's modules: the fix for 0.09's boot loop, the modulation matrix, automation lanes with their own destination, the extra lane and ramps, arpeggio modifiers, range Nudge, save on stop and the velocity curve; the project and sample copy and the pack delete write to the card"),
+        "A0.10S": ("⚠️ experimental, necesita pulirse — Alpha 0.10S — versión más segura: Alpha 0.10 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "⚠️ experimental, needs refinement — Alpha 0.10S — safer build: Alpha 0.10 without the project copy, pack delete or sample copy; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
         "A0.09": ("⛔ posiblemente defectuosa: en el aparato entra en un bucle de arranque al encenderla; usa Alpha 0.11 o 0.08 — Alpha 0.09 — la versión completa: Alpha 0.08 más la automatización de CIRCUIT-HACKS (pasos con automatización en amarillo en Velocity + Shift o fijos con Velocity otra vez, escucharlos, borrarlos, Project init, snapshot), los modos de la pista en Sample mode, el FX hacia una entrada fuera del master, el enlace estéreo con desviaciones y el inicio / longitud del original en el granular y el sinte; la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
                   "⛔ potentially flawed: on the device it boot-loops when switched on; use Alpha 0.11 or 0.08 — Alpha 0.09 — full build: Alpha 0.08 plus CIRCUIT-HACKS' automation (steps with automation in yellow on Velocity + Shift or latched with Velocity again, listening to them, clearing them, Project init, snapshot), the track's modes in Sample mode, an FX into an input taken off the master, the stereo link with offsets and the original's start / length on the granular and the synth; the project and sample copy and the pack delete write to the card"),
         "A0.09S": ("⛔ posiblemente defectuosa (sin probar; comparte el código de Alpha 0.09); usa Alpha 0.11S o 0.08S — Alpha 0.09S — versión más segura: Alpha 0.09 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",

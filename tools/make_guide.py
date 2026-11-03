@@ -92,8 +92,10 @@ def view(vid, part, es, en, figs=()):
     V.append(dict(id=vid, part=part, es=es, en=en, figs=list(figs)))
 
 
-A = "*(Alpha 0.11)*"
-A_EN = "*(Alpha 0.11)*"
+A = "*(Alpha 0.10)*"
+A_EN = "*(Alpha 0.10)*"
+A11 = "*(Alpha 0.11)*"
+A11_EN = "*(Alpha 0.11)*"
 A9 = "*(Alpha 0.09)*"
 A9_EN = "*(Alpha 0.09)*"
 A8 = "*(Alpha 0.08)*"
@@ -113,7 +115,7 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado {ACUR} es nuevo o cambia en esta versión.
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado {ACUR} o *(Alpha 0.11)* es nuevo o cambia en estas versiones (0.11 = 0.10 + los módulos de Arrhythmia).
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 """), ("How to read this manual", "—", """
 Each chapter is a view of the device: how you get there, and what its pads, knobs and buttons do with Circuit Remix. Everything else works as in Novation's original firmware (see its manual); the new gestures are combinations that did nothing in the original or repeated the plain gesture.
@@ -122,7 +124,7 @@ Each chapter is a view of the device: how you get there, and what its pads, knob
 - **K1-K8** = the 8 knobs. **▲ / ▼** = the arrow buttons.
 - **Hold** a button = press it and keep it down; **A + B** = B with A held.
 - **★** = exclusive to Circuit Remix (not in CIRCUIT-HACKS).
-- **(since Alpha 0.0x)** = the release that brought the function. Marked {ACUR}: new or changed in this release.
+- **(since Alpha 0.0x)** = the release that brought the function. Marked {ACUR} or *(Alpha 0.11)*: new or changed in these releases (0.11 = 0.10 + Arrhythmia's modules).
 - At the end, the **[glossary](#glosario)**: one entry per function, with its view and its gesture.
 """))
 
@@ -181,7 +183,9 @@ view("instalar", "0", ("Instalar y volver al original", "—", """
 2. Aporta el firmware oficial 2.0.1 (build 5706) del Circuit Rhythm: el instalador comprueba su SHA-256 y lo parchea en tu ordenador.
 3. Elige la versión y envíala al aparato por USB.
 
-**Versiones S** (A0.11S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
+**Versiones S** (A0.11S, A0.10S): sin las funciones que crean, cambian o borran ficheros de la tarjeta por su cuenta (copiar proyectos, borrar packs, copiar samples). La más segura para tu SD.
+
+**Alpha 0.10 / 0.10S** = Alpha 0.11 / 0.11S sin los [módulos de Arrhythmia](#modulos).
 
 **Volver al firmware oficial:** mantén **Sample Rec + Samples + Note** al encender (modo bootloader de Novation) y envía el oficial con el instalador («Oficial») o con Novation Components. Haz siempre una copia de tu tarjeta SD.
 """), ("Install and go back to the original", "—", """
@@ -189,7 +193,9 @@ view("instalar", "0", ("Instalar y volver al original", "—", """
 2. Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.
 3. Pick the version and send it to the device over USB.
 
-**S versions** (A0.11S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
+**S versions** (A0.11S, A0.10S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.
+
+**Alpha 0.10 / 0.10S** = Alpha 0.11 / 0.11S without the [Arrhythmia modules](#modulos).
 
 **Back to the official firmware:** hold **Sample Rec + Samples + Note** while powering on (Novation's bootloader mode) and send the official one with the installer ("Official") or with Novation Components. Always back up your SD card.
 """))
@@ -897,14 +903,14 @@ The new knobs move the original's parameters with their usual MIDI (Circuit Rhyt
 """))
 
 view("modulos", "A", ("Módulos de Arrhythmia (prueba de concepto)", "desde el ordenador, por USB", f"""
-★ {A} **Una prueba de concepto.** Circuit Remix ejecuta los **módulos de [Arrhythmia](https://github.com/llcoolkm/arrhythmia)** (de llcoolkm, licencia MIT): pequeños programas (`.mod`) que toman las luces, los pads y los botones y pueden tocar notas, mover parámetros y mandar MIDI. Los módulos, su interfaz y su documentación son de Arrhythmia; Circuit Remix trae su propio código para esa interfaz, así que el mismo fichero sirve en los dos firmwares. Los módulos no están en este repositorio: **descárgalos de las [releases de Arrhythmia](https://github.com/llcoolkm/arrhythmia/releases)** y mira sus controles en [su guía de módulos](https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md).
+★ {A11} **Una prueba de concepto.** No está en Alpha 0.10 / 0.10S. Circuit Remix ejecuta los **módulos de [Arrhythmia](https://github.com/llcoolkm/arrhythmia)** (de llcoolkm, licencia MIT): pequeños programas (`.mod`) que toman las luces, los pads y los botones y pueden tocar notas, mover parámetros y mandar MIDI. Los módulos, su interfaz y su documentación son de Arrhythmia; Circuit Remix trae su propio código para esa interfaz, así que el mismo fichero sirve en los dos firmwares. Los módulos no están en este repositorio: **descárgalos de las [releases de Arrhythmia](https://github.com/llcoolkm/arrhythmia/releases)** y mira sus controles en [su guía de módulos](https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md).
 
 - **Subir y arrancar:** en la [app de la tarjeta](https://github.com/Ghillermo/CIRCUIT-REMIX#app-de-la-tarjeta-y-del-aparato-toolsrm_sd_apphtml), botón **Módulos (prueba de concepto)…**: elige el `.mod`, la app lo comprueba (cabecera y CRC), lo sube, lo lee de vuelta y lo arranca.
 - **Mientras corre:** un módulo con entrada se queda con los pads y los botones; **Shift** y los knobs siguen siendo del original, **Play** sigue moviendo el transporte. **Shift + Sample Rec** lo para y devuelve todo como estaba.
 - **Se pierde al apagar** (vive en la RAM rápida del procesador). No lee la tarjeta: sin el selector de módulos de Arrhythmia.
 - Un módulo es código que corre en el aparato: **usa solo módulos en los que confíes.**
 """, ), ("Arrhythmia modules (proof of concept)", "from the computer, over USB", f"""
-★ {A_EN} **A proof of concept.** Circuit Remix runs **[Arrhythmia](https://github.com/llcoolkm/arrhythmia)'s modules** (by llcoolkm, MIT licence): small programs (`.mod`) that take over the lights, pads and buttons and can play notes, move parameters and send MIDI. The modules, their interface and its documentation are Arrhythmia's; Circuit Remix brings its own code for that interface, so the same file works on both firmwares. The modules are not in this repository: **download them from [Arrhythmia's releases](https://github.com/llcoolkm/arrhythmia/releases)** and see their controls in [its modules guide](https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md).
+★ {A11_EN} **A proof of concept.** Not in Alpha 0.10 / 0.10S. Circuit Remix runs **[Arrhythmia](https://github.com/llcoolkm/arrhythmia)'s modules** (by llcoolkm, MIT licence): small programs (`.mod`) that take over the lights, pads and buttons and can play notes, move parameters and send MIDI. The modules, their interface and its documentation are Arrhythmia's; Circuit Remix brings its own code for that interface, so the same file works on both firmwares. The modules are not in this repository: **download them from [Arrhythmia's releases](https://github.com/llcoolkm/arrhythmia/releases)** and see their controls in [its modules guide](https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md).
 
 - **Upload and start:** in the [card app](https://github.com/Ghillermo/CIRCUIT-REMIX#card-and-device-app-toolsrm_sd_apphtml), button **Modules (proof of concept)…**: pick the `.mod`, the app checks it (header and CRC), uploads it, reads it back and starts it.
 - **While it runs:** a module with an input takes the pads and buttons; **Shift** and the knobs stay the original's, **Play** still drives the transport. **Shift + Sample Rec** stops it and gives everything back.
@@ -959,15 +965,15 @@ GLOSSARY = [
     ("Nivel a 100 / 0", "Level to 100 / 0", "Shift + knob en los niveles del Mixer", "Shift + knob on the Mixer's levels", "mixer", "0.0"),
     ("Módulos de Arrhythmia", "Arrhythmia modules", "prueba de concepto: sus `.mod` por USB desde la app de la tarjeta; Shift + Sample Rec para", "proof of concept: its `.mod` files over USB from the card app; Shift + Sample Rec stops", "modulos", "0.11"),
     ("Nudge", "Nudge", "mueve el tramo elegido un paso; pad 26 de Pattern Settings", "moves the chosen range one step; Pattern Settings pad 26", "patternsettings", "0.0"),
-    ("Matriz de modulación", "Modulation matrix", "8 fuentes por pista hacia 32 destinos; menú, pad 6", "8 sources per track to 32 destinations; menu, pad 6", "matriz", "0.11"),
-    ("Secuenciables", "Sequenceable", "los 8 carriles de automatización con destino propio; menú, pad 7", "the 8 automation lanes with their own destination; menu, pad 7", "matriz", "0.11"),
-    ("No secuenciables", "Non-sequenceable", "8 knobs que nunca se graban; menú, pad 16", "8 knobs that are never recorded; menu, pad 16", "matriz", "0.11"),
-    ("Carril extra", "Extra lane", "una novena automatización, un valor por paso", "a ninth automation, one value per step", "matriz", "0.11"),
-    ("Rampas", "Ramps", "paso amarillo mantenido + otro paso, en la vista de automatización", "yellow step held + another step, in the automation view", "velocity", "0.11"),
-    ("Modificadores del arpegio", "Arpeggio modifiers", "octavas, groove y reinicio; Pattern Settings, Shift + pads 1-16", "octaves, groove and restart; Pattern Settings, Shift + pads 1-16", "patternsettings", "0.11"),
-    ("Guardar al parar", "Save on stop", "Save espera a parar; Advanced Setup, pad 24", "Save waits for the stop; Advanced Setup, pad 24", "setup", "0.11"),
-    ("Curva de velocity", "Velocity curve", "Advanced Setup, K1", "Advanced Setup, K1", "setup", "0.11"),
-    ("Destello de las pistas", "Track flash", "con Shift, el botón de cada pista en blanco al sonar", "with Shift, each track's button flashes white when it plays", "pista", "0.11"),
+    ("Matriz de modulación", "Modulation matrix", "8 fuentes por pista hacia 32 destinos; menú, pad 6", "8 sources per track to 32 destinations; menu, pad 6", "matriz", "0.10"),
+    ("Secuenciables", "Sequenceable", "los 8 carriles de automatización con destino propio; menú, pad 7", "the 8 automation lanes with their own destination; menu, pad 7", "matriz", "0.10"),
+    ("No secuenciables", "Non-sequenceable", "8 knobs que nunca se graban; menú, pad 16", "8 knobs that are never recorded; menu, pad 16", "matriz", "0.10"),
+    ("Carril extra", "Extra lane", "una novena automatización, un valor por paso", "a ninth automation, one value per step", "matriz", "0.10"),
+    ("Rampas", "Ramps", "paso amarillo mantenido + otro paso, en la vista de automatización", "yellow step held + another step, in the automation view", "velocity", "0.10"),
+    ("Modificadores del arpegio", "Arpeggio modifiers", "octavas, groove y reinicio; Pattern Settings, Shift + pads 1-16", "octaves, groove and restart; Pattern Settings, Shift + pads 1-16", "patternsettings", "0.10"),
+    ("Guardar al parar", "Save on stop", "Save espera a parar; Advanced Setup, pad 24", "Save waits for the stop; Advanced Setup, pad 24", "setup", "0.10"),
+    ("Curva de velocity", "Velocity curve", "Advanced Setup, K1", "Advanced Setup, K1", "setup", "0.10"),
+    ("Destello de las pistas", "Track flash", "con Shift, el botón de cada pista en blanco al sonar", "with Shift, each track's button flashes white when it plays", "pista", "0.10"),
     ("Órdenes fractal / deconstruido", "Fractal / deconstructed orders", "pads 27 / 28 de Pattern Settings", "Pattern Settings pads 27 / 28", "patternsettings", "0.0"),
     ("Página Stock+", "Stock+ page", "ocho knobs más por pista; menú, pad 2; desde 0.07 también en el granular y el sinte", "eight more knobs per track; menu, pad 2; since 0.07 on the granular and the synth too", "stockplus", "0.01"),
     ("Program Change", "Program Change", "canales de escucha y salida; Setup, pads 29 / 30", "listen and send channels; Setup, pads 29 / 30", "setup", "0.0"),
