@@ -184,7 +184,7 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
             E(mov_reg, 0, 4)
             E(bl, SEND)
             E(pop_list, [4], pc=True)
-        return a.assemble()
+        return a.assemble(plain=True)
     inv = False
     try:
         size = len(gen([0] * len(blks))[0])

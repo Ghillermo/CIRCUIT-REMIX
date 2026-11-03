@@ -20,6 +20,7 @@ from thumb import (Asm, adds_imm8, adds_reg, b, b_cond, b_w, bics_reg, bl, cmp_i
                    lsls_reg, lsrs_reg, subs_imm8, ldrb_w, mov_reg, movs_imm, movt, movw, pop_list, push_list, raw, strb_imm, strb_w, tst_reg)
 import countin as CI  # noqa: E402
 import fxkeys as F  # noqa: E402
+import rhbuild  # noqa: E402
 import sckn as SK  # noqa: E402
 
 CTRL = CI.CTRL
@@ -184,6 +185,7 @@ def arm_code(base, L, prev):
         E(adds_reg, 0, 0, 7)
         E(strb_imm, 6, 0, SK.B_VAL)
         E(b, "ks_fix")
+    a.mute(SINGLE and rhbuild.OPT.get("trim", False))                     # (trim) the loops SINGLE leaves unreachable
     E(movs_imm, 5, 0)
     a.label("ks_l")
     E(ldrb_reg, 3, 6, 5)
@@ -203,6 +205,7 @@ def arm_code(base, L, prev):
     E(bics_reg, 0, 1)
     E(strb_imm, 0, 7, SK.B_BITS)
     E(b, "ks_fix")
+    a.mute(False)
     a.label("ks_c")                                                       # K6-K8: the compressor's factory values
     if SINGLE:                                                            # this knob only (RH12's copy of it if the compressor is ours)
         E(subs_imm8, 5, 5)                                                # r5 = 0 soft clip, 1 attack, 2 release
@@ -222,6 +225,7 @@ def arm_code(base, L, prev):
         E(adds_imm8, 0, SK.B_CVAL)
         E(strb_imm, 6, 0, 0)
         E(b, "ks_fix")
+    a.mute(SINGLE and rhbuild.OPT.get("trim", False))
     E(movs_imm, 5, 0)
     a.label("ks_cl")
     imm32(0, t_cdef)
@@ -237,6 +241,7 @@ def arm_code(base, L, prev):
     bc("ks_x", "eq")
     E(movs_imm, 0, 0)
     E(strb_w, 0, 7, SK.B_COMP)
+    a.mute(False)
     a.label("ks_fix")
     E(mov_reg, 0, 7)
     E(bl, L["c_skfix"])

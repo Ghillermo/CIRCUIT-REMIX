@@ -19,10 +19,10 @@ import smodes  # noqa: E402
 NAME = "RH58"
 
 
-def build(name=NAME, ai=None, **kw):
+def build(name=NAME, ai=None, fr=None, **kw):
     b = build_rh57.build(name, rh58=True, **kw)
     b.add("smodes", smodes)
-    b.add("fxroute", fxroute)
+    b.add("fxroute", fxroute, **(fr or {}))
     b.add("autoinit", autoinit, **(ai or {}))
     return b
 

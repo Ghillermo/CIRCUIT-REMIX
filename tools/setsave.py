@@ -15,9 +15,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, adds_reg, h, raw, b_cond, bl, cmp_imm, cmp_reg, ldr_imm, ldrb_imm, lsls_imm, lsrs_imm, mov_reg, movs_imm, movt, movw,  # noqa: E402
-                   pop_list, push_list, str_imm, strb_imm)
+                   orrs_reg, pop_list, push_list, str_imm, strb_imm)
 import countin as CI  # noqa: E402
 import midithru as M  # noqa: E402
+import rhbuild  # noqa: E402
 import rhstate  # noqa: E402
 
 SAVER, SAVER_VT, SAVE = 0x2003CD88, 0x08068F6C, 0x080356D0
@@ -54,6 +55,14 @@ def arm_code(base, L, prev):
     E(ldr_imm, 5, 0, 0)
     E(lsrs_imm, 5, 5, 20)
     E(lsls_imm, 5, 5, 20)                                                 # r5 = bits 20..31
+    if rhbuild.OPT.get("setp3"):                                          # (RH63) and bytes 1 / 2 of parameter 3 (savedefer's, velcurve's)
+        imm32(0, SETTINGS)
+        E(movs_imm, 1, 3)
+        E(bl, GET)
+        E(ldr_imm, 0, 0, 0)
+        E(lsls_imm, 0, 0, 8)
+        E(lsrs_imm, 0, 0, 16)
+        E(orrs_reg, 5, 0)
     E(ldrb_imm, 0, 4, 4)
     E(cmp_imm, 0, KNOWN)
     E(b_cond, "ss_k", "eq")

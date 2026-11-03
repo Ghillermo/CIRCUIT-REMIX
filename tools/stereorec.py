@@ -540,8 +540,8 @@ def arm_code(base, L, prev_led, known=None):
 
 def build_code(base, L, prev_led):
     """Two passes: the second one knows the functors' addresses (movw / movt: the same size either way)."""
-    code, labels = arm_code(base, L, prev_led).assemble()
-    code2, labels2 = arm_code(base, L, prev_led, labels).assemble()
+    code, labels = arm_code(base, L, prev_led).assemble(plain=True)
+    code2, labels2 = arm_code(base, L, prev_led, labels).assemble(plain=True)
     assert labels2 == labels and len(code2) == len(code)
     return code2, labels2
 

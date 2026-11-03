@@ -5,11 +5,12 @@ The stock of the Rhythm (read in the firmware and on the RAM dump, emulated):
     step (p1) being edited, [obj + 0x64] = the copy buffer (+ 2 the source pattern, + 3 the source step);
   * Duplicate + step A + step B: 0x08047820(obj, the step's data, its lanes) pastes A onto B (its only call: 0x0803684C): the 12 lanes and the
     edit stores (their commits write the pattern);
-  * Mutate (Shift + Duplicate): 0x08047E88(obj) (its only call: 0x0803656C) moves whole steps (their 8 bytes unchanged) to other places of the
-    pattern in [obj + 0x28] p0, within its first / last steps.
+  * Mutate (Shift + Duplicate): 0x08047E88(obj) (its only call: 0x0803656C) moves steps (their bytes 0-6; byte 7 stays behind) to other places of
+    the pattern in [obj + 0x28] p0, within its first / last steps.
 Ours (drumpat's bytes at the pattern + 0x108 + step):
   * the paste: the source's byte onto the destination;
-  * Mutate: the pattern's 32 steps and bytes kept before, then each step takes the byte of the first old step with the same 8 bytes not yet taken.
+  * Mutate: the pattern's 32 steps and bytes kept before, then each step takes the byte of the first old step with the same 8 bytes not yet taken;
+  * (mxx, RH65) byte 7 (the mark, the extra lane) goes with the step: the paste copies it, Mutate compares bytes 0-6 and moves it with the hit.
 """
 from __future__ import annotations
 
@@ -17,8 +18,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from thumb import (Asm, add_sp_imm, adds_imm8, adds_reg, b, b_cond, bl, cmp_imm, cmp_reg, h, ldr_imm, ldr_sp, ldrb_imm, ldrb_reg, lsls_imm,  # noqa: E402
-                   lsls_reg, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list, push_list, raw, str_sp, strb_reg, sub_sp_imm, tst_reg)
+from thumb import (Asm, add_sp_imm, adds_imm8, adds_reg, b, b_cond, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldr_sp, ldrb_imm, ldrb_reg, lsls_imm,  # noqa: E402
+                   lsls_reg, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list, push_list, raw, str_sp, strb_imm, strb_reg, sub_sp_imm, tst_reg)
 import countin as CI  # noqa: E402
 import drumpat as DQ  # noqa: E402
 
@@ -33,6 +34,8 @@ def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 <<
 
 
 def arm_code(base, L):
+    import rhbuild
+    MXX = rhbuild.OPT.get("mxx", False)                                   # (RH65) byte 7 of the step (the mark, the extra lane) goes with it
     a = Asm(base)
     E = a.emit
 
@@ -77,10 +80,22 @@ def arm_code(base, L):
     E(mov_reg, 1, 4)
     E(bl, "c_dfpat")
     E(ldrb_reg, 4, 0, 5)                                                  # r4 = the source's byte
+    if MXX:
+        E(movw, 1, DQ_OFF)
+        E(raw, h(0x1A40))                                                 # subs r0, r0, r1
+        E(lsls_imm, 1, 5, 3)
+        E(adds_reg, 0, 0, 1)
+        E(ldrb_imm, 5, 0, 7)                                              # r5 = its byte 7
     E(ldr_sp, 0, 0)
     E(mov_reg, 1, 6)
     E(bl, "c_dfpat")
     E(strb_reg, 4, 0, 7)
+    if MXX:
+        E(movw, 1, DQ_OFF)
+        E(raw, h(0x1A40))                                                 # subs r0, r0, r1
+        E(lsls_imm, 1, 7, 3)
+        E(adds_reg, 0, 0, 1)
+        E(strb_imm, 5, 0, 7)
     a.label("dp_x")
     E(raw, h(0xB003))                                                     # add sp, #12
     E(pop_list, [4, 5, 6, 7], pc=True)
@@ -147,13 +162,25 @@ def arm_code(base, L):
     E(cmp_reg, 0, 1)
     E(b_cond, "dm_on", "ne")
     E(ldr_imm, 0, 3, 4)
-    E(cmp_reg, 0, 2)
+    if MXX:                                                               # (the stock moves bytes 0-6: byte 7 stays behind, so it does not count)
+        E(eors_reg, 0, 2)
+        E(lsls_imm, 0, 0, 8)
+    else:
+        E(cmp_reg, 0, 2)
     E(b_cond, "dm_on", "ne")
     E(ldr_sp, 0, 8)                                                       # found: taken, its byte
     E(movs_imm, 3, 1)
     E(lsls_reg, 3, 7)
     E(orrs_reg, 0, 3)
     E(str_sp, 0, 8)
+    if MXX:
+        E(raw, h(0xA800 | 3 << 8 | OLD // 4))                             # add r3, sp, #OLD
+        E(lsls_imm, 0, 7, 3)
+        E(adds_reg, 3, 3, 0)
+        E(ldrb_imm, 0, 3, 7)
+        E(lsls_imm, 1, 6, 3)
+        E(adds_reg, 1, 1, 5)
+        E(strb_imm, 0, 1, 7)
     E(raw, h(0xA800 | 3 << 8 | OLDB // 4))                                # add r3, sp, #OLDB
     E(ldrb_reg, 0, 3, 7)
     E(b, "dm_w")

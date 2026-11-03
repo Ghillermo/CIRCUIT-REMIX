@@ -1,5 +1,49 @@
 # CHANGELOG
 
+## Alpha 0.11 (2026-11-04) — Arrhythmia modules proof of concept (experimental)
+
+> ⚠️ **Experimental: necesita pulirse.** Alpha 0.11 arranca en frío y tras reiniciar en el aparato, y los módulos de Arrhythmia se han probado en él; el resto de lo nuevo se ha comprobado sobre todo en emulación (el código del aparato ejecutado sobre un volcado de su memoria). Puede haber fallos, ruidos o cuelgues. **Haz una copia de la tarjeta SD.** (Alpha 0.10 no se publicó: lo suyo va en 0.11.)
+
+**Español.** Dos versiones nuevas: **Alpha 0.11** (marca `A0.11`) y **Alpha 0.11S** (marca `A0.11S`: sin la copia de proyectos, el borrado de packs ni la copia de samples). Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **Arreglado el bucle de arranque de Alpha 0.09:** la foto de Project init se tomaba al arrancar, antes de que existieran las pistas, y leía la basura del encendido. Ahora espera a que el aparato haya arrancado.
+- **Matriz de modulación** (menú de pista, pad 6, cualquier pista): 8 fuentes por pista hacia 32 destinos (los knobs del original, Stock+ y la página del sonido, con su capa Shift).
+- **Secuenciables** (menú, pad 7): los 8 carriles de automatización con un destino propio; un knob de Stock+, Granular o Sinte grabado con Record toma un carril libre. **No secuenciables** (menú, pad 16): 8 knobs que nunca se graban.
+- **Carril extra:** una novena automatización por pista, un valor por paso. **Rampas:** en la vista de automatización, un paso amarillo mantenido + otro paso = la línea recta entre los dos.
+- **Modificadores del arpegio** (Pattern Settings, Shift, arpegiador encendido, pads 1-16): octavas, groove y reinicio.
+- **Nudge de tramo:** el pad 26 de Pattern Settings mueve el tramo elegido; con Shift, hacia delante.
+- **Guardar al parar** (Advanced Setup, pad 24): con la marcha en curso, Save espera a parar. **Curva de velocity** (Advanced Setup, K1).
+- **1 de n en las cadenas:** un paso «cada n pasadas» cuenta las pasadas de su patrón aunque la cadena cambie de patrón, suena en la última de las n y ya no corta la nota anterior cuando no le toca.
+- **Destello de las pistas:** con Shift, el botón de cada pista en blanco cuando suena.
+- Más realimentación en el FX hacia una entrada; el pad 8 del menú devuelve también Stock+, el granular o el sinte y la Envolvente a sus valores; Duplicate + pista deja al día los knobs de la pista de destino.
+- **Módulos de [Arrhythmia](https://github.com/llcoolkm/arrhythmia) (prueba de concepto):** Circuit Remix ejecuta los módulos `.mod` de Arrhythmia (de llcoolkm, licencia MIT), con código propio para su interfaz: el mismo fichero sirve en los dos firmwares. Se suben por USB desde la app de la tarjeta (**Módulos (prueba de concepto)…**); **Shift + Sample Rec** los para; se pierden al apagar. Los módulos son de Arrhythmia y no están aquí: [sus releases](https://github.com/llcoolkm/arrhythmia/releases). Usa solo módulos en los que confíes.
+
+**App de la tarjeta** (`tools/rm_sd_app.html`):
+- **Renombrar** packs y samples: cambia solo el nombre tras el prefijo `NN_` y rechaza lo que rompería los datos (vacío, demasiado largo, caracteres que la tarjeta no admite, espacio o punto en un extremo, el mismo nombre que otro fichero).
+- **Módulos (prueba de concepto)…:** subir, comprobar (cabecera, CRC y lectura de vuelta), arrancar y parar un módulo de Arrhythmia, con su estado. Necesita Alpha 0.11 o posterior.
+
+**English.** Two new versions: **Alpha 0.11** (marker `A0.11`) and **Alpha 0.11S** (marker `A0.11S`: without the project copy, the pack delete or the sample copy). Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** Alpha 0.11 boots cold and after a restart on the device, and Arrhythmia's modules were tried on it; the rest of what's new has mostly been checked in emulation (the device's code run on a dump of its memory). There may be bugs, noises or hangs. **Back up your SD card.** (Alpha 0.10 was not published: its changes are in 0.11.)
+
+What's new:
+- **Alpha 0.09's boot loop fixed:** the Project init snapshot was taken during start-up, before the tracks existed, and read power-on garbage. It now waits until the device has started.
+- **Modulation matrix** (track menu, pad 6, any track): 8 sources per track to 32 destinations (the original's knobs, Stock+ and the sound's page, with its Shift layer).
+- **Sequenceable** (menu, pad 7): the 8 automation lanes with their own destination; a Stock+, Granular or Synth knob recorded with Record takes a free lane. **Non-sequenceable** (menu, pad 16): 8 knobs that are never recorded.
+- **Extra lane:** a ninth automation per track, one value per step. **Ramps:** in the automation view, a yellow step held + another step = the straight line between the two.
+- **Arpeggio modifiers** (Pattern Settings, Shift, arpeggiator on, pads 1-16): octaves, groove and restart.
+- **Range Nudge:** Pattern Settings pad 26 moves the chosen range; with Shift, forwards.
+- **Save on stop** (Advanced Setup, pad 24): while playing, Save waits for the stop. **Velocity curve** (Advanced Setup, K1).
+- **1-in-n in chains:** an "every n passes" step counts its own pattern's passes even when the chain changes pattern, plays on the last of the n and no longer cuts the previous note when it is not its turn.
+- **Track flash:** with Shift, each track's button flashes white when it plays.
+- More feedback for an FX into an input; menu pad 8 also resets Stock+, the granular or synth and the Envelope; Duplicate + track brings the destination track's knobs up to date.
+- **[Arrhythmia](https://github.com/llcoolkm/arrhythmia) modules (proof of concept):** Circuit Remix runs Arrhythmia's `.mod` modules (by llcoolkm, MIT licence) with its own code for their interface: the same file works on both firmwares. Upload them over USB from the card app (**Modules (proof of concept)…**); **Shift + Sample Rec** stops them; they are lost at power-off. The modules are Arrhythmia's and are not here: [its releases](https://github.com/llcoolkm/arrhythmia/releases). Only use modules you trust.
+
+**Card app** (`tools/rm_sd_app.html`):
+- **Rename** packs and samples: only the name after the `NN_` prefix changes, and anything that would break the data is refused (empty, too long, characters the card does not allow, a space or dot at either end, the same name as another file).
+- **Modules (proof of concept)…:** upload, check (header, CRC and read-back), start and stop an Arrhythmia module, with its status. Needs Alpha 0.11 or later.
+
 ## App de la tarjeta (2026-11-02)
 
 **Español.** `tools/rm_sd_app.html`: la app de la tarjeta de CIRCUIT-HACKS, para el Circuit Rhythm: packs, los 128 samples con escucha y patrones de las ocho pistas con editor, desde la microSD o por USB; exportar, snapshot y restaurar. Sin instalación (Chrome o Edge). Comprobada en emulación contra el firmware 5706 y Alpha 0.09; aún no en un aparato real. Instrucciones en el README.

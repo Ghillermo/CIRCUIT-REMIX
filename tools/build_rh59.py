@@ -12,8 +12,9 @@ import build_rh58  # noqa: E402
 NAME = "RH59"
 
 
-def build(name=NAME, **kw):
-    return build_rh58.build(name, ai=dict(cue=True, latch=True), **kw)
+def build(name=NAME, bootok=False, **kw):
+    """bootok (A0.09B): autoinit's photo at a save only once the controller is built (the cold-boot loop, RD34 / RD36)"""
+    return build_rh58.build(name, ai=dict(cue=True, latch=True, **({"bootok": True} if bootok else {})), **kw)
 
 
 if __name__ == "__main__":

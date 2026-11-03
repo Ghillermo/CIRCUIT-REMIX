@@ -160,15 +160,23 @@ class Asm:
     def __init__(self, base):
         self.base = base
         self.items = []      # (kind, payload)
+        self.muted = False
+
+    def mute(self, on):
+        """Between mute(True) and mute(False) nothing is emitted (code a later option leaves unreachable)"""
+        self.muted = on
 
     def label(self, name):
-        self.items.append(("label", name))
+        if not self.muted:
+            self.items.append(("label", name))
 
     def emit(self, fn, *args, **kw):
-        self.items.append(("ins", (fn, args, kw)))
+        if not self.muted:
+            self.items.append(("ins", (fn, args, kw)))
 
-    def assemble(self, external=None):
-        if COMPACT:
+    def assemble(self, external=None, plain=False):
+        """plain: the sizes fixed whatever COMPACT says (a block whose length a caller works out in advance)"""
+        if COMPACT and not plain:
             return _assemble_compact(self, external)
         labels = dict(external or {})
         # pass 1: sizes (all our encodings have fixed size per function)

@@ -24,6 +24,11 @@ RAM: rhstate OFF2 "autoinit": + 0 the step pads swallowed (bit), + 4 the control
 kept knobs, the knobs shown), + 12 the kept values, + 20 the shown values, + 28 Record (held: the recording before + 1, a snapshot made),
 + 30 (latch) the automation view latched.
 
+RH60 (allpages; the user, 2026-10-29: «pad 8 on track pages clears all pages back to default (not just stock)»): the menu's pad 8 also
+puts the track's other pages back to their defaults (each page's Clear + knob value): Stock+ and the waveshaper (spall's c_s0reset), the
+granular slot of a granular track (granpage's 13 values, c_gnp), the synth slot of a synth track (synthpage's 16 values, c_syp) and its
+Envelope page (envpage's c_evset: the synth's slope; the granular's four).
+
 RH59 (CIRCUIT-HACKS' SC49.5 / SC49.6; the user, 2026-10-29: «Record + step cue, Latched automation view»):
   * cue: the track view, a step pad swallowed by a snapshot (its bit in + 0) = yellow until let go;
   * latch: Velocity pressed with the Velocity view on the screen, without Shift = the automation view latched / unlatched (as if Shift were
@@ -45,6 +50,7 @@ import autorel as AR  # noqa: E402
 import countin as CI  # noqa: E402
 import granpage as GP  # noqa: E402
 import mfsess as MF  # noqa: E402
+import rhbuild  # noqa: E402
 import rhstate  # noqa: E402
 import slinkofs as SO  # noqa: E402
 import stockplus as SP  # noqa: E402
@@ -57,6 +63,16 @@ assert R_REC + 2 <= O_LEN
 R_LATCH = 30                                              # (latch) the automation view latched
 assert R_LATCH < O_LEN
 ID_VEL = 10
+
+
+def page_defaults():
+    """(allpages) the defaults pad 8 writes: granpage multi's 13 values (14-bit), synthpage env's 16 values, envpage's granular four"""
+    import envpage as EV
+    import granpage as GP
+    import synthpage as SY
+    gdef = GP.DEF + (0,)                                  # (stereo: the spread)
+    sdef = SY.DEF[:SY.K_REL] + (SY.LEN_DEF,) + SY.DEF[SY.K_REL + 1:]
+    return gdef, sdef, EV.DEF_G
 TP_O = rhstate.OFF2["trkphoto"][0]
 PH_REC = 26                                               # a track's photo: 25 parameters, the selected sample
 NK, NMS, LANE_SZ = 8, 6, 192
@@ -98,10 +114,16 @@ def _is_bl(img, x, rhbuild):
         return False
 
 
-def arm_code(base, L, prev, cue=False, latch=False):
+def arm_code(base, L, prev, cue=False, latch=False, allpages=False, bootok=False):
     a = Asm(base)
     E = a.emit
     zc = [0]
+    if allpages:                                                          # the tables first: their address = base
+        import synthpage as SY
+        gdef, sdef, edef = page_defaults()
+        t_g, t_s, t_e = base, base + 2 * len(gdef), base + 2 * len(gdef) + len(sdef)
+        tab = b"".join(v.to_bytes(2, "little") for v in gdef) + bytes(sdef) + bytes(edef)
+        E(raw, tab + bytes([0xFF]) * (-len(tab) % 4))
 
     def imm32(rd, v):
         E(movw, rd, v & 0xFFFF)
@@ -171,6 +193,17 @@ def arm_code(base, L, prev, cue=False, latch=False):
 
     # ---- c_aihas(r0 = lanes, r1 = step) -> r0 = 1 when a knob lane has a value on the step; clobbers r1-r3
     a.label("c_aihas")
+    if rhbuild.OPT.get("mxx"):                                            # (RH65) or the extra lane
+        E(movw, 2, AR.LANES_OFF)
+        E(subs_reg, 2, 0, 2)
+        E(lsls_imm, 3, 1, 3)
+        E(adds_reg, 2, 2, 3)
+        E(ldrb_imm, 2, 2, 7)
+        E(lsrs_imm, 2, 2, 1)
+        E(b_cond, "hs_0", "eq")
+        E(movs_imm, 0, 1)
+        E(raw, h(0x4770))
+        a.label("hs_0")
     E(push_list, [4, 5], lr=True)
     E(movs_imm, 2, NMS)
     E(muls, 2, 1)
@@ -230,6 +263,7 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(ldrb_imm, 2, 2, R_KEPT)
     E(mov_reg, 0, 6)
     E(mov_reg, 1, 5)
+    a.label("c_aiks1")
     E(bl, "c_aiknob")
     a.label("en_n")
     E(adds_imm8, 5, 1)
@@ -294,6 +328,7 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(push_list, [2])
     E(mov_reg, 0, 6)
     E(adds_imm3, 1, 5, KNOB0)
+    a.label("c_aikg")
     E(bl, L["c_tcget"])
     E(adds_reg, 1, 4, 5)
     E(strb_imm, 0, 1, R_KEPT)
@@ -301,6 +336,7 @@ def arm_code(base, L, prev, cue=False, latch=False):
     a.label("pv_w")
     E(mov_reg, 0, 6)
     E(mov_reg, 1, 5)
+    a.label("c_aiks2")
     E(bl, "c_aiknob")
     a.label("pv_n")
     E(adds_imm8, 7, 0xC0)
@@ -338,6 +374,16 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(mov_reg, 4, 0)                                                      # r4 = the track's photo
     E(movs_imm, 5, 0)
     a.label("sn_l")
+    if rhbuild.OPT.get("mxlane"):                                         # (RH64) a lane with another destination: that destination's value
+        E(bl, L["c_arrem"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "sn_c", "eq")
+        E(mov_reg, 0, 6)
+        E(adds_imm3, 1, 5, KNOB0)
+        a.label("c_aisk")
+        E(bl, L["c_tcget"])
+        E(b, "sn_w")
+        a.label("sn_c")
     E(mov_reg, 0, 6)
     E(adds_imm3, 1, 5, KNOB0)
     E(bl, L["c_tcget"])
@@ -345,6 +391,7 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(ldrb_imm, 1, 1, KNOB0)
     E(cmp_reg, 0, 1)
     E(b_cond, "sn_n", "eq")
+    a.label("sn_w")
     for m in range(NMS):
         E(strb_imm, 0, 7, m)
     a.label("sn_n")
@@ -426,12 +473,21 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(b_cond, "sp_v", "pl")
     E(mov_reg, 0, 4)                                                      # Velocity, Clear held: the step's knob automation erased
     E(mov_reg, 1, 5)
+    a.label("c_aicl1")
     E(bl, "c_aiclr")
     E(b, "sp_w")
     a.label("sp_v")
     E(bl, "c_aiauto" if latch else L["c_cishift"])
     E(cmp_imm, 0, 0)
     bc("sp_p", "eq")
+    if rhbuild.OPT.get("mxx"):                                            # (RH65) a step held, another pressed: the ramp between them
+        E(mov_reg, 0, 6)
+        E(mov_reg, 1, 4)
+        E(mov_reg, 2, 5)
+        a.label("c_airamp")
+        E(bl, "ai_zero")
+        E(cmp_imm, 0, 0)
+        bc("sp_w", "ne")
     E(lsls_imm, 0, 5, 3)                                                  # Shift: a yellow step (not marked, with knob automation)
     E(movw, 1, AR.LANES_OFF)
     E(subs_reg, 1, 4, 1)
@@ -447,6 +503,7 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(mov_reg, 0, 6)
     E(mov_reg, 1, 4)
     E(mov_reg, 2, 5)
+    a.label("c_aipv")
     E(bl, "c_aiprev")
     E(b, "sp_w")
     a.label("sp_m")
@@ -467,6 +524,11 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(raw, AR.popw([0, 1, 2, 4, 5, 6, 7], lr=True))
     a.label("sp_s")
     E(b_w, prev["press"])
+
+    if rhbuild.OPT.get("mxx"):                                            # (RH65) modmx's c_mxramp is called instead
+        a.label("ai_zero")
+        E(movs_imm, 0, 0)
+        E(raw, h(0x4770))
 
     # ---- c_airel (the step views' slot 1: view, pad): one we took, swallowed
     a.label("c_airel")
@@ -510,6 +572,63 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(ldrb_imm, 1, 4, PH_REC - 1)
     E(mov_reg, 0, 6)
     E(bl, L["c_tcsetsmp"])
+    if allpages:                                                          # the other pages: their defaults
+        E(mov_reg, 0, 6)
+        E(bl, L["c_s0reset"])                                             # Stock+ and the waveshaper
+        E(mov_reg, 0, 6)
+        E(bl, L["c_sysnd"])
+        E(cmp_imm, 0, SY.SND_SYNTH)
+        E(b_cond, "in_g", "ne")
+        E(mov_reg, 0, 6)
+        E(bl, L["c_syslot"])
+        E(cmp_imm, 0, SY.NSL)
+        bc("in_x", "hs")
+        E(mov_reg, 4, 0)                                                  # r4 = the synth slot
+        E(movs_imm, 5, 0)
+        a.label("in_s")
+        imm32(2, t_s)
+        E(raw, AR.ldrb_reg(2, 2, 5))
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, L["c_syp"])
+        E(adds_imm8, 5, 1)
+        E(cmp_imm, 5, len(sdef))
+        E(b_cond, "in_s", "lo")
+        E(mov_reg, 0, 6)                                                  # its Envelope page's slope
+        E(movs_imm, 1, 2)
+        E(movs_imm, 2, 64)
+        E(bl, L["c_evset"])
+        E(b, "in_x")
+        a.label("in_g")
+        E(cmp_imm, 0, SY.SND_GRAN)
+        bc("in_x", "ne")
+        E(mov_reg, 0, 6)
+        E(bl, L["c_gnslot"])
+        E(cmp_imm, 0, GP.NSL)
+        bc("in_x", "hs")
+        E(mov_reg, 4, 0)                                                  # r4 = the granular slot
+        E(movs_imm, 5, 0)
+        a.label("in_gl")
+        imm32(2, t_g)
+        E(lsls_imm, 1, 5, 1)
+        E(adds_reg, 2, 2, 1)
+        E(raw, h(0x8812))                                                 # ldrh r2, [r2]
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, L["c_gnp"])
+        E(adds_imm8, 5, 1)
+        E(cmp_imm, 5, len(gdef))
+        E(b_cond, "in_gl", "lo")
+        E(movs_imm, 5, 0)
+        a.label("in_e")                                                   # its Envelope page
+        imm32(2, t_e)
+        E(raw, AR.ldrb_reg(2, 2, 5))
+        E(mov_reg, 0, 6)
+        E(mov_reg, 1, 5)
+        E(bl, L["c_evset"])
+        E(adds_imm8, 5, 1)
+        E(cmp_imm, 5, len(edef))
+        E(b_cond, "in_e", "lo")
     a.label("in_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
 
@@ -521,6 +640,7 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(bl, L["c_gpmopen"])
     E(cmp_imm, 0, 8)
     bc("mp_p", "hs")
+    a.label("c_aiin1")
     E(bl, "c_aiinit")
     E(movs_imm, 0, PAD_INIT)
     E(movs_imm, 1, R_SWP)
@@ -602,11 +722,17 @@ def arm_code(base, L, prev, cue=False, latch=False):
     E(b, "c_aibrst")
 
     # ---- c_aisave0 / c_aisave1 (the two save calls, in front of what is there): the photo taken again (the state the save writes), then the
-    #      save with the same arguments (r0-r3 and the stack), as mfsess's
+    #      save with the same arguments (r0-r3 and the stack), as mfsess's; (bootok) the photo only once the controller is built: the stock
+    #      reaches these calls in its start-up, before the players exist (their fields still the power-on noise: RD34, 2026-11-03)
     for k in (0, 1):
         a.label(f"c_aisave{k}")
         E(push_list, [0, 1, 2, 3, 4], lr=True)
+        if bootok:
+            E(bl, L["c_ciok"])
+            E(cmp_imm, 0, 0)
+            E(b_cond, f"sv_x{k}", "eq")
         E(bl, L["c_tcphoto"])
+        a.label(f"sv_x{k}")
         E(raw, AR.popw([0, 1, 2, 3, 4], lr=True))
         E(b_w, prev[f"save{k}"])
 
@@ -793,7 +919,7 @@ def arm_code(base, L, prev, cue=False, latch=False):
     return a.assemble()
 
 
-def install(img, report, base_addr, cue=False, latch=False):
+def install(img, report, base_addr, cue=False, latch=False, allpages=False, bootok=False):
     """The step views' slots 0 / 1 (in front of autorel's), the controller's pad press / release (in front of smodes's), the button press /
     release heads, the two save calls, the LED calls; (latch) autorel's c_arvel's Shift test -> c_aiauto.  Needs autorel init (keep), trkcopy
     ram (the photo), stepgate, granpage menu2, smodes, stockplus, kbright, rhstate ram2; not latdiag."""
@@ -802,10 +928,14 @@ def install(img, report, base_addr, cue=False, latch=False):
     u = lambda a_: struct.unpack_from("<I", img, a_ - BASE)[0]                 # noqa: E731
     lab = lambda m, k: int(report[m]["labels"][k], 16)                         # noqa: E731
     assert "latdiag" not in report and report["autorel"].get("init") and report["trkcopy"].get("ram"), "autoinit: needs autorel init, trkcopy ram"
-    L = dict(c_rram=lab("rhstate", "c_rram"), c_rst=lab("rhstate", "c_rst"), c_ciok=lab("countin", "c_ciok"), c_cinew=lab("countin", "c_cinew"),
+    L = dict(**({"c_arrem": lab("autorel", "c_arrem")} if rhbuild.OPT.get("mxlane") else {}),
+             c_rram=lab("rhstate", "c_rram"), c_rst=lab("rhstate", "c_rst"), c_ciok=lab("countin", "c_ciok"), c_cinew=lab("countin", "c_cinew"),
              c_cishift=lab("countin", "c_cishift"), c_sgsvt=lab("stepgate", "c_sgsvt"), c_sgstep=lab("stepgate", "c_sgstep"),
              c_arsteps=lab("autorel", "c_arsteps"), c_spview=lab("stockplus", "c_spview"), c_spheld=lab("stockplus", "c_spheld"),
              c_gpmopen=lab("granpage", "c_gpmopen"), **{k: lab("trkcopy", k) for k in ("c_tcget", "c_tcset", "c_tcsetsmp", "c_tcphoto")})
+    if allpages:
+        L.update(c_s0reset=lab("spall", "c_s0reset"), c_gnslot=lab("granpage", "c_gnslot"), c_gnp=lab("granpage", "c_gnp"),
+                 c_evset=lab("envpage", "c_evset"), **{k: lab("synthpage", k) for k in ("c_sysnd", "c_syslot", "c_syp")})
     saves = list(MF.SAVE_CALLS)
     prev = dict(press=u(AR.SV_VT) & ~1, rel=u(AR.SV_VT + 4) & ~1, pad=rhbuild.bw_target(img, GP.PP_ENTRY),
                 rel_p=rhbuild.bw_target(img, GP.PR_ENTRY), btn=rhbuild.bw_target(img, CI.BTN_ENTRY),
@@ -814,7 +944,7 @@ def install(img, report, base_addr, cue=False, latch=False):
     assert prev["press"] == lab("autorel", "c_arpress") and prev["rel"] == lab("autorel", "c_arrel")
     assert prev["pad"] == lab("smodes", "c_smpad") and prev["rel_p"] == lab("smodes", "c_smrel")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
-    code_, labels = arm_code(base_addr, L, prev, cue, latch)
+    code_, labels = arm_code(base_addr, L, prev, cue, latch, allpages, bootok)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
         img += bytes([0xFF])
@@ -834,6 +964,8 @@ def install(img, report, base_addr, cue=False, latch=False):
         assert len(sites) == 1, sites
         rhbuild.patch(img, sites[0], f"bl #{L['c_cishift']:#x}", bl(sites[0], labels["c_aiauto"]))
     report["autoinit"] = dict(prev={k: hex(v) for k, v in prev.items()}, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
-    if cue or latch:
-        report["autoinit"].update(cue=cue, latch=latch)
+    if cue or latch or allpages:
+        report["autoinit"].update(cue=cue, latch=latch, **({"allpages": True} if allpages else {}))
+    if bootok:
+        report["autoinit"]["bootok"] = True
     return labels, code_

@@ -15,6 +15,7 @@ The method of CIRCUIT-HACKS, for the Rhythm:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 import struct
@@ -30,6 +31,22 @@ TRACKS = ROOT.parent / "CIRCUIT-HACKS" / "stock" / "circuittracks-firmware-4486-
 BASE = rh_fw.APP_BASE
 MD = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
 _TARGETS = None
+OPT = {}                     # (RH62 on) switches for modules deep in the builders' chain, set with options(): empty = the older builds byte for byte
+
+
+@contextlib.contextmanager
+def options(compact=False, **kw):
+    """Around a builder's chain: literal pools (thumb.COMPACT) and the OPT switches; nested calls add to each other, the end puts things back."""
+    import thumb
+    old = thumb.COMPACT, dict(OPT)
+    thumb.COMPACT = thumb.COMPACT or compact
+    OPT.update(kw)
+    try:
+        yield
+    finally:
+        thumb.COMPACT = old[0]
+        OPT.clear()
+        OPT.update(old[1])
 
 
 def load_stock() -> bytes:
@@ -116,6 +133,10 @@ class Build:
         self.report = {}
         self.patched = []                      # (offset, length) of the changed stock bytes
         self.cave_start = self.next_base()
+        if OPT.get("modhost"):                 # (RH67) Arrhythmia's host table first, at its fixed 0x0806A570 (modhost fills it)
+            import modhost
+            assert self.cave_start == modhost.TABLE
+            self.img += struct.pack("<II", modhost.HOST_MAGIC, modhost.ABI) + bytes(modhost.TABLE_LEN - 8)
 
     # ---- placement
     def next_base(self, align: int = 16) -> int:

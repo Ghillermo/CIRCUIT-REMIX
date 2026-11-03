@@ -436,6 +436,7 @@ def _gn_funcs(a, E, imm32, L, nk, t_def, t_mul, t_off, t_idx, note):
     E(b_cond, "nw_k", "hs")
     E(mov_reg, 0, 4)
     E(mov_reg, 1, 5)
+    a.label("c_gnwv")
     E(bl, "c_gnv")
     E(lsrs_imm, 0, 0, 7)
     imm32(1, t_mul)
@@ -752,6 +753,11 @@ def _gn_dsp(a, E):
     E(b, "gl_gx")
 
 
+def TRIM():
+    import rhbuild
+    return rhbuild.OPT.get("trim", False)
+
+
 def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False, noblink=False):
     nwx = NW_X + (1 if v2 else 0)
     nk, nwg = NK + (1 if stereo else 0), NW_G + (1 if stereo else 0)           # (stereo, RH47) value 12 = the spread (Shift + K2)
@@ -885,6 +891,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
 
     if multi:
         _gn_funcs(a, E, imm32, L, nk, t_def, t_mul, t_off, t_idx, note)
+    a.mute(multi and TRIM())                                              # (trim) replaced by _gn_funcs
     # ---- c_gpval(r0 = k) -> r0 = its value (the default without our block); clobbers r1-r3
     a.label("c_gpval" if not multi else "c_gpval1")
     E(push_list, [4, 5], lr=True)
@@ -919,6 +926,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     a.label("gp_x")
     E(pop_list, [4, 5, 6], pc=True)
 
+    a.mute(False)
     # ---- c_gpbyte(r0 = offset 3 / 4) -> r0 = that byte of our block (0 without it); c_gpsetb(r0 = offset, r1 = value); clobber r1-r3
     a.label("c_gpbyte")
     E(push_list, [4], lr=True)
@@ -973,6 +981,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     E(bl, TH.WR16)
     E(pop_list, [4], pc=True)
 
+    a.mute(multi and TRIM())
     # ---- c_gpwg(r0 = i 0 .. NW_G - 1): the engine's word i to core 0 (0..11 its controls, 12 the key, 13 the track last); clobbers r0-r3
     a.label("c_gpwg" if not multi else "c_gpwg1")
     E(push_list, [4], lr=True)
@@ -1023,6 +1032,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     E(bl, "c_gpw")
     a.label("gg_x")
     E(pop_list, [4], pc=True)
+    a.mute(False)
 
     if note and multi:
         # ---- c_gpnote (multi): the note to the slot of the track, if it has one
@@ -1199,6 +1209,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
 
         if multi:
             _gn_mact(a, E, L, menu2)
+        a.mute(multi and TRIM())
         # ---- c_gpmact(r0 = track, r1 = menu pad 0..3); clobbers r0-r3
         a.label("c_gpmact" if not multi else "c_gpmact1")
         E(push_list, [4, 5, 6], lr=True)
@@ -1259,6 +1270,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
         a.label("ma_x")
         E(pop_list, [4, 5, 6], pc=True)
 
+        a.mute(False)
         # ---- c_gpmpad (the controller's pad press, its first two instructions: r0 = ctrl, r1 = pad, r2 = velocity)
         a.label("c_gpmpad")
         E(push_list, [0, 1, 2, 3, 4, 5, 6], lr=True)
@@ -1576,6 +1588,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     E(ldrb_imm, 7, 6, 0)                                                  # r7 = what to push
     if multi:
         _gn_dsp(a, E)
+    a.mute(multi and TRIM())                                              # (trim) _gn_dsp ends on gl_gx
     E(lsls_imm, 0, 7, 31)
     E(b_cond, "gl_gr", "pl")
     E(movs_imm, 4, 0)                                                     # the engine changed: all its words (the track last)
@@ -1598,6 +1611,7 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
         E(movs_imm, 4, 0)
         a.label(f"_r{zc[0]}")
         E(strb_imm, 4, 6, 1)
+    a.mute(False)
     a.label("gl_gx")
     E(mov_reg, 0, 6)
     E(subs_imm8, 0, O_ST - O_W)

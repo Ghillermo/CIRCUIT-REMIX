@@ -22,7 +22,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, add_sp_imm, adds_imm8, adds_reg, b, b_cond, b_w, bl, cmp_imm, cmp_reg, h, ldr_imm, ldr_sp, ldrb_imm, lsls_imm,  # noqa: E402
-                   mov_reg, movs_imm, movt, movw, muls, pop_list, push_list, raw, str_sp, strb_imm, strh_reg, sub_sp_imm, subs_imm8, subs_reg)
+                   lsrs_imm, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list, push_list, raw, str_sp, strb_imm, strh_reg, sub_sp_imm, subs_imm8,
+                   subs_reg)
 import countin as CI  # noqa: E402
 import quant as Q  # noqa: E402
 
@@ -37,7 +38,21 @@ PARAM_NEW = CI.PARAM_NEW
 def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
 
 
-def arm_code(base, L, prev, v2=False):
+def model_nudge(first, last, forward):
+    """(RH63) -> (start, count, k, new first, new last): the steps start .. start + count - 1 rotated left by k; None = refused"""
+    if first > 31 or last > 31 or first > last:
+        return None
+    n = 16 if first < 16 and last < 16 else 32
+    if not forward:
+        if first == 0:
+            return 0, n, 1, first, last
+        return first - 1, last - first + 2, 1, first - 1, last - 1
+    if last == n - 1:
+        return 0, n, n - 1, first, last
+    return first, last - first + 2, last - first + 1, first + 1, last + 1
+
+
+def arm_code(base, L, prev, v2=False, nudge2=False):
     a = Asm(base)
     E = a.emit
 
@@ -135,6 +150,9 @@ def arm_code(base, L, prev, v2=False):
     E(movs_imm, 0, 0)
     E(pop_list, [5], pc=True)
 
+    if nudge2:
+        _nudge2(a, E, imm32, L)
+    a.mute(nudge2)
     # ---- c_pmnudge(r0 = track) -> r0 = 1 done, 0 refused (nothing written)
     a.label("c_pmnudge")
     E(push_list, [2, 3, 4, 5, 6, 7], lr=True)
@@ -216,6 +234,7 @@ def arm_code(base, L, prev, v2=False):
     a.label("nf_x")
     E(add_sp_imm, 12)
     E(pop_list, [2, 3, 4, 5, 6, 7], pc=True)
+    a.mute(False)
 
     # ---- c_pmtrk(r0 = a Pattern Settings view) -> r0 = its track, 0xFF: none; clobbers r1-r3
     a.label("c_pmtrk")
@@ -249,6 +268,11 @@ def arm_code(base, L, prev, v2=False):
     E(b_cond, "pp_x", "eq")
     E(ldr_sp, 0, 0)
     E(bl, "c_pmtrk")
+    if nudge2:
+        E(mov_reg, 4, 0)
+        E(bl, L["c_cishift"])
+        E(mov_reg, 1, 0)
+        E(mov_reg, 0, 4)
     E(bl, "c_pmnudge")
     a.label("pp_x")
     E(pop_list, [0, 1, 2, 3, 4], pc=True)
@@ -272,15 +296,150 @@ def arm_code(base, L, prev, v2=False):
     return a.assemble()
 
 
+def _nudge2(a, E, imm32, L):
+    """(RH63, CIRCUIT-HACKS' c_pmnudge2 for the Rhythm's patterns; the user: «Nudge de tramo»): c_pmnudge(r0 = track, r1 = forward) -> r0 = 1 done,
+    0 refused: the steps, drumpat's step bytes and the 12 lanes rotated as model_nudge says; the range through ST3.
+    [sp]: + 0 start, + 4 count, + 8 k, + 12 the new last | first << 8 (the forward flag before)"""
+    a.label("c_pmnudge")
+    E(push_list, [2, 3, 4, 5, 6, 7], lr=True)
+    E(sub_sp_imm, 16)
+    E(str_sp, 1, 12)
+    E(bl, "c_pmfind")
+    E(cmp_imm, 0, 0)
+    E(b_cond, "n2_00", "ne")
+    a.label("n2_0")
+    E(movs_imm, 0, 0)
+    E(b, "n2_x")
+    a.label("n2_00")
+    E(mov_reg, 5, 0)                                                      # r5 = the pattern
+    imm32(0, Q.SET_OFF)
+    E(adds_reg, 0, 0, 5)
+    E(ldrb_imm, 2, 0, 0)                                                  # r2 = the last step
+    E(ldrb_imm, 1, 0, 1)                                                  # r1 = the first
+    E(cmp_imm, 1, 31)
+    E(b_cond, "n2_0", "hi")
+    E(cmp_imm, 2, 31)
+    E(b_cond, "n2_0", "hi")
+    E(cmp_reg, 1, 2)
+    E(b_cond, "n2_0", "hi")
+    E(movs_imm, 3, 32)
+    E(cmp_imm, 1, 16)
+    E(b_cond, "n2_n", "hs")
+    E(cmp_imm, 2, 16)
+    E(b_cond, "n2_n", "hs")
+    E(movs_imm, 3, 16)
+    a.label("n2_n")                                                       # r3 = the pattern's length
+    E(ldr_sp, 0, 12)
+    E(cmp_imm, 0, 0)
+    E(b_cond, "n2_fw", "ne")
+    E(cmp_imm, 1, 0)
+    E(b_cond, "n2_bw", "ne")
+    E(movs_imm, 0, 0)                                                     # back, at step 1: the whole pattern
+    E(str_sp, 0, 0)
+    E(str_sp, 3, 4)
+    E(movs_imm, 0, 1)
+    E(str_sp, 0, 8)
+    E(b, "n2_go")
+    a.label("n2_bw")
+    E(subs_imm8, 1, 1)
+    E(str_sp, 1, 0)
+    E(subs_reg, 0, 2, 1)
+    E(adds_imm8, 0, 1)
+    E(str_sp, 0, 4)
+    E(movs_imm, 0, 1)
+    E(str_sp, 0, 8)
+    E(subs_imm8, 2, 1)
+    E(b, "n2_go")
+    a.label("n2_fw")
+    E(subs_imm8, 3, 1)
+    E(cmp_reg, 2, 3)
+    E(b_cond, "n2_ff", "lo")
+    E(movs_imm, 0, 0)                                                     # forward, at the end: the whole pattern
+    E(str_sp, 0, 0)
+    E(str_sp, 3, 8)
+    E(adds_imm8, 3, 1)
+    E(str_sp, 3, 4)
+    E(b, "n2_go")
+    a.label("n2_ff")
+    E(str_sp, 1, 0)
+    E(subs_reg, 0, 2, 1)
+    E(adds_imm8, 0, 1)
+    E(str_sp, 0, 8)
+    E(adds_imm8, 0, 1)
+    E(str_sp, 0, 4)
+    E(adds_imm8, 1, 1)
+    E(adds_imm8, 2, 1)
+    a.label("n2_go")
+    E(lsls_imm, 1, 1, 8)
+    E(orrs_reg, 2, 1)
+    E(str_sp, 2, 12)
+    E(ldr_sp, 0, 0)                                                       # the steps
+    E(lsls_imm, 0, 0, 3)
+    E(adds_reg, 0, 0, 5)
+    E(ldr_sp, 1, 4)
+    E(lsls_imm, 1, 1, 3)
+    E(ldr_sp, 2, 8)
+    E(lsls_imm, 2, 2, 3)
+    E(bl, "c_pmrot")
+    E(ldr_sp, 0, 0)                                                       # drumpat's step bytes
+    E(movw, 1, 0x108)
+    E(adds_reg, 0, 0, 1)
+    E(adds_reg, 0, 0, 5)
+    E(ldr_sp, 1, 4)
+    E(ldr_sp, 2, 8)
+    E(bl, "c_pmrot")
+    E(movs_imm, 4, 0)
+    a.label("n2_a")                                                       # the lanes
+    E(movs_imm, 0, 192)
+    E(muls, 0, 4)
+    E(adds_reg, 0, 0, 5)
+    imm32(1, Q.LANES_OFF)
+    E(adds_reg, 0, 0, 1)
+    E(ldr_sp, 1, 0)
+    E(movs_imm, 2, LANE_STEP)
+    E(muls, 1, 2)
+    E(adds_reg, 0, 0, 1)
+    E(ldr_sp, 1, 4)
+    E(muls, 1, 2)
+    E(ldr_sp, 3, 8)
+    E(muls, 2, 3)
+    E(bl, "c_pmrot")
+    E(adds_imm8, 4, 1)
+    E(cmp_imm, 4, LANES)
+    E(b_cond, "n2_a", "lo")
+    for st, m in ((6, Q.ST1_MAP), (7, Q.ST2_MAP)):                        # the step stores: both copies
+        E(mov_reg, 0, st)
+        E(mov_reg, 1, 5)
+        imm32(2, Q.packed(m, True))
+        E(bl, L["c_qzst"])
+    E(ldr_imm, 0, 6, 0x14)                                                # the range through ST3
+    E(ldr_imm, 4, 0, 0)
+    E(ldr_imm, 0, 4, 0x24)
+    E(movs_imm, 1, 0)
+    E(bl, PARAM_WPTR)
+    E(ldr_sp, 1, 12)
+    E(strb_imm, 1, 0, 0)
+    E(lsrs_imm, 1, 1, 8)
+    E(strb_imm, 1, 0, 1)
+    E(ldr_imm, 0, 4, 0x24)
+    E(bl, COMMIT)
+    E(movs_imm, 0, 1)
+    a.label("n2_x")
+    E(add_sp_imm, 16)
+    E(pop_list, [2, 3, 4, 5, 6, 7], pc=True)
+
+
 def install(img, report, base_addr, v2=False):
     """Append the code; slots 0 and 7 of the Pattern Settings views' vtable.  v2 (RH11): the nudge rotates drumpat's step bytes too."""
     import rhbuild
     BASE = rhbuild.BASE
     lab = lambda sec, n: int(report[sec]["labels"][n], 16)
-    L = dict(c_ciok=lab("countin", "c_ciok"), c_qzst=lab("quant", "c_qzst"))
+    L = dict(c_ciok=lab("countin", "c_ciok"), c_qzst=lab("quant", "c_qzst"), c_cishift=lab("countin", "c_cishift"))
     old = [struct.unpack_from("<I", img, PS_VT + 4 * k - BASE)[0] for k in (0, 7)]
     prev = dict(pad=old[0] & ~1, led=old[1] & ~1)
-    code, labels = arm_code(base_addr, L, prev, v2)
+    nudge2 = rhbuild.OPT.get("nudge2", False)
+    assert not nudge2 or v2
+    code, labels = arm_code(base_addr, L, prev, v2, nudge2)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code
     while len(img) % 4:
         img += bytes([0xFF])

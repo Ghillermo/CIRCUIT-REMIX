@@ -100,7 +100,11 @@ def arm_code(base, L):
     imm32(0, BASE)
     imm32(1, rhstate.HEAP_LIMIT_PTR)
     E(ldr_imm, 1, 1, 0)
-    E(cmp_reg, 1, 0)
+    if RAM2 and rhstate.our_limit() != BASE:                  # (RH67) the limit is modhost's third block, below ours
+        imm32(2, rhstate.our_limit())
+        E(cmp_reg, 1, 2)
+    else:
+        E(cmp_reg, 1, 0)
     E(b_cond, "kb_no", "ne")
     E(ldr_imm, 1, 0, 0)
     imm32(2, BMAGIC)
