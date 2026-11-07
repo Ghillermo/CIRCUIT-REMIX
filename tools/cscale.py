@@ -21,6 +21,9 @@ Ours:
     intervals 0..12 below, 12..24 above); a key toggles its interval (7 at most); LEDs: root white, degrees green, the period blue, the free
     keys dim; on Shift's release the keyboard is rebuilt;
   * the LED task rebuilds a keyboard whose scale is not the project's (after an edit, a load, a new project): one a frame (rhstate "cscale").
+OPT latch (RH75; the user, 2026-11-05: «custom scale now lives on shift+note during note expand view. Shift any note pad is now latch»): the
+editor is a flag (tools/latch.py's RAM, set / cleared by Shift + Note in the expanded Note view, container mode 7: all 32 pads a keyboard),
+shown while that view is on the screen; Shift no longer opens it (Shift + a key pad = tools/latch.py's latch).
 """
 from __future__ import annotations
 
@@ -41,6 +44,8 @@ NV0, NV_SZ, NV_VT = 0x2004A604, 0x1B4, 0x08067248
 KB0, KB_SZ = 0x200497C4, 0x1C8
 BUILD_CALL, CHROMATIC, REBUILD = 0x08055FAC, 0x08055E8C, 0x08055F8C
 CONT, CONT_VT, O_MODE, MODE_NOTE, O_SEL = 0x20048B9C, 0x080678DC, 0x264, 1, 0x25C   # the track views' container: mode 1 = the Note view
+MODE_EXP = 7                                               # (latch) mode 7 = the expanded Note view (Note again): 32 keyboard pads
+LATCH = False                                              # (RH75, OPT latch) the editor = Shift + Note in the expanded Note view
 NV_IDX = 0x0805DFEA                                        # (view, pad) -> the keyboard index (pad + 8 x rows x (5 - octave))
 O_ROWS, O_TAB, O_REV, O_LINK = 0x19C, 8, 0x88, 0x114
 ROOT = 0x48
@@ -369,7 +374,7 @@ def arm_code(base, L, prev):
     E(bl, L["c_ciok"])
     E(cmp_imm, 0, 0)
     E(b_cond, "ce_n", "eq")
-    E(bl, L["c_cishift"])
+    E(bl, "c_csnote" if LATCH else L["c_cishift"])                        # (latch: the editor = its flag, not Shift)
     E(cmp_imm, 0, 0)
     E(b_cond, "ce_n", "eq")
     E(mov_reg, 0, 4)
@@ -437,10 +442,22 @@ def arm_code(base, L, prev):
     E(b_cond, "cn_0", "ne")
     imm32(1, O_MODE)
     E(raw, h(0x5C41))                                                     # ldrb r1, [r0, r1]
-    E(cmp_imm, 1, MODE_NOTE)
-    E(b_cond, "cn_0", "ne")
-    E(bl, L["c_cishift"])
-    E(pop_list, [4], pc=True)
+    if LATCH:                                                             # (latch) the expanded Note view with the editor's flag on
+        import latch as LX
+        E(cmp_imm, 1, MODE_EXP)
+        E(b_cond, "cn_0", "ne")
+        imm32(0, LX.RAM)
+        E(ldr_imm, 1, 0, 0)
+        imm32(2, LX.MAGIC)
+        E(cmp_reg, 1, 2)
+        E(b_cond, "cn_0", "ne")
+        E(ldrb_imm, 0, 0, LX.O_ED)
+        E(pop_list, [4], pc=True)
+    else:
+        E(cmp_imm, 1, MODE_NOTE)
+        E(b_cond, "cn_0", "ne")
+        E(bl, L["c_cishift"])
+        E(pop_list, [4], pc=True)
     a.label("cn_0")
     E(movs_imm, 0, 0)
     a.label("cn_x")
@@ -491,12 +508,17 @@ def arm_code(base, L, prev):
     E(bl, L["c_ciok"])
     E(cmp_imm, 0, 0)
     bc("cq_x", "eq")
-    E(bl, L["c_cishift"])
-    E(cmp_imm, 0, 0)
-    bc("cq_s", "eq")
-    E(bl, "c_csnote")                                                     # Shift held: the editor?
-    E(cmp_imm, 0, 0)
-    bc("cq_x", "eq")
+    if LATCH:                                                             # (latch) the editor's flag in the expanded Note view
+        E(bl, "c_csnote")
+        E(cmp_imm, 0, 0)
+        bc("cq_s", "eq")
+    else:
+        E(bl, L["c_cishift"])
+        E(cmp_imm, 0, 0)
+        bc("cq_s", "eq")
+        E(bl, "c_csnote")                                                 # Shift held: the editor?
+        E(cmp_imm, 0, 0)
+        bc("cq_x", "eq")
     E(bl, "c_cssel")
     E(cmp_imm, 0, 7)
     bc("cq_x", "hi")
@@ -575,6 +597,8 @@ def arm_code(base, L, prev):
 def install(img, report, base_addr):
     """Append the code; the keyboards' chromatic builder call, the Note views' slot 0, the container's slot 0, the LED task calls."""
     import rhbuild
+    global LATCH
+    LATCH = bool(rhbuild.OPT.get("latch"))
     BASE = rhbuild.BASE
     u = lambda a_: struct.unpack_from("<I", img, a_ - BASE)[0]
     lab = lambda sec, n: int(report[sec]["labels"][n], 16)

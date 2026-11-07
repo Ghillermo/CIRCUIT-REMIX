@@ -24,6 +24,11 @@ TOOL = os.environ.get("DSPTOOL") or str(ROOT.parent / "CIRCUIT-HACKS" / "ext" / 
 def block(img, core, mode=0):
     a = int.from_bytes(img[TABLE - BASE + 4 * (2 * core + mode):][:4], "little")
     o = a - BASE
+    if bytes(img[o:o + 4]) == b"DZ2\0":                                 # (RH80, dspz OPT dzhole) packed with ours, in pieces: it heads the stream
+        import dspz
+        raw = dspz.unblob2(img, a, BASE)
+        n, load = int.from_bytes(raw[0:3], "big"), int.from_bytes(raw[3:6], "big")
+        return a, n, load, raw[6:6 + 3 * n]
     n, load = int.from_bytes(img[o:o + 3], "big"), int.from_bytes(img[o + 3:o + 6], "big")
     return a, n, load, img[o + 6:o + 6 + 3 * n]
 

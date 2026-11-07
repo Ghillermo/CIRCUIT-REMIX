@@ -91,6 +91,113 @@ BIP = (0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0)
 BIP_UI = (3, 3) + BIP[2:9] + (2,) + BIP[10:]                # (ui) 3 = a wave (its colour), 2 = a toggle
 ORDER = (S.C_SHP, S.C_P2, S.C_OCT, S.C_G1, S.C_G2, S.C_GS, S.C_GN, S.C_FM, S.C_K, S.C_GLD, S.C_VFM, S.C_REL, S.C_EF, S.C_SP, S.C_TRK, S.C_KEY)
 G_LEVEL, G_HALF, G_ONE, G_PW = 46236, 33026, 66052, 63410   # 0.7 / 127, 0.5 / 127, 1 / 127, 0.96 / 127 (x 2^23)
+# va (RH77, OPT vapage: tools/va0.py's oscillators (OPT va >= 3); the user, 2026-11-06: «haz la build de rythm con el VA», the layout «Like Hacks»: its OSC
+# pages): K1 WAVE (the morph: sine 0, triangle 42, saw 84, square 126), K2 SHAPE (50 the middle), K3 WAVE 2, K4 SHAPE 2, K5 TUNE 2 (+-24
+# semitones), K6 FM (64 none: right OSC 2 -> OSC 1, left OSC 1 -> OSC 2), K7 sync + bitwise (7 zones), K8 MIX; Shift: K1 env -> pitch, K2 env
+# -> shape, K3 glide, K4 octave, K5 FINE 2, K6 RING, K7 env -> morph, K8 the release (the Envelope page's length).  The project's 16 bytes
+# a slot: the knob k's value at raw MAP_VA[k]; raw 13 / 14 / 15 stay the Envelope page's (length, env -> low-pass, start), so RING and env ->
+# morph (raw 16 / 17) live in bit 7 of bytes 0-6 / 7-13 (every value is 7-bit; env -> morph XOR 64: a cleared byte = the middle).  The
+# Envelope page and Project init use the raw indices (c_syvr / c_sypr), the knobs, the LEDs and the matrix the knob ones (c_syv / c_syp).
+# Core 0: the slot's VA block (va0.XB0 + XS s) gets 17 X words (VA_WORDS: the 13 knobs', OSC 1's TUNE / FINE 0, DFLAGS = OSC 2 heard or
+# used, VMAG last: the words a block never wrote are only phases and smoothed states); synth0's Y words keep C_OCT, C_GLD, C_REL (knob 15),
+# C_EF (raw 14), the track and the key (the others 0: unused by the VA).  A project block of RH51-RH76 (the old meanings) is made anew.
+VA_CHECK = 0x3B
+MAP_VA = tuple(range(13)) + (16, 17, 13)
+K_RING, K_ENVM, K_LEN = 13, 14, 15                                   # (va) the knob indices
+DEF_VA_RAW = (84, 64, 84, 64, 64, 64, 0, 0, 64, 64, 0, 64, 64, LEN_DEF, 64, 0, 0, 64)
+DEF_VA = tuple(DEF_VA_RAW[MAP_VA[k]] for k in range(16))
+STEP_VA = (1,) * 11 + (8,) + (1,) * 4
+BIP_VA = (0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0)
+BIP_UI_VA0 = (3,) + BIP_VA[1:2] + (3,) + BIP_VA[3:]                  # (ui, RH77) K1 / K3 the morph's nearest wave in its colour
+BIP_UI_VA = BIP_UI_VA0[:6] + (4,) + BIP_UI_VA0[7:]                    # (leftlight) and K7 (4)
+# its zone's colour (leftlight, RH78; the user: «todas las zonas dentro de un knob tienen que ser distintas»): none dark, sync blue, xor
+# red-orange, or green, nor pink, and pale yellow, nand silver; the brightness 24 + the position in the zone (as va0: 7 v = zone << 7 | pos)
+VA_ZONES = (0x00, 0x12, 0x43, 0x7B, 0x66, 0x2D, 0x1B)
+UI_WAVES_VA = (0x01, 0x1E, 0x55, 0x2F)                               # sine white, triangle green, saw red, square yellow (UI_WAVES' colours)
+VA_PW, VA_SEMI, VA_BIP, VA_ZERO, VA_DUAL, VA_MAG = 1, 2, 3, 4, 5, 6  # (kind 0: the value as it is)
+VA_EXT = 7                                                           # (RH80, OPT vsel) tools/vsel.py's value (the knob field = which)
+VA_DUALW, VMAGIC3 = 2, 0x7A5A03                                      # va0.DUAL, va0.VMAGIC3
+VA_XB0, VA_XS = 0x4E00, 0x60                                         # va0.XB0, XS
+KB_LEFT = 0x8000                                                    # kbright.BIPLEFT
+# (va0 X offset, the knob, the kind)
+VA_WORDS = ((2, 0, 0), (3, 1, VA_PW), (0x30 + 2, 2, 0), (0x30 + 3, 3, VA_PW), (0x30 + 0, 4, VA_SEMI), (0x30 + 6, 5, 0), (0x30 + 9, 6, 0),
+            (0x30 + 4, 7, 0), (5, 8, VA_BIP), (6, 9, VA_BIP), (0x30 + 1, 12, VA_BIP), (0x30 + 7, 13, 0), (8, 14, VA_BIP), (0, 0, VA_ZERO),
+            (1, 0, VA_ZERO), (21, 0, VA_DUAL), (0x30 + 47, 0, VA_MAG))
+NVA = len(VA_WORDS)
+VA_WORDS_EXT = tuple((o, (0 if o == 0 else 1), VA_EXT) if kind == VA_ZERO else (o, k, kind) for o, k, kind in VA_WORDS)   # (OSC 1's TUNE / FINE)
+Y_EXT = ((S.C_G1, 2), (S.C_G2, 3), (S.C_GS, 4))                    # (OPT vsel) synth0's words: the envelope -> FM / ring / mix (va0 envx)
+ORDER_VA = tuple(range(16, 15 + NVA, 2)) + tuple(range(17, 15 + NVA, 2)) + (15 + NVA,) + ORDER   # the bulk send: the VA's words (VMAG
+                                                                     # last; not 16..31 in a row: a plain run the provenance check finds
+                                                                     # in any image), then synth0's (the key last)
+ORDER_VA64 = ORDER_VA + ORDER_VA[:64 - len(ORDER_VA)]                # (in turn: 64 a slot)
+
+
+def va():
+    """(RH77) OPT vapage: the Synth page drives the VA (needs OPT va >= 3: RD43's engine; RD41-RD43 themselves keep the old page)"""
+    import rhbuild
+    if not rhbuild.OPT.get("vapage"):
+        return False
+    assert int(rhbuild.OPT.get("va", 0) or 0) >= 3, "synthpage vapage needs va0 V3"
+    return True
+
+
+def va_raw(vals_raw, r):
+    """(va) the value at raw index r (0..17) of a slot's 16 bytes"""
+    if r < 16:
+        return vals_raw[r] & 0x7F
+    base = 7 * (r - 16)
+    v = sum(((vals_raw[base + i] >> 7) & 1) << i for i in range(7))
+    return v ^ 64 if r == 17 else v
+
+
+def va_put(vals_raw, r, v):
+    """(va) the 16 bytes with raw index r set to v"""
+    b = list(vals_raw)
+    if r < 16:
+        b[r] = (b[r] & 0x80) | v
+    else:
+        base, v = 7 * (r - 16), v ^ 64 if r == 17 else v
+        for i in range(7):
+            b[base + i] = (b[base + i] & 0x7F) | ((v >> i) & 1) << 7
+    return bytes(b)
+
+
+def va_knobs(vals_raw):
+    """(va) the 16 knob values of a slot's bytes"""
+    return [va_raw(vals_raw, MAP_VA[k]) for k in range(16)]
+
+
+def va_raw_bytes(knobs, raw13=LEN_DEF, raw14=64, raw15=0):
+    """(va) a slot's 16 bytes from its 16 knob values (+ the Envelope page's three)"""
+    b = bytes(16)
+    for k in range(16):
+        b = va_put(b, MAP_VA[k], knobs[k])
+    for r, v in ((14, raw14), (15, raw15)):
+        b = va_put(b, r, v)
+    return b
+
+
+def va_words(knobs):
+    """(va) {va0 X offset in the block: word} the ARM writes for a slot's 16 knob values (the tests')"""
+    import va0 as V
+    out = {}
+    for off, k, kind in VA_WORDS:
+        v = knobs[k]
+        w = {0: v, VA_PW: (v * 807) >> 10, VA_SEMI: ((3 * v + 4) >> 3) - 24, VA_BIP: v - 64, VA_ZERO: 0,
+             VA_DUAL: V.DUAL if knobs[7] or knobs[5] != 64 or knobs[K_RING] or knobs[6] >= 19 else 0, VA_MAG: V.VMAGIC3}[kind]
+        out[off] = w & 0xFFFFFF
+    return out
+
+
+def va_model_words(knobs, trk1, raw14=64):
+    """(va) synth0's 16 Y words of a slot (the ARM's: the unused ones 0)"""
+    c = [0] * 16
+    c[S.C_TRK] = trk1
+    c[S.C_OCT] = (((knobs[K_OCT] * 7) >> 7) - 3) * 0xC0000
+    c[S.C_GLD], c[S.C_REL] = glide_t()[knobs[K_GLIDE]], rel_t()[knobs[K_LEN]]
+    c[S.C_EF] = (raw14 - 64) * 131072
+    c[S.C_KEY] = S.KEY if trk1 else 0
+    return [x & 0xFFFFFF for x in c]
 
 
 def glide_t():
@@ -119,14 +226,14 @@ def model_words(vals, trk1):
     return [x & 0xFFFFFF for x in c]
 
 
-def model_block(slots):
-    """the project's block for [(track + 1, [16 values])] (the tests')"""
+def model_block(slots, check=CHECK):
+    """the project's block for [(track + 1, [16 values])] (the tests'; va: check = VA_CHECK, the values the raw bytes)"""
     blk = bytearray(BLK_LEN)
     blk[0] = MARK
     for s, (t1, vals) in enumerate(slots):
         blk[2 + SL * s] = t1
         blk[3 + SL * s:3 + SL * s + NV] = bytes(vals)
-    x = CHECK ^ MARK
+    x = check ^ MARK
     for c in blk[2:]:
         x ^= c
     blk[1] = x
@@ -489,17 +596,36 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         E(b, target)
         a.label(n)
 
+    V = va()
+    CHK = VA_CHECK if V else CHECK
     t_def = base
-    dft = DEF[:K_REL] + (LEN_DEF,) + DEF[K_REL + 1:] if env else DEF
-    E(raw, bytes(dft) + bytes(STEP) + bytes(BIP_UI if ui else BIP) + bytes(ORDER))
-    t_step, t_bip, t_order = t_def + 16, t_def + 32, t_def + 48
-    t_gld = t_def + 64
+    if V:                                                                 # (va) raw defaults (18), knob defaults, steps, bipolar, the
+        assert env and ui                                                 # orders, the map, the VA words (offset, knob, kind)
+        tb = bytes(DEF_VA_RAW) + bytes(2) + bytes(DEF_VA) + bytes(STEP_VA) + bytes(BIP_UI_VA if rhbuild.OPT.get("leftlight") else BIP_UI_VA0)
+        tb += bytes(ORDER_VA64) + bytes(MAP_VA)
+        t_kdef, t_step, t_bip = t_def + 20, t_def + 36, t_def + 52
+        t_order, t_map = t_def + 68, t_def + 132
+        t_vw = t_def + 148
+        tb += b"".join(bytes(w) for w in (VA_WORDS_EXT if rhbuild.OPT.get("vsel") else VA_WORDS)) + bytes(1)
+        assert len(tb) == 148 + 3 * NVA + 1 and len(tb) % 4 == 0
+        E(raw, tb)
+        t_gld = t_def + len(tb)
+    else:
+        t_kdef = t_def
+        dft = DEF[:K_REL] + (LEN_DEF,) + DEF[K_REL + 1:] if env else DEF
+        E(raw, bytes(dft) + bytes(STEP) + bytes(BIP_UI if ui else BIP) + bytes(ORDER))
+        t_step, t_bip, t_order = t_def + 16, t_def + 32, t_def + 48
+        t_gld = t_def + 64
     E(raw, b"".join(x.to_bytes(4, "little") for x in glide_t()))
     t_rel = t_gld + 512
     E(raw, b"".join(x.to_bytes(4, "little") for x in rel_t()))
     t_wave = t_rel + 512
     if ui:
-        E(raw, b"".join(x.to_bytes(2, "little") for x in UI_WAVES))
+        E(raw, b"".join(x.to_bytes(2, "little") for x in (UI_WAVES_VA if V else UI_WAVES)))
+    LL = rhbuild.OPT.get("leftlight")
+    t_zone = t_wave + 8
+    if V and LL:
+        E(raw, b"".join(x.to_bytes(2, "little") for x in VA_ZONES + (0,)))
 
     # ---- c_syram() -> r0 = our RAM (OFF2), 0 without it; clobbers r1-r3
     a.label("c_syram")
@@ -514,7 +640,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
 
     # ---- c_sysum(r0 = the block) -> r0 = its check byte (written); clobbers r1-r3
     a.label("c_sysum")
-    E(movs_imm, 1, CHECK ^ MARK)
+    E(movs_imm, 1, CHK ^ MARK)
     E(movs_imm, 2, 2)
     a.label("ys_l")
     E(ldrb_reg, 3, 0, 2)
@@ -538,7 +664,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(cmp_imm, 0, MARK)
     E(b_cond, "yb_new", "ne")
     E(ldrb_imm, 5, 4, 1)
-    E(movs_imm, 1, CHECK ^ MARK)
+    E(movs_imm, 1, CHK ^ MARK)
     E(movs_imm, 2, 2)
     a.label("yb_l")
     E(ldrb_reg, 3, 4, 2)
@@ -591,6 +717,10 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
 
     # ---- c_syv(r0 = slot, r1 = k) -> its value (the default without the block); clobbers r1-r3
     a.label("c_syv")
+    if V:                                                                 # (va) the knob k -> its raw index; c_syvr(r0 = slot, r1 = raw)
+        imm32(2, t_map)
+        E(ldrb_reg, 1, 2, 1)
+        a.label("c_syvr")
     E(push_list, [4, 5], lr=True)
     E(mov_reg, 4, 0)
     E(mov_reg, 5, 1)
@@ -600,9 +730,37 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(movs_imm, 1, SL)
     E(muls, 1, 4)
     E(adds_reg, 0, 0, 1)
-    E(adds_reg, 0, 0, 5)
-    E(ldrb_imm, 0, 0, 3)
-    E(pop_list, [4, 5], pc=True)
+    if V:
+        E(adds_imm8, 0, 3)                                                # r0 = the slot's 16 bytes
+        E(cmp_imm, 5, 16)
+        E(b_cond, "yv_pk", "hs")
+        E(ldrb_reg, 0, 0, 5)
+        E(lsls_imm, 0, 0, 25)
+        E(lsrs_imm, 0, 0, 25)
+        E(pop_list, [4, 5], pc=True)
+        a.label("yv_pk")                                                  # raw 16 / 17: bit 7 of bytes 0-6 / 7-13
+        E(subs_imm8, 5, 16)
+        E(movs_imm, 1, 7)
+        E(muls, 1, 5)
+        E(adds_reg, 0, 0, 1)
+        E(movs_imm, 4, 0)
+        E(movs_imm, 2, 0)
+        a.label("yv_pl")
+        E(ldrb_reg, 3, 0, 2)
+        E(lsrs_imm, 3, 3, 7)
+        E(lsls_reg, 3, 2)
+        E(orrs_reg, 4, 3)
+        E(adds_imm8, 2, 1)
+        E(cmp_imm, 2, 7)
+        E(b_cond, "yv_pl", "lo")
+        E(lsls_imm, 5, 5, 6)                                              # env -> morph: XOR 64
+        E(eors_reg, 4, 5)
+        E(mov_reg, 0, 4)
+        E(pop_list, [4, 5], pc=True)
+    else:
+        E(adds_reg, 0, 0, 5)
+        E(ldrb_imm, 0, 0, 3)
+        E(pop_list, [4, 5], pc=True)
     a.label("yv_d")
     imm32(0, t_def)
     E(ldrb_reg, 0, 0, 5)
@@ -634,6 +792,10 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
 
     # ---- c_syp(r0 = slot, r1 = k, r2 = value): into the block, its check, the slot to send; clobbers r0-r3
     a.label("c_syp")
+    if V:                                                                 # (va) the knob k -> its raw index; c_sypr(r0 = slot, r1 = raw, r2)
+        imm32(3, t_map)
+        E(ldrb_reg, 1, 3, 1)
+        a.label("c_sypr")
     E(push_list, [4, 5, 6], lr=True)
     E(mov_reg, 4, 0)
     E(mov_reg, 5, 1)
@@ -644,8 +806,43 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(movs_imm, 1, SL)
     E(muls, 1, 4)
     E(adds_reg, 1, 0, 1)
-    E(adds_reg, 1, 1, 5)
-    E(strb_imm, 6, 1, 3)
+    if V:
+        E(adds_imm8, 1, 3)                                                # r1 = the slot's 16 bytes
+        E(cmp_imm, 5, 16)
+        E(b_cond, "yq_pk", "hs")
+        E(ldrb_reg, 2, 1, 5)                                              # bit 7 kept
+        E(movs_imm, 3, 0x80)
+        E(ands_reg, 2, 3)
+        E(orrs_reg, 2, 6)
+        E(strb_reg, 2, 1, 5)
+        E(b, "yq_s")
+        a.label("yq_pk")
+        E(subs_imm8, 5, 16)
+        E(movs_imm, 2, 7)
+        E(muls, 2, 5)
+        E(adds_reg, 1, 1, 2)
+        E(lsls_imm, 5, 5, 6)                                              # env -> morph: XOR 64
+        E(eors_reg, 6, 5)
+        E(push_list, [0])
+        E(movs_imm, 5, 0)
+        a.label("yq_pl")
+        E(ldrb_reg, 2, 1, 5)
+        E(lsls_imm, 2, 2, 25)
+        E(lsrs_imm, 2, 2, 25)
+        E(mov_reg, 3, 6)
+        E(lsrs_reg, 3, 5)
+        E(lsls_imm, 3, 3, 31)
+        E(lsrs_imm, 3, 3, 24)
+        E(orrs_reg, 2, 3)
+        E(strb_reg, 2, 1, 5)
+        E(adds_imm8, 5, 1)
+        E(cmp_imm, 5, 7)
+        E(b_cond, "yq_pl", "lo")
+        E(pop_list, [0])
+        a.label("yq_s")
+    else:
+        E(adds_reg, 1, 1, 5)
+        E(strb_imm, 6, 1, 3)
     E(bl, "c_sysum")
     E(mov_reg, 0, 4)
     E(bl, "c_sypend")
@@ -673,6 +870,27 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(adds_imm8, 6, 1)
     E(cmp_imm, 6, NSL)
     E(b_cond, "ya_l", "lo")
+    if rhbuild.OPT.get("poly"):                                           # (RH72) none free: a poly track's borrowed one (not the first
+        E(movs_imm, 6, 0)                                                 # of its track; fmpage's c_plsync turns its FM off)
+        a.label("ya_s")
+        E(movs_imm, 0, SL)
+        E(muls, 0, 6)
+        E(adds_reg, 0, 5, 0)
+        E(ldrb_imm, 0, 0, 2)
+        E(subs_imm8, 0, 1)
+        E(bl, "c_syslot")
+        E(cmp_reg, 0, 6)
+        E(b_cond, "ya_st", "ne")
+        E(adds_imm8, 6, 1)
+        E(cmp_imm, 6, NSL)
+        E(b_cond, "ya_s", "lo")
+        E(b, "ya_n")
+        a.label("ya_st")
+        E(movs_imm, 0, SL)
+        E(muls, 0, 6)
+        E(adds_reg, 0, 5, 0)
+        E(adds_imm8, 0, 2)
+        E(b, "ya_g")
     a.label("ya_n")
     E(movs_imm, 0, NSL)
     E(pop_list, [4, 5, 6], pc=True)
@@ -789,6 +1007,14 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         SYV = "c_sywv"
         a.label("c_sywv")
         E(b_w, "c_syv")
+    if rhbuild.OPT.get("vmode"):                                          # (RH80) c_sydt(r0 = slot, r1 = C_OCT) -> r0: esel's b.w c_esdt
+        a.label("c_sydt")
+        E(mov_reg, 0, 1)
+        E(raw, h(0x4770))
+    if rhbuild.OPT.get("vsel"):                                           # (RH80) c_syext(r0 = slot, r1 = e) -> r0: vsel's b.w c_vsext
+        a.label("c_syext")
+        E(movs_imm, 0, 0)
+        E(raw, h(0x4770))
     a.label("c_syword")
     E(push_list, [4, 5, 6], lr=True)
     E(mov_reg, 4, 0)
@@ -804,6 +1030,10 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     def case(i, nxt):
         E(cmp_imm, 5, i)
         E(b_cond, nxt, "ne")
+
+    def val_r1():
+        E(mov_reg, 0, 4)
+        E(bl, SYV)
 
     case(S.C_TRK, "w1")
     E(bl, "c_syb")
@@ -828,83 +1058,194 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     imm32(0, S.KEY)
     E(b, "w_x")
     a.label("w2")
-    case(S.C_SHP, "w3")
-    val(K_W1, 6)
-    E(lsrs_imm, 6, 6, 5)
-    val(K_W2)
-    E(lsrs_imm, 0, 0, 5)
-    E(lsls_imm, 0, 0, 2)
-    E(orrs_reg, 6, 0)
-    val(K_SYNC)
-    E(cmp_imm, 0, 64)
-    E(b_cond, "w2s", "lo")
-    E(movs_imm, 0, S.SHP_SYNC)
-    E(orrs_reg, 6, 0)
-    a.label("w2s")
-    E(mov_reg, 0, 6)
-    E(b, "w_x")
-    a.label("w3")
-    case(S.C_P2, "w4")
-    val(K_P2, 6)                                                          # ((3 v + 4) >> 3) - 24 semitones
-    E(movs_imm, 0, 3)
-    E(muls, 6, 0)
-    E(adds_imm8, 6, 4)
-    E(lsrs_imm, 6, 6, 3)
-    E(subs_imm8, 6, 24)
-    E(lsls_imm, 6, 6, 16)
-    val(K_FINE)                                                           # + (v - 64) << 9
-    E(subs_imm8, 0, 64)
-    E(lsls_imm, 0, 0, 9)
-    E(adds_reg, 0, 0, 6)
-    E(b, "w_x")
-    a.label("w4")
-    case(S.C_OCT, "w5")
-    val(K_OCT)                                                            # ((v x 7) >> 7) - 3 octaves
-    E(movs_imm, 1, 7)
-    E(muls, 0, 1)
-    E(lsrs_imm, 0, 0, 7)
-    E(subs_imm8, 0, 3)
-    imm32(1, 0xC0000)
-    E(muls, 0, 1)
-    E(b, "w_x")
-    a.label("w5")
-    for i, k, mul, inv in ((S.C_G1, K_MIX, G_LEVEL, True), (S.C_G2, K_MIX, G_LEVEL, False), (S.C_GS, K_SUB, G_HALF, False),
-                           (S.C_GN, K_NOISE, G_HALF, False), (S.C_FM, K_FM, G_ONE, False), (S.C_VFM, K_VFM, G_ONE, False)):
-        nx = f"wm{i}"
-        case(i, nx)
-        val(k)
-        if inv:
-            E(movs_imm, 1, 127)
-            E(subs_reg, 0, 1, 0)
-        imm32(1, mul)
+    if V:                                                                 # (va) C_OCT, C_GLD, C_REL (knob 15), C_EF (raw 14); the
+        case(S.C_OCT, "v4")                                               # VA's X words (i >= 16); the others 0
+        val(K_OCT)
+        E(movs_imm, 1, 7)
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 7)
+        E(subs_imm8, 0, 3)
+        imm32(1, 0xC0000)
+        E(muls, 0, 1)
+        if rhbuild.OPT.get("vmode"):                                      # (RH80) + the unison's detune (esel patches the stub)
+            E(mov_reg, 1, 0)
+            E(mov_reg, 0, 4)
+            E(bl, "c_sydt")
+        E(b, "w_x")
+        a.label("v4")
+        for i, k, t in ((S.C_GLD, K_GLIDE, t_gld), (S.C_REL, K_LEN, t_rel)):
+            nx = f"vt{i}"
+            case(i, nx)
+            val(k)
+            imm32(1, t)
+            E(lsls_imm, 0, 0, 2)
+            E(adds_reg, 0, 0, 1)
+            E(ldr_imm, 0, 0, 0)
+            E(b, "w_x")
+            a.label(nx)
+        case(S.C_EF, "v7")
+        E(mov_reg, 0, 4)                                                  # the Envelope page's (raw 14): (v - 64) << 17
+        E(movs_imm, 1, 14)
+        E(bl, "c_syvr")
+        E(subs_imm8, 0, 64)
+        E(lsls_imm, 0, 0, 17)
+        E(b, "w_x")
+        a.label("v7")
+        if rhbuild.OPT.get("vsel"):                                       # (RH80) the envelope -> FM / ring / mix: vsel's
+            for i, x in Y_EXT:
+                E(cmp_imm, 5, i)
+                E(b_cond, f"vy{i}", "ne")
+                E(mov_reg, 0, 4)
+                E(movs_imm, 1, x)
+                E(bl, "c_syext")
+                E(b, "w_x")
+                a.label(f"vy{i}")
+        E(movs_imm, 0, 0)
+        E(cmp_imm, 5, 16)
+        bc("w_x", "lo")
+        E(subs_imm8, 5, 16)                                               # j: (offset, knob, kind) at t_vw + 3 j
+        E(movs_imm, 0, 3)
+        E(muls, 5, 0)
+        imm32(0, t_vw + 1)
+        E(adds_reg, 5, 5, 0)
+        E(ldrb_imm, 6, 5, 1)                                              # r6 = the kind
+        E(cmp_imm, 6, VA_ZERO)
+        E(b_cond, "vz", "eq")
+        if rhbuild.OPT.get("vsel"):                                       # (RH80) vsel's value (the knob field)
+            E(cmp_imm, 6, VA_EXT)
+            E(b_cond, "vx", "ne")
+            E(ldrb_imm, 1, 5, 0)
+            E(mov_reg, 0, 4)
+            E(bl, "c_syext")
+            E(b, "w_x")
+            a.label("vx")
+        E(cmp_imm, 6, VA_MAG)
+        E(b_cond, "vm", "eq")
+        E(cmp_imm, 6, VA_DUAL)
+        E(b_cond, "vd", "eq")
+        E(ldrb_imm, 1, 5, 0)
+        val_r1()
+        E(cmp_imm, 6, VA_PW)
+        E(b_cond, "vp", "ne")
+        imm32(1, 807)                                                     # (v x 807) >> 10: 0..100
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 10)
+        E(b, "w_x")
+        a.label("vp")
+        E(cmp_imm, 6, VA_SEMI)
+        E(b_cond, "vs", "ne")
+        E(movs_imm, 1, 3)                                                 # ((3 v + 4) >> 3) - 24
+        E(muls, 0, 1)
+        E(adds_imm8, 0, 4)
+        E(lsrs_imm, 0, 0, 3)
+        E(subs_imm8, 0, 24)
+        E(b, "w_x")
+        a.label("vs")
+        E(cmp_imm, 6, VA_BIP)
+        bc("w_x", "ne")
+        E(subs_imm8, 0, 64)
+        E(b, "w_x")
+        a.label("vz")
+        E(movs_imm, 0, 0)
+        E(b, "w_x")
+        a.label("vm")
+        imm32(0, VMAGIC3)
+        E(b, "w_x")
+        a.label("vd")                                                     # DFLAGS: OSC 2 heard (MIX) or used (FM off the middle, RING, a zone)
+        val(7)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vd1", "ne")
+        val(K_RING)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vd1", "ne")
+        val(6)
+        E(cmp_imm, 0, 19)
+        E(b_cond, "vd1", "hs")
+        val(5)
+        E(cmp_imm, 0, 64)
+        E(b_cond, "vd1", "ne")
+        E(movs_imm, 0, 0)
+        E(b, "w_x")
+        a.label("vd1")
+        E(movs_imm, 0, VA_DUALW)
+    else:
+        case(S.C_SHP, "w3")
+        val(K_W1, 6)
+        E(lsrs_imm, 6, 6, 5)
+        val(K_W2)
+        E(lsrs_imm, 0, 0, 5)
+        E(lsls_imm, 0, 0, 2)
+        E(orrs_reg, 6, 0)
+        val(K_SYNC)
+        E(cmp_imm, 0, 64)
+        E(b_cond, "w2s", "lo")
+        E(movs_imm, 0, S.SHP_SYNC)
+        E(orrs_reg, 6, 0)
+        a.label("w2s")
+        E(mov_reg, 0, 6)
+        E(b, "w_x")
+        a.label("w3")
+        case(S.C_P2, "w4")
+        val(K_P2, 6)                                                          # ((3 v + 4) >> 3) - 24 semitones
+        E(movs_imm, 0, 3)
+        E(muls, 6, 0)
+        E(adds_imm8, 6, 4)
+        E(lsrs_imm, 6, 6, 3)
+        E(subs_imm8, 6, 24)
+        E(lsls_imm, 6, 6, 16)
+        val(K_FINE)                                                           # + (v - 64) << 9
+        E(subs_imm8, 0, 64)
+        E(lsls_imm, 0, 0, 9)
+        E(adds_reg, 0, 0, 6)
+        E(b, "w_x")
+        a.label("w4")
+        case(S.C_OCT, "w5")
+        val(K_OCT)                                                            # ((v x 7) >> 7) - 3 octaves
+        E(movs_imm, 1, 7)
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 7)
+        E(subs_imm8, 0, 3)
+        imm32(1, 0xC0000)
         E(muls, 0, 1)
         E(b, "w_x")
-        a.label(nx)
-    case(S.C_K, "w6")
-    val(K_PW)
-    imm32(1, G_PW)
-    E(muls, 0, 1)
-    imm32(1, S.ONE)
-    E(subs_reg, 0, 1, 0)
-    E(b, "w_x")
-    a.label("w6")
-    for i, k, t in ((S.C_GLD, K_GLIDE, t_gld), (S.C_REL, K_REL, t_rel)):
-        nx = f"wt{i}"
-        case(i, nx)
-        val(k)
-        imm32(1, t)
-        E(lsls_imm, 0, 0, 2)
-        E(adds_reg, 0, 0, 1)
-        E(ldr_imm, 0, 0, 0)
+        a.label("w5")
+        for i, k, mul, inv in ((S.C_G1, K_MIX, G_LEVEL, True), (S.C_G2, K_MIX, G_LEVEL, False), (S.C_GS, K_SUB, G_HALF, False),
+                               (S.C_GN, K_NOISE, G_HALF, False), (S.C_FM, K_FM, G_ONE, False), (S.C_VFM, K_VFM, G_ONE, False)):
+            nx = f"wm{i}"
+            case(i, nx)
+            val(k)
+            if inv:
+                E(movs_imm, 1, 127)
+                E(subs_reg, 0, 1, 0)
+            imm32(1, mul)
+            E(muls, 0, 1)
+            E(b, "w_x")
+            a.label(nx)
+        case(S.C_K, "w6")
+        val(K_PW)
+        imm32(1, G_PW)
+        E(muls, 0, 1)
+        imm32(1, S.ONE)
+        E(subs_reg, 0, 1, 0)
         E(b, "w_x")
-        a.label(nx)
-    case(S.C_EF, "w7")
-    val(K_EF)                                                             # (v - 64) << 17
-    E(subs_imm8, 0, 64)
-    E(lsls_imm, 0, 0, 17)
-    E(b, "w_x")
-    a.label("w7")
-    E(movs_imm, 0, 0)                                                     # C_SP
+        a.label("w6")
+        for i, k, t in ((S.C_GLD, K_GLIDE, t_gld), (S.C_REL, K_REL, t_rel)):
+            nx = f"wt{i}"
+            case(i, nx)
+            val(k)
+            imm32(1, t)
+            E(lsls_imm, 0, 0, 2)
+            E(adds_reg, 0, 0, 1)
+            E(ldr_imm, 0, 0, 0)
+            E(b, "w_x")
+            a.label(nx)
+        case(S.C_EF, "w7")
+        val(K_EF)                                                             # (v - 64) << 17
+        E(subs_imm8, 0, 64)
+        E(lsls_imm, 0, 0, 17)
+        E(b, "w_x")
+        a.label("w7")
+        E(movs_imm, 0, 0)                                                     # C_SP
     a.label("w_x")
     E(pop_list, [4, 5, 6], pc=True)
 
@@ -914,10 +1255,26 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(mov_reg, 4, 0)
     E(mov_reg, 5, 1)
     E(bl, "c_syword")
+    if V:                                                                 # (va) i >= 16: X:va0.XB0 + XS slot + its offset
+        E(cmp_imm, 5, 16)
+        E(b_cond, "yw_y", "lo")
+        E(subs_imm8, 5, 16)
+        E(movs_imm, 1, 3)
+        E(muls, 5, 1)
+        imm32(1, t_vw)
+        E(ldrb_reg, 5, 1, 5)
+        E(movs_imm, 1, VA_XS)
+        E(muls, 1, 4)
+        E(adds_reg, 1, 1, 5)
+        E(movw, 2, VA_XB0)
+        E(adds_reg, 1, 1, 2)
+        E(b, "yw_w")
+        a.label("yw_y")
     E(lsls_imm, 1, 4, 6)
     E(adds_reg, 1, 1, 5)
     E(movw, 2, 0x8000 | S.Y0)
     E(adds_reg, 1, 1, 2)
+    a.label("yw_w")
     E(movs_imm, 2, 0)
     E(bl, L["c_gpw"])
     E(pop_list, [4, 5], pc=True)
@@ -1034,7 +1391,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(bl, L["c_spheld"])
     E(lsls_imm, 0, 0, 31 - SP.BIT_CLEAR)
     E(b_cond, "kn_t", "pl")
-    imm32(0, t_def)                                                       # Clear + the knob: its default
+    imm32(0, t_kdef)                                                      # Clear + the knob: its default
     E(ldrb_reg, 2, 0, 5)
     E(b, "kn_w")
     a.label("kn_t")
@@ -1140,20 +1497,20 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(mov_reg, 0, 6)
     E(bl, "c_sywr")
     E(adds_imm8, 7, 1)
-    E(cmp_imm, 7, NV)
+    E(cmp_imm, 7, len(ORDER_VA) if V else NV)
     E(b_cond, "ll_wa", "lo")
     E(b, "ll_m")
     a.label("ll_rd")
     for _ in range(2):                                                    # else two words a frame in turn
         E(ldrb_imm, 6, 4, R_ROUND)
-        E(lsrs_imm, 0, 6, 4)
-        E(movs_imm, 1, 15)
+        E(lsrs_imm, 0, 6, 6 if V else 4)                                  # (va) 64 a slot
+        E(movs_imm, 1, 63 if V else 15)
         E(ands_reg, 1, 6)
         imm32(2, t_order)
         E(ldrb_reg, 1, 2, 1)
         E(bl, "c_sywr")
         E(adds_imm8, 6, 1)
-        E(movs_imm, 0, 4 * NV - 1)
+        E(movs_imm, 0, 255 if V else 4 * NV - 1)
         E(ands_reg, 6, 0)
         E(strb_imm, 6, 4, R_ROUND)
     a.label("ll_m")
@@ -1243,7 +1600,42 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
             E(movs_imm, 3, UI_KNOB)                                       # r3 = the colour
         E(cmp_imm, 2, 0)
         E(b_cond, f"lu_{k}", "eq")
-        if ui and k < 2:                                                  # (ui) K1 / K2: the wave's colour; with Shift, K2: sync, a toggle
+        if ui and V and k in (0, 2):                                      # (va) K1 / K3: the morph's nearest wave ((v + 21) / 42)
+            E(cmp_imm, 2, 3)
+            E(b_cond, f"lb_{k}", "ne")
+            E(adds_imm8, 0, 21)
+            imm32(2, 1561)
+            E(muls, 0, 2)
+            E(lsrs_imm, 0, 0, 16)
+            E(lsls_imm, 0, 0, 1)
+            imm32(2, t_wave)
+            E(adds_reg, 2, 2, 0)
+            E(ldrh_imm, 3, 2, 0)
+            E(movs_imm, 0, 127)
+            if LL:
+                E(movs_imm, 2, 0)
+            E(b, f"lu_{k}")
+            a.label(f"lb_{k}")
+        if ui and V and LL and k == 6:                                    # (va, leftlight) K7: its zone's colour, the position
+            E(cmp_imm, 2, 4)
+            E(b_cond, f"lz_{k}", "ne")
+            E(movs_imm, 2, 7)
+            E(muls, 0, 2)
+            E(lsrs_imm, 2, 0, 7)                                          # r2 = the zone
+            E(lsls_imm, 2, 2, 1)
+            imm32(3, t_zone)
+            E(adds_reg, 3, 3, 2)
+            E(ldrh_imm, 3, 3, 0)
+            E(lsls_imm, 0, 0, 25)                                         # the position x 13 / 16 + 24
+            E(lsrs_imm, 0, 0, 25)
+            E(movs_imm, 2, 13)
+            E(muls, 0, 2)
+            E(lsrs_imm, 0, 0, 4)
+            E(adds_imm8, 0, 24)
+            E(movs_imm, 2, 0)
+            E(b, f"lu_{k}")
+            a.label(f"lz_{k}")
+        if ui and not V and k < 2:                                        # (ui) K1 / K2: the wave's colour; with Shift, K2: sync, a toggle
             E(cmp_imm, 2, 3)
             E(b_cond, f"lt_{k}", "ne")
             E(lsrs_imm, 0, 0, 5)
@@ -1252,6 +1644,8 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
             E(adds_reg, 2, 2, 0)
             E(ldrh_imm, 3, 2, 0)
             E(movs_imm, 0, 127)
+            if LL:
+                E(movs_imm, 2, 0)
             E(b, f"lu_{k}")
             a.label(f"lt_{k}")
             if k == 1:
@@ -1263,11 +1657,17 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
                 E(movs_imm, 2, 127)
                 a.label(f"ly_{k}")
                 E(mov_reg, 0, 2)
+                if LL:
+                    E(movs_imm, 2, 0)
                 E(b, f"lu_{k}")
                 a.label(f"lb_{k}")
+        if LL:
+            E(movs_imm, 2, 0)
         E(subs_imm8, 0, 64)                                               # from the middle: |v - 64| x 2
         E(b_cond, f"lq_{k}", "ge")
         E(raw, h(0x4240))                                                 # rsbs r0, r0, #0
+        if LL:                                                            # (leftlight) left: the lighter shade
+            E(movw, 2, KB_LEFT)
         a.label(f"lq_{k}")
         E(lsls_imm, 0, 0, 1)
         E(cmp_imm, 0, 127)
@@ -1275,7 +1675,12 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         E(movs_imm, 0, 127)
         a.label(f"lu_{k}")
         E(strb_imm, 0, 7, K_VAL + k)
-        if ui:
+        if ui and LL:
+            E(mov_reg, 1, 3)
+            E(orrs_reg, 1, 2)
+            E(strh_imm, 1, 7, K_CODE + 2 * k)
+            E(strh_w_imm, 3, 5, 2 * (LED_KNOB0 + k))
+        elif ui:
             E(strh_imm, 3, 7, K_CODE + 2 * k)
             E(strh_w_imm, 3, 5, 2 * (LED_KNOB0 + k))
         else:
@@ -1333,7 +1738,7 @@ def install(img, report, base_addr, ui=False, menu2=False, env=False, spall=Fals
     rhbuild.patch(img, NOFF_AT, NOFF_HEAD, bl(NOFF_AT, labels["c_synoff"]))
     if ui:
         rhbuild.patch(img, GP.PR_ENTRY, f"b.w #{prev['rel']:#x}", b_w(GP.PR_ENTRY, labels["c_syrel"]))
-    report["synthpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}), **({"spall": True} if spall else {}),
+    report["synthpage"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), **({"va": True} if va() else {}), **({"ui": True} if ui else {}), **({"menu2": True} if menu2 else {}), **({"env": True} if env else {}), **({"spall": True} if spall else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     if noblink:
         report["synthpage"]["noblink"] = True

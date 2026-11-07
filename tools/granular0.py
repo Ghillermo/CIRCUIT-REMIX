@@ -479,12 +479,14 @@ def code(note=False, post=None, stereo=False, multi=False, sp=False, mix=MIX, sl
     if multi:
         tb["CAP_T"] = list(CAP_T)
     at0 = MCODE if multi else CODE
-    w0, _ = C0.asm_at(items({k: 0x3000 for k in tb}, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl), at0)
+    import rhbuild
+    fix = (lambda its: __import__("sp0").short_items(its)) if (rhbuild.OPT.get("g0short") or rhbuild.OPT.get("poly")) else (lambda its: its)
+    w0, _ = C0.asm_at(fix(items({k: 0x3000 for k in tb}, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl)), at0)
     at, tab_at = at0 + len(w0), {}
     for k in names:
         tab_at[k] = at
         at += len(tb[k])
-    w, labels = C0.asm_at(items(tab_at, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl), at0)
+    w, labels = C0.asm_at(fix(items(tab_at, note=note, post=post, stereo=stereo, multi=multi, sp=sp, mix=mix, sl=sl)), at0)
     assert len(w) == len(w0)
     for k in names:
         w += tb[k]

@@ -47,7 +47,7 @@ def asm_at(items, at):
     def size(it):
         if isinstance(it, str):
             return len(lines_of(it, defaultdict(lambda: 0x3FFF)))
-        return {"label": 0, "jcc": 2, "jmp": 2, "jsr": 2, "jscc": 2}.get(it[0], len(it[1]) if it[0] == "words" else 0)
+        return {"label": 0, "jcc": 2, "jmp": 2, "jsr": 2, "jscc": 2, "bcc": 1, "bra": 1}.get(it[0], len(it[1]) if it[0] == "words" else 0)
     labels, a = {}, at
     for it in items:
         if isinstance(it, tuple) and it[0] == "label":
@@ -72,6 +72,12 @@ def asm_at(items, at):
             out += DP.jscc(it[1], at_(it[2]))
         elif it[0] == "words":
             out += list(it[1])
+        elif it[0] in ("bcc", "bra"):                                     # (RH80) the short relative forms, one word: +-255
+            here = at + len(out)
+            d = at_(it[-1]) - here
+            assert -256 <= d <= 255, (it, hex(here))
+            d &= 0x1FF
+            out.append((0x050C00 if it[0] == "bra" else 0x050400 | DP.CC[it[1]] << 12) | (d >> 5) << 6 | (d & 0x1F))
     return out, labels
 
 
@@ -106,9 +112,14 @@ def seg_items():
 
 
 def block_words(img):
-    o = BLK0 - BASE
-    n, at = int.from_bytes(img[o:o + 3], "big"), int.from_bytes(img[o + 3:o + 6], "big")
-    return n, at, [int.from_bytes(img[o + 6 + 3 * i:o + 9 + 3 * i], "big") for i in range(n)]
+    _, n, at, code = rhdsp.block(img, 0, 0)                               # (RH80: also packed in pieces, tools/dspz.py)
+    return n, at, [int.from_bytes(code[3 * i:3 * i + 3], "big") for i in range(n)]
+
+
+def hole_places():
+    """(RH80, OPT dzhole) the flash core 0's block leaves: up to cthresh's table (read at run time, kept), and after it"""
+    import cthresh as CT
+    return [(BLK0, CT.TAB_FLASH), (CT.TAB_FLASH + 3 * CT.TAB_N, BLK0 + 6 + 3 * N0)]
 
 
 def patch_p0(img, addr, old, new):
@@ -146,6 +157,22 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
     pack = lambda xs: b"".join(x.to_bytes(3, "big") for x in xs)           # noqa: E731
     blks = [pack([len(lw), LD] + lw)] + [pack([len(w), a] + list(w)) for a, w in segs] + [pack([0, 0])]
     assert rhbuild.bl_target(img, UPLOAD_BL0) == SEND
+    dz = rhbuild.OPT.get("dspz", False)                                   # (RH69) the segments and the end as one packed stream (tools/dspz.py)
+    if dz:
+        import dspz as DZ
+        DZ.check_ram(report)
+        raw = b"".join(blks[1:])
+        blks = [blks[0], DZ.pack(raw)]
+        rep["dspz"] = dict(raw=len(raw), packed=len(blks[1]), ring=hex(DZ.RING), stage=hex(DZ.STAGE), state=hex(DZ.S))
+    hole = dz and rhbuild.OPT.get("dzhole", False)                        # (RH80) the stock block too, the stream in pieces in its flash
+    if hole:
+        o = BLK0 - BASE
+        blob = DZ.pack(bytes(img[o:o + 6 + 3 * N0]) + raw)
+        R = hole_places()
+        HL = DZ.H_ENT + 4 * DZ.ENT                                        # three pieces + the end entry
+        pieces = DZ.split(blob, [R[0][1] - R[0][0] - HL, R[1][1] - R[1][0]])
+        blks = [blks[0], pieces[2][0]]
+        rep["dspz"].update(hole=[(hex(a), hex(b)) for a, b in R], packed=len(blob), pieces=[(len(p), w) for p, w in pieces])
 
     def gen(ats, inv=False):
         a = Asm(base_addr)
@@ -173,17 +200,31 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         else:
             E(b_cond, "d0_stock", "ne")
         send(ats[0])                                                      # our loader (a bootstrap block)
-        E(mov_reg, 0, 4)
-        E(movs_imm, 1, 0)
-        E(bl, SEND)                                                       # the stock block, from its own place
-        for x in ats[1:]:
-            send(x)                                                       # our segments, the end
+        if hole:                                                          # the stock block, ours and the end: one stream in pieces
+            imm32(0, BLK0)
+            E(movs_imm, 1, 0)
+            E(bl, "c_dzp")
+        else:
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, 0)
+            E(bl, SEND)                                                   # the stock block, from its own place
+        if hole:
+            pass
+        elif dz:                                                          # our segments and the end, one packed stream
+            imm32(0, ats[1])
+            E(movs_imm, 1, 0)
+            E(bl, "c_dz")
+        else:
+            for x in ats[1:]:
+                send(x)                                                   # our segments, the end
         E(pop_list, [4], pc=True)
         if not inv:
             a.label("d0_stock")
             E(mov_reg, 0, 4)
             E(bl, SEND)
             E(pop_list, [4], pc=True)
+        if dz:
+            DZ.emit(a, E, pieces=hole)
         return a.assemble(plain=True)
     inv = False
     try:
@@ -202,6 +243,13 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         img += bytes([0xFF]) * (x - BASE - len(img)) + blk
     while len(img) % 4:
         img += bytes([0xFF])
+    if hole:                                                              # the header and the first two pieces in the block's flash
+        hd = DZ.header2(blob, [(R[0][0] + HL, pieces[0]), (R[1][0], pieces[1]), (ats[1], pieces[2])])
+        assert len(hd) == HL
+        for (lo, hi), body in zip(R, (hd + pieces[0][0], pieces[1][0])):
+            assert len(body) <= hi - lo
+            img[lo - BASE:hi - BASE] = body + bytes([0xFF]) * (hi - lo - len(body))
+        assert DZ.unblob2(img, BLK0, BASE) == DZ.unblob(blob)
     rhbuild.patch(img, UPLOAD_BL0, f"bl #{SEND:#x}", bl(UPLOAD_BL0, labels["c_d0up"]))
     rep.update(labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")}, blocks=[hex(b) for b in ats], ld=hex(LD),
                ld_words=len(lw), segs=[(hex(a), len(w)) for a, w in segs])
@@ -212,7 +260,16 @@ def sent(img, report):
     """-> the words core 0 receives after the stub on a mode 0 upload of this image (for the tests): our blocks around the stock block"""
     def blk(at):
         o = at - BASE
+        if bytes(img[o:o + 4]) == b"DZ1\0":                              # (RH69, dspz) a packed stream: all its words
+            import dspz as DZ
+            raw = DZ.blob_at(img, at, BASE)
+            return [int.from_bytes(raw[i:i + 3], "big") for i in range(0, len(raw), 3)]
         cnt = int.from_bytes(img[o + 1:o + 3], "big")
         return [int.from_bytes(img[o + 3 * i:o + 3 * i + 3], "big") for i in range(cnt + 2)]
     ats = [int(a, 16) for a in report["core0"]["blocks"]]
+    o = BLK0 - BASE
+    if bytes(img[o:o + 4]) == b"DZ2\0":                                  # (RH80) the stock block and ours, one stream in pieces
+        import dspz as DZ
+        raw = DZ.unblob2(img, BLK0, BASE)
+        return blk(ats[0]), [int.from_bytes(raw[i:i + 3], "big") for i in range(0, len(raw), 3)]
     return blk(ats[0]), blk(BLK0) + [w for a in ats[1:] for w in blk(a)]

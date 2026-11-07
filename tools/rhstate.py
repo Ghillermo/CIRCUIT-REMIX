@@ -61,7 +61,8 @@ OFF2 = {                                   # module -> (offset, length) inside t
     "modmx": (352, 1072),                  # (RH64) the matrix: pages, sources, offsets: modmx.R_*
     "arpmods": (248, 12),                  # (RH63) the arpeggio's modifiers running: arpmods.X_*
     "dspgate": (260, 12),                  # (RH66) + 0 in a PCM upload's bulk interval, + 4 the intervals, + 8 our DSP writes dropped (clkprobe's room)
-    "itcm": (288, 20),                     # (RH66) the ITCM canary: + 0 state, + 4 the next word, + 8 bad words, + 12 the first, + 16 full sweeps (clkprobe's room)
+    "itcm": (288, 20),
+    "fmpage": (260, 84),                   # (RH70) the FM engine's pages: the slots with FM, to send, the round, pad 12 held, the 4 x 16 values                     # (RH66) the ITCM canary: + 0 state, + 4 the next word, + 8 bad words, + 12 the first, + 16 full sweeps (clkprobe's room)
     "startfix": (228, 12),                 # (RD25) tick 0 played at the start: ACT, the passes N, T0 (HAL tick)
     "clkprobe": (240, 112),                # (RD27) the clock timer's gaps: the switch, the time source, stats since the last internal start
     "stallprof": (352, 1072),              # (RD28) SysTick's samples of what runs while the timers' dispatcher is stalled
@@ -109,11 +110,13 @@ OFF = {                                    # module -> (offset, length) inside t
     "granpage": (228, 4),                  # (RH39) + 0 to push (bit 0 the granular's words to core 0, bit 1 the crossfade's to core 1), + 1 / + 2 their rounds
     "vismet": (232, 4),                    # (RH56, mefisme's A0.04F) the visual metronome: the last silent beat or click (HAL tick, 0 = none)
     "smpcopy": (202, 12),                  # the sample copy: tag, source + 1, its pack, the slot asked about + 1, time, the last copy + 1, its pack, status, time
+    "projsnd": (240, 4),                   # (RH79) projsnd: [0] a load to apply, [1] the last status
     "stereorec": (248, 8),                 # (RD23) Sample Rec in stereo: phase, A, B, STF written, our functors installed
+    "resmap": (236, 4),                    # (RD39) + 0 0xA7 once tools/resmap.py's block is set up this boot
 }
 
 
-SHARED = {"dspgate": "clkprobe","itcm": "clkprobe", "modmx": "stallprof", "savedefer": "clkprobe", "velcurve": "clkprobe", "arpmods": "clkprobe", "clkci": "latdiag", "slinkofs": "latdiag", "smodes": "latdiag", "fxroute": "latdiag", "autoinit": "latdiag", "dqchain": "latdiag",
+SHARED = {"fmpage": "clkprobe", "dspgate": "clkprobe","itcm": "clkprobe", "modmx": "stallprof", "savedefer": "clkprobe", "velcurve": "clkprobe", "arpmods": "clkprobe", "clkci": "latdiag", "slinkofs": "latdiag", "smodes": "latdiag", "fxroute": "latdiag", "autoinit": "latdiag", "dqchain": "latdiag",
           "trigflash": "latdiag"}               # slots that share a diagnostic module's room (never in the same build: the module's install checks)
 
 

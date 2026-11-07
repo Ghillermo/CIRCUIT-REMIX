@@ -58,6 +58,7 @@ BLK, BLK_LEN = rhrec.OFF["stockplus"]
 O_ST, ST_LEN = rhstate.OFF["stockplus"]               # + 0 the tracks on the Stock+ page, + 1 the tracks to push, + 2 the round, + 3 Duplicate's source + 1
 O_KB, O_TH = rhstate.OFF["kbright"][0], rhstate.OFF["cthresh"][0] + 1
 K_MASK, K_VAL, K_CODE = 0, 1, 10
+KB_LEFT = 0x8000                                                    # kbright.BIPLEFT (leftlight, RH78)
 YB = PM.Y_BASE                                        # (install(shift=$300), RD10 on) pitchmod's words moved up, out of voice 7's sample ring
 MARK0, MARK1, CHECK = ord("S"), ord("P"), 0xA5
 NPAR, NTRK = 8, 8
@@ -258,6 +259,8 @@ def words(v):
 
 
 def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fitflag=False, k3sync=False, ui=False, noblink=False):
+    import rhbuild as _rb
+    LL = _rb.OPT.get("leftlight")                                        # (RH78) bipolar knobs: the lighter shade left
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -1367,12 +1370,16 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         E(bl, "c_spval")
         if mid:
             E(pop_list, [1])
+            if LL:                                                        # (leftlight) r2 = kbright's left flag
+                E(movs_imm, 2, 0)
             E(cmp_imm, 1, k)
             E(b_cond, f"lk_q{k}", "ne")
             E(movw, 1, X7)
             E(subs_reg, 0, 0, 1)
             E(b_cond, f"lk_n{k}", "ge")
             E(raw, h(0x4240))
+            if LL:
+                E(movw, 2, KB_LEFT)
             a.label(f"lk_n{k}")
             E(lsls_imm, 0, 0, 1)
             a.label(f"lk_q{k}")
@@ -1384,10 +1391,14 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
             E(b_cond, f"lk_c{k}", "le")
             E(movs_imm, 0, 127)
             a.label(f"lk_c{k}")
+        elif LL:
+            E(movs_imm, 2, 0)
         if k == 0:
             E(subs_imm8, 0, 64)
             E(b_cond, f"lk_p{k}", "ge")
             E(raw, h(0x4240))                                             # rsbs r0, r0, #0
+            if LL:
+                E(movw, 2, KB_LEFT)
             a.label(f"lk_p{k}")
             E(lsls_imm, 0, 0, 1)
             E(cmp_imm, 0, 127)
@@ -1396,7 +1407,11 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
             a.label(f"lk_c{k}")
         E(strb_imm, 0, 7, K_VAL + k)
         imm32(0, UI_KNOB if ui else COL_KNOB)
-        E(strh_imm, 0, 7, K_CODE + 2 * k)
+        if LL:
+            E(orrs_reg, 2, 0)
+            E(strh_imm, 2, 7, K_CODE + 2 * k)
+        else:
+            E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
     if not v2:
         E(movs_imm, 0, 0)

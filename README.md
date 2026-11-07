@@ -16,9 +16,9 @@ If you want your name or website in this list, add it on your message when you s
 
 > ⛔ **Alpha 0.09 / 0.09S: posiblemente defectuosas.** En el aparato, Alpha 0.09 entra en un bucle de arranque al encenderla (se reinicia sin parar); 0.09S comparte su código y no se ha probado. **Arreglado en Alpha 0.11** (arranca en frío y tras reiniciar). Si instalaste 0.09 y no arranca: mantén **Sample Rec + Samples + Note** al encender e instala Alpha 0.11, Alpha 0.08 o el firmware oficial.
 
-> 📢 **Alpha 0.11 (experimental)**: un port de las funciones de [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) al **Novation Circuit Rhythm**, con características exclusivas. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.11/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge ([cómo](#instalar-sin-compilar-toolsrm_uploaderhtml)). Novedades: [`CHANGELOG.md`](CHANGELOG.md).
+> 📢 **Alpha 0.12 (experimental)**: un port de las funciones de [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) al **Novation Circuit Rhythm**, con características exclusivas. **[Descarga la app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** (`rm_app.zip`), descomprímela y abre `rm_app.html` en Chrome o Edge: instala el firmware (pestaña **Firmware**) y ordena la tarjeta, el aparato y los módulos ([cómo](#la-app-de-circuit-remix-toolsrm_apphtml)). Novedades: [`CHANGELOG.md`](CHANGELOG.md).
 
-**⬇️ Descarga del parche de firmware (instalador): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.11/rm_uploader.zip)** · [todas las versiones](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
+**⬇️ Descarga la app (instalador del firmware, tarjeta y módulos): [rm_app.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** · [todas las versiones](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
 Nota legal: el firmware proporcionado por Novation es propietario, no está permitido instalarlo en cualquier dispositivo que no sea Circuit Rhythm. Este instalador lo comprueba y no permite instalar en ningún otro dispositivo.
 
@@ -36,8 +36,8 @@ Proyecto desarrollado usando Claude (Anthropic).
 > - Es una versión **alfa**: las funciones se han comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria) y en parte en el aparato; podría haber problemas que dañen proyectos o samples guardados.
 > - ⚠️ **Fallo conocido de Alpha 0.01, 0.01S, A0.01F y A01FS: pista 8.** Los valores de la página Stock+ (envolvente y LFO de tono) estaban en la memoria del DSP donde la pista 8 lee su sample mientras suena, y se escriben siempre, aunque no uses la página. Con algo sonando en la pista 8 puede oírse chirridos, clics o siseo, y el tono puede irse. **Arreglado en Alpha 0.02: actualiza.** Alpha 0.0 / 0.0S no lo tienen.
 > - ⚠️ **Fallo conocido de Alpha 0.01 / 0.01S / 0.02 / 0.02S (y A0.01F / A01FS): Stock+ tras encender.** Recién encendido el aparato (no tras instalar), la página Stock+ puede no hacer nada durante unos minutos. La causa está en el firmware original: una palabra de configuración del DSP de las voces no se inicializa al arrancar, y según lo que tenga la memoria al encender, su puerto de comunicación con el procesador principal queda en un modo equivocado. **Arreglado en Alpha 0.03: actualiza.**
-> - ⚠️ **Alpha 0.11 es experimental y necesita pulirse:** casi todo lo nuevo (la matriz de modulación, los carriles, los módulos de Arrhythmia, la automatización, los modos en Sample mode, el FX hacia una entrada, la cuenta atrás con el reloj, Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX, el sinte, la interfaz nueva, granular en varias pistas, menú de pista, entrada de línea, enlace estéreo, modo cue, General MIDI…) se ha comprobado solo en emulación. Para tocar en serio, **Alpha 0.03** sigue en el instalador.
-> - Si prefieres no arriesgar la tarjeta, usa la **versión más segura, Alpha 0.11S** (o 0.03S): es Alpha 0.11 sin ninguna función que cree, modifique o borre ficheros en la SD por su cuenta (no tiene la copia de proyectos, el borrado de packs ni la copia de samples).
+> - ⚠️ **Alpha 0.12 es experimental, necesita pulirse y no se ha probado en el aparato:** casi todo lo nuevo (la matriz de modulación, los carriles, los módulos de Arrhythmia, la automatización, los modos en Sample mode, el FX hacia una entrada, la cuenta atrás con el reloj, Stock+ en el granular y el sinte, la envolvente, la entrada desde los retornos de FX, el sinte, la interfaz nueva, granular en varias pistas, menú de pista, entrada de línea, enlace estéreo, modo cue, General MIDI…) se ha comprobado solo en emulación. Para tocar en serio, **Alpha 0.03** sigue en el instalador.
+> - Si prefieres no arriesgar la tarjeta, usa la **versión más segura, Alpha 0.12S** (o 0.03S): es Alpha 0.12 sin ninguna función que cree, modifique o borre ficheros en la SD por su cuenta (no tiene la copia de proyectos, el borrado de packs, la copia de samples ni el sonido del proyecto en la tarjeta).
 > - El mod nunca escribe en el pack de la memoria interna: sus funciones de escritura lo rechazan (LED de Save en rojo). Lo que guarda el firmware original sigue funcionando como siempre.
 > - El bootloader de Novation no se toca: **Sample Rec + Samples + Note** al encender permite volver al firmware oficial.
 
@@ -53,30 +53,53 @@ Este repositorio contiene **solo el trabajo propio del proyecto**:
 - **Volcados del aparato** (memoria, bootloader): las pruebas de emulación que los necesitan se quedan en el repositorio de desarrollo.
 - **Samples ni manuales de terceros.**
 
-### Instalar sin compilar: `tools/rm_uploader.html`
+### La app de Circuit Remix: `tools/rm_app.html`
+
+Una sola página, sin instalación ni servidor, en Chrome o Edge: **Firmware** (instalar Circuit Remix o volver al oficial), **Packs**, **Proyectos**, **Samples** y **Patrones** (la tarjeta y el aparato) y **Módulos (prueba de concepto)**. Sustituye al instalador `rm_uploader.html` y a la app de la tarjeta `rm_sd_app.html`.
+
+#### Instalar el firmware (pestaña Firmware)
 
 1. **Descarga el firmware oficial** Circuit Rhythm 2.0.1 (build 5706) de Novation: [circuitrhythm-firmware-5706.syx](https://components.novationmusic.com/api/v2/firmwares/169/file). Es el enlace de descarga de Novation Components; la lista completa está en `https://components.novationmusic.com/api/v2/firmwares`, producto `circuit-rhythm`.
-2. **[Descarga el instalador](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.11/rm_uploader.zip)** (`rm_uploader.zip`), descomprímelo y abre `rm_uploader.html` en Chrome o Edge (es el mismo [`tools/rm_uploader.html`](tools/rm_uploader.html) del repositorio).
-3. **Elige el `.syx` oficial y la versión**: **Alpha 0.11** (experimental) o la versión más segura Alpha 0.11S; Alpha 0.10 / 0.10S (lo mismo sin los módulos de Arrhythmia); Alpha 0.08 / 0.08S (arrancan en frío); Alpha 0.09 / 0.09S (⛔ posiblemente defectuosas: bucle de arranque); las anteriores Alpha 0.07 / 0.07S / 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, u «Oficial» para volver atrás.
+2. **[Descarga la app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** (`rm_app.zip`), descomprímela, abre `rm_app.html` en Chrome o Edge (es el mismo [`tools/rm_app.html`](tools/rm_app.html) del repositorio) y ve a la pestaña **Firmware**.
+3. **Elige el `.syx` oficial y la versión**: **Alpha 0.12** (experimental, sin probar en el aparato) o la versión más segura Alpha 0.12S; Alpha 0.11 / 0.11S (con los módulos de Arrhythmia); Alpha 0.10 / 0.10S; Alpha 0.08 / 0.08S (arrancan en frío); Alpha 0.09 / 0.09S (⛔ posiblemente defectuosas: bucle de arranque); las anteriores Alpha 0.07 / 0.07S / 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, u «Oficial» para volver atrás.
    - La página comprueba que el fichero es el firmware oficial (SHA-256) y lo parchea en el navegador.
    - Comprueba que el resultado es idéntico, bit a bit, al publicado (SHA-256 de la imagen y del `.syx`).
+   - También acepta el `.syx` ya hecho de una versión publicada (por ejemplo el de `patch_official.py`): lo envía tal cual si su SHA-256 es el publicado.
 4. **Conecta el Circuit Rhythm y pulsa Enviar.** Confirma con **Play** en el aparato.
 
 La página no contiene código de Novation: solo los bytes del mod y las instrucciones para copiar el resto del firmware oficial que tú aportas (ningún tramo propio repite 8 bytes seguidos del firmware oficial). **Haz antes una copia de la tarjeta SD.**
 
 **En caso de brick** (el aparato no arranca): desconéctalo de la corriente, mantén **Sample Rec + Samples + Note** mientras lo enciendes (modo bootloader de Novation) y envía «Oficial» con la misma página, o usa Novation Components.
 
+#### La tarjeta y el aparato (pestañas Packs, Proyectos, Samples y Patrones)
+
+Para ordenar packs, samples y patrones desde el ordenador, con la microSD o con el Circuit Rhythm conectado por USB. Funciona también con el firmware oficial.
+
+1. **Abre `rm_app.html`** (arriba) en Chrome o Edge.
+2. **Elige de dónde leer:**
+   - **Abrir carpeta…**: la carpeta `Rhythm` de la tarjeta o de una copia en el ordenador.
+   - **Aparato…**: el Circuit Rhythm por USB. Cierra Components y acepta el permiso de MIDI. El transporte se para y el panel queda bloqueado hasta **Desconectar aparato**.
+3. **Trabaja con las dos columnas:** pestañas **Packs**, **Proyectos** (los 64 de cada pack), **Samples** (los 128, con escucha) y **Patrones**. **Copiar** y **Mover** pasan lo elegido a la otra columna.
+   - **Subir…** (pestaña Proyectos) pone en el pack proyectos `.ncs` del ordenador: desde el hueco elegido en la lista; si no hay ninguno y cada fichero lleva su número (`62_Nombre.ncs`), en ese hueco; si no, en los primeros libres. Enseña antes adónde va cada uno y qué sustituye. Solo acepta ficheros de proyecto del Circuit Rhythm (169 092 bytes, cabecera `RUSE` / `RDEM`) y los copia tal cual. Un proyecto toca los samples del pack donde lo pongas. Doble clic en un proyecto = sus patrones.
+4. **Patrones** enseña las ocho pistas con su vista previa y, con el aparato conectado, su canal. Con doble clic se abre el editor: un golpe por paso, con nota, velocity, duración, probabilidad, sample flip, micropasos y los 12 carriles de automatización.
+5. **Exportar…** guarda lo elegido en el ordenador sin hacer un volcado completo: samples (`.wav`), patrones (`.mid` y `.rmpat`) proyectos (`.ncs`) y packs enteros. Los proyectos exportados se vuelven a cargar con **Subir…**; samples y patrones, todavía no.
+6. **Snapshot…** y **Restaurar…** (con el aparato conectado) guardan en el ordenador todos los packs y el pack interno, y devuelven al aparato solo lo que haya cambiado, tras enseñarte un plan. El pack interno no se escribe de vuelta, y los packs que no estén en el snapshot se quedan. No incluye los ajustes del aparato ni lo que no hayas guardado del proyecto.
+7. **Renombrar…** (pestañas Packs y Samples) cambia solo el nombre tras el prefijo `NN_` y rechaza un nombre que rompería los datos: vacío, demasiado largo, con caracteres que la tarjeta no admite, con un espacio o un punto en un extremo, o igual a otro fichero.
+8. **Módulos (prueba de concepto)…** sube, comprueba, arranca y para un módulo de [Arrhythmia](https://github.com/llcoolkm/arrhythmia) en un Circuit Rhythm con **Alpha 0.11 o 0.11S: solo esas dos versiones tienen el anfitrión de módulos** (no Alpha 0.10 / 0.10S, ni las anteriores, ni el firmware oficial; la app avisa si el aparato no contesta) (ver el [manual](docs/MANUAL.md#modulos)). Los módulos son de Arrhythmia (llcoolkm, MIT) y no están en este repositorio: descárgalos de [sus releases](https://github.com/llcoolkm/arrhythmia/releases).
+
+**Antes de escribir:** la app guarda lo que sustituye en una carpeta tuya del ordenador, nunca en la tarjeta: el aparato busca los ficheros por su prefijo `NN_` y una copia dentro de un pack puede ocupar el lugar del original. Por USB, cada escritura borra primero el fichero antiguo. **Esta versión aún no se ha probado en un Circuit Rhythm real:** se ha comprobado en emulación, contra el código del firmware 5706 y de Alpha 0.09 (la de Circuit Tracks sí se ha usado en un aparato). Haz antes un snapshot o una copia de la tarjeta.
+
 ### Con Python (`tools/patch_official.py`)
 
 ```bash
 python -m pip install -r tools/requirements.txt
-python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version A0.11
+python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version A0.12
 ```
 - El firmware oficial es el **Circuit Rhythm 2.0.1 (build 5706)** de Novation Components, en `.syx` o `.bin`; la herramienta comprueba su SHA-256 (`stock/SHA256SUMS.txt`).
 - Construye la versión en `firmware/<versión>/` y comprueba que el `.syx` es idéntico al publicado (`manifest.json`).
-- `--version A0.11S` = la versión más segura; `--list` enseña las versiones; `--all` las construye todas.
+- `--version A0.12S` = la versión más segura; `--list` enseña las versiones; `--all` las construye todas.
 - `python tools/verify_builds.py` vuelve a construir las versiones y las compara con sus manifiestos.
-- Para enviarlo, lo más sencillo es `tools/rm_uploader.html` con el `.syx` oficial: hace lo mismo en el navegador y comprueba el mismo SHA-256.
+- Para enviarlo, lo más sencillo es la pestaña **Firmware** de `tools/rm_app.html`: con el `.syx` oficial hace lo mismo en el navegador, y el `.syx` que sale de aquí lo envía tal cual (comprueba el mismo SHA-256).
 
 ### Fixed Recording al tempo del reloj externo: A0.01F / A01FS
 
@@ -84,26 +107,11 @@ python tools/patch_official.py RUTA/AL/circuitrhythm-firmware-5706.syx --version
 
 **Incluido en Alpha 0.02.** **A0.01F** (Alpha 0.01 + el arreglo) y **A01FS** (Alpha 0.01S + el arreglo): con un reloj MIDI externo, Fixed Recording usa el tempo del reloj, no el del proyecto. Instalador: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Detalles y pruebas: [`docs/FIXEDREC.md`](docs/FIXEDREC.md).
 
-### App de la tarjeta y del aparato: `tools/rm_sd_app.html`
-
-Una página para ordenar packs, samples y patrones desde el ordenador, con la microSD o con el Circuit Rhythm conectado por USB. Funciona también con el firmware oficial.
-
-1. **[Descarga la app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_sd_app.zip)** (`rm_sd_app.zip`), descomprímela y abre `rm_sd_app.html` en Chrome o Edge (es el mismo [`tools/rm_sd_app.html`](tools/rm_sd_app.html) del repositorio). No necesita instalación ni servidor.
-2. **Elige de dónde leer:**
-   - **Abrir carpeta…**: la carpeta `Rhythm` de la tarjeta o de una copia en el ordenador.
-   - **Aparato…**: el Circuit Rhythm por USB. Cierra Components y acepta el permiso de MIDI. El transporte se para y el panel queda bloqueado hasta **Desconectar aparato**.
-3. **Trabaja con las dos columnas:** pestañas **Packs**, **Samples** (los 128, con escucha) y **Patrones**. **Copiar** y **Mover** pasan lo elegido a la otra columna.
-4. **Patrones** enseña las ocho pistas con su vista previa y, con el aparato conectado, su canal. Con doble clic se abre el editor: un golpe por paso, con nota, velocity, duración, probabilidad, sample flip, micropasos y los 12 carriles de automatización.
-5. **Exportar…** guarda lo elegido en el ordenador sin hacer un volcado completo: samples (`.wav`), patrones (`.mid` y `.rmpat`) y packs enteros. Lo exportado todavía no se puede volver a cargar desde la app.
-6. **Snapshot…** y **Restaurar…** (con el aparato conectado) guardan en el ordenador todos los packs y el pack interno, y devuelven al aparato solo lo que haya cambiado, tras enseñarte un plan. El pack interno no se escribe de vuelta, y los packs que no estén en el snapshot se quedan. No incluye los ajustes del aparato ni lo que no hayas guardado del proyecto.
-7. **Renombrar…** (pestañas Packs y Samples) cambia solo el nombre tras el prefijo `NN_` y rechaza un nombre que rompería los datos: vacío, demasiado largo, con caracteres que la tarjeta no admite, con un espacio o un punto en un extremo, o igual a otro fichero.
-8. **Módulos (prueba de concepto)…** sube, comprueba, arranca y para un módulo de [Arrhythmia](https://github.com/llcoolkm/arrhythmia) en un Circuit Rhythm con Alpha 0.11 o posterior (ver el [manual](docs/MANUAL.md#modulos)). Los módulos son de Arrhythmia (llcoolkm, MIT) y no están en este repositorio: descárgalos de [sus releases](https://github.com/llcoolkm/arrhythmia/releases).
-
-**Antes de escribir:** la app guarda lo que sustituye en una carpeta tuya del ordenador, nunca en la tarjeta: el aparato busca los ficheros por su prefijo `NN_` y una copia dentro de un pack puede ocupar el lugar del original. Por USB, cada escritura borra primero el fichero antiguo. **Esta versión aún no se ha probado en un Circuit Rhythm real:** se ha comprobado en emulación, contra el código del firmware 5706 y de Alpha 0.09 (la de Circuit Tracks sí se ha usado en un aparato). Haz antes un snapshot o una copia de la tarjeta.
-
-## Características (Alpha 0.11)
+## Características (Alpha 0.12)
 
 Manual completo, vista por vista y con un glosario de funciones: [`docs/MANUAL.md`](docs/MANUAL.md) (texto) o [ilustrado](docs/manual/index.html).
+
+**Nuevo en Alpha 0.12 (experimental, sin probar en el aparato):** los **motores en Sample mode** (pad 8) y el **menú de pista como la fila 1 de CIRCUIT-HACKS** (Filtro / VCA, Envolvente + LFO, OSC 1 / OSC 2); el **VA** y el **FM de 8 operadores** de CIRCUIT-HACKS; los **modos de voz** (legato, glide, unísono, poly) y la **polifonía**; el **latch** en la vista Note; el **sonido de cada proyecto en la tarjeta**; el **de-click de los redisparos**. Ver [`CHANGELOG.md`](CHANGELOG.md).
 
 **Nuevo en Alpha 0.11 (experimental):** el **arreglo del bucle de arranque** de 0.09; la **matriz de modulación** (8 fuentes por pista hacia 32 destinos), los **carriles con destino propio** (Secuenciables) y los **No secuenciables**, el **carril extra** y las **rampas**; los **modificadores del arpegio**, el **Nudge de tramo**, **guardar al parar** y la **curva de velocity**; el «1 de n» que sigue a su patrón en las cadenas; el **destello de las pistas** con Shift; y los **módulos de [Arrhythmia](https://github.com/llcoolkm/arrhythmia)** por USB (prueba de concepto; los módulos son de Arrhythmia, de sus releases). **Alpha 0.10 / 0.10S** = lo mismo sin los módulos.
 
@@ -157,9 +165,9 @@ Circuit Rhythm, Components y Novation son marcas de Focusrite Audio Engineering 
 
 > ⛔ **Alpha 0.09 / 0.09S: potentially flawed.** On the device, Alpha 0.09 boot-loops when switched on (it keeps restarting); 0.09S shares its code and has not been tested. **Fixed in Alpha 0.11** (it boots cold and after a restart). If you installed 0.09 and it does not start: hold **Sample Rec + Samples + Note** while switching on and install Alpha 0.11, Alpha 0.08 or the official firmware.
 
-> 📢 **Alpha 0.11 (experimental)**: a port of the [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) features to the **Novation Circuit Rhythm**, with exclusive features. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.11/rm_uploader.zip)** (`rm_uploader.zip`), unzip it and open `rm_uploader.html` in Chrome or Edge. What's new: [`CHANGELOG.md`](CHANGELOG.md).
+> 📢 **Alpha 0.12 (experimental)**: a port of the [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUITS-HACKS-RC) features to the **Novation Circuit Rhythm**, with exclusive features. **[Download the app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** (`rm_app.zip`), unzip it and open `rm_app.html` in Chrome or Edge: it installs the firmware (**Firmware** tab) and manages the card, the device and the modules ([how](#the-circuit-remix-app-toolsrm_apphtml)). What's new: [`CHANGELOG.md`](CHANGELOG.md).
 
-**⬇️ Firmware patch download (installer): [rm_uploader.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.11/rm_uploader.zip)** · [all versions](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
+**⬇️ Download the app (firmware installer, card and modules): [rm_app.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** · [all versions](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
 Legal note: the firmware provided by Novation is proprietary; installing it on any device other than a Circuit Rhythm is not allowed. This installer checks it and does not allow installing it on any other device.
 
@@ -173,8 +181,8 @@ Developed using Claude (Anthropic).
 > - This is an **alpha**: the features were checked in emulation (the device's code run on a dump of its memory) and partly on the device; there could be problems that damage stored projects or samples.
 > - ⚠️ **Known bug in Alpha 0.01, 0.01S, A0.01F and A01FS: track 8.** The Stock+ page's values (pitch envelope and LFO) sat in the DSP memory where track 8 reads its sample while it plays, and they are written all the time, even if you never use the page. With something playing on track 8 you may hear chirps, clicks or hiss, and its pitch may drift. **Fixed in Alpha 0.02: please update.** Alpha 0.0 / 0.0S are not affected.
 > - ⚠️ **Known bug in Alpha 0.01 / 0.01S / 0.02 / 0.02S (and A0.01F / A01FS): Stock+ after power-on.** Right after switching the device on (not after installing), the Stock+ page may do nothing for a few minutes. The cause is in the original firmware: a configuration word of the voices' DSP is not initialised at start-up, and depending on what the memory holds at power-on, its link to the main processor is left in the wrong mode. **Fixed in Alpha 0.03: please update.**
-> - ⚠️ **Alpha 0.11 is experimental and needs refinement:** almost everything new (the modulation matrix, the lanes, Arrhythmia's modules, the automation, the modes in Sample mode, an FX into an input, the count-in on the clock, Stock+ on the granular and the synth, the envelope, the line input from the FX returns, the synth, the new interface, granular on several tracks, track menu, line input, stereo link, cue mode, General MIDI…) has only been checked in emulation. For serious playing, **Alpha 0.03** is still in the installer.
-> - If you would rather not risk the card, use the **safer build, Alpha 0.11S** (or 0.03S): Alpha 0.11 without any feature that creates, changes or deletes files on the SD card by itself (no project copy, pack delete or sample copy).
+> - ⚠️ **Alpha 0.12 is experimental, needs refinement and has not been tested on the device:** almost everything new (the modulation matrix, the lanes, Arrhythmia's modules, the automation, the modes in Sample mode, an FX into an input, the count-in on the clock, Stock+ on the granular and the synth, the envelope, the line input from the FX returns, the synth, the new interface, granular on several tracks, track menu, line input, stereo link, cue mode, General MIDI…) has only been checked in emulation. For serious playing, **Alpha 0.03** is still in the installer.
+> - If you would rather not risk the card, use the **safer build, Alpha 0.12S** (or 0.03S): Alpha 0.12 without any feature that creates, changes or deletes files on the SD card by itself (no project copy, pack delete, sample copy or project's sound on the card).
 > - The mod never writes to the internal memory pack: its write features refuse it (Save LED red). Saving from the original firmware works as always.
 > - Novation's bootloader is not touched: **Sample Rec + Samples + Note** at power-on lets you go back to the official firmware.
 
@@ -184,24 +192,46 @@ This repository holds **only the project's own work**: the builders of the versi
 
 **It does not include** Novation code or binaries (neither the official firmware nor the patched `.syx` / `.bin`, which contain Novation's firmware: you provide the official firmware, and the installer and the patcher check its SHA-256), device dumps (memory, bootloader; the emulation tests that need them stay in the development repository), or third-party samples or manuals.
 
-### Install without building: `tools/rm_uploader.html`
+### The Circuit Remix app: `tools/rm_app.html`
+
+One page, with no installation or server, in Chrome or Edge: **Firmware** (install Circuit Remix or go back to the official one), **Packs**, **Projects**, **Samples** and **Patterns** (the card and the device) and **Modules (proof of concept)**. It replaces the `rm_uploader.html` installer and the `rm_sd_app.html` card app.
+
+#### Install the firmware (Firmware tab)
 
 1. **Download the official firmware** Circuit Rhythm 2.0.1 (build 5706) from Novation: [circuitrhythm-firmware-5706.syx](https://components.novationmusic.com/api/v2/firmwares/169/file) (Novation Components' download link; the full list is at `https://components.novationmusic.com/api/v2/firmwares`, product `circuit-rhythm`).
-2. **[Download the installer](https://github.com/Ghillermo/CIRCUIT-REMIX/releases/download/alpha-0.11/rm_uploader.zip)**, unzip it and open `rm_uploader.html` in Chrome or Edge (the same [`tools/rm_uploader.html`](tools/rm_uploader.html) as in the repository).
-3. **Pick the official `.syx` and the version**: **Alpha 0.11** (experimental) or the safer Alpha 0.11S; Alpha 0.10 / 0.10S (the same without Arrhythmia's modules); Alpha 0.08 / 0.08S (they boot cold); Alpha 0.09 / 0.09S (⛔ potentially flawed: boot loop); the earlier Alpha 0.07 / 0.07S / 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, or “Official” to go back. The page checks that the file is the official firmware (SHA-256), patches it in the browser and checks that the result is bit for bit the published one (SHA-256 of the image and of the `.syx`).
+2. **[Download the app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** (`rm_app.zip`), unzip it, open `rm_app.html` in Chrome or Edge (the same [`tools/rm_app.html`](tools/rm_app.html) as in the repository) and go to the **Firmware** tab.
+3. **Pick the official `.syx` and the version**: **Alpha 0.12** (experimental, not tested on the device) or the safer Alpha 0.12S; Alpha 0.11 / 0.11S (with Arrhythmia's modules); Alpha 0.10 / 0.10S; Alpha 0.08 / 0.08S (they boot cold); Alpha 0.09 / 0.09S (⛔ potentially flawed: boot loop); the earlier Alpha 0.07 / 0.07S / 0.06 / 0.06S / 0.05 / 0.05S / 0.04 / 0.04S / 0.03 / 0.03S / 0.02 / 0.02S / 0.01 / 0.01S / 0.0 / 0.0S, or “Official” to go back. The page checks that the file is the official firmware (SHA-256), patches it in the browser and checks that the result is bit for bit the published one (SHA-256 of the image and of the `.syx`). It also takes the ready-made `.syx` of a published version (for example the one from `patch_official.py`): it sends it as it is if its SHA-256 is the published one.
 4. **Connect the Circuit Rhythm and press Send.** Confirm with **Play** on the device.
 
 The page contains no Novation code: only the mod's bytes and the instructions to copy the rest of the official firmware you provide (no run of our own bytes repeats 8 consecutive bytes of the official firmware). **Back up the SD card first.**
 
 **If the device is bricked** (it does not start): unplug it from power, hold **Sample Rec + Samples + Note** while you power it on (Novation's bootloader mode) and send “Official” with the same page, or use Novation Components.
 
+#### The card and the device (Packs, Projects, Samples and Patterns tabs)
+
+To organise packs, samples and patterns from the computer, with the microSD card or with the Circuit Rhythm connected by USB. It also works with the official firmware.
+
+1. **Open `rm_app.html`** (above) in Chrome or Edge.
+2. **Choose where to read from:**
+   - **Open folder…**: the `Rhythm` folder of the card or of a copy on the computer.
+   - **Device…**: the Circuit Rhythm over USB. Close Components and accept the MIDI permission. The transport stops and the panel stays locked until **Disconnect device**.
+3. **Work with the two columns:** tabs **Packs**, **Projects** (each pack's 64), **Samples** (all 128, with listening) and **Patterns**. **Copy** and **Move** send what you chose to the other column.
+   - **Upload…** (Projects tab) puts `.ncs` projects from the computer into the pack: from the slot chosen in the list; with none chosen and each file carrying its number (`62_Name.ncs`), in that slot; otherwise in the first free ones. It shows first where each one goes and what it replaces. It only takes Circuit Rhythm project files (169 092 bytes, `RUSE` / `RDEM` header) and copies them as they are. A project plays the samples of the pack you put it in. Double click on a project = its patterns.
+4. **Patterns** shows the eight tracks with their preview and, with the device connected, their channel. Double click opens the editor: one hit per step, with note, velocity, length, probability, sample flip, micro steps and the 12 automation lanes.
+5. **Export…** saves what you chose on the computer without a full dump: samples (`.wav`), patterns (`.mid` and `.rmpat`) projects (`.ncs`) and whole packs. Exported projects load back with **Upload…**; samples and patterns, not yet.
+6. **Snapshot…** and **Restore…** (with the device connected) save all the packs and the internal pack on the computer, and send back only what changed, after showing you a plan. The internal pack is not written back, and packs that are not in the snapshot stay. It does not include the device's settings or whatever is unsaved in the project.
+7. **Rename…** (Packs and Samples tabs) changes only the name after the `NN_` prefix and refuses a name that would break the data: empty, too long, with characters the card does not allow, with a space or dot at either end, or the same as another file.
+8. **Modules (proof of concept)…** uploads, checks, starts and stops an [Arrhythmia](https://github.com/llcoolkm/arrhythmia) module on a Circuit Rhythm running **Alpha 0.11 or 0.11S: only those two versions have the module host** (not Alpha 0.10 / 0.10S, the earlier ones or the official firmware; the app says so when the device does not answer) (see the [manual](docs/MANUAL_EN.md#modulos)). The modules are Arrhythmia's (llcoolkm, MIT) and are not in this repository: download them from [its releases](https://github.com/llcoolkm/arrhythmia/releases).
+
+**Before writing:** the app keeps what it replaces in a folder of yours on the computer, never on the card: the device finds files by their `NN_` prefix and a copy inside a pack can take the original's place. Over USB, each write deletes the old file first. **This version has not been tried on a real Circuit Rhythm yet:** it was checked in emulation, against the code of firmware 5706 and of Alpha 0.09 (the Circuit Tracks version has been used on a device). Take a snapshot or a copy of the card first.
+
 ### With Python (`tools/patch_official.py`)
 
 ```bash
 python -m pip install -r tools/requirements.txt
-python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version A0.11
+python tools/patch_official.py PATH/TO/circuitrhythm-firmware-5706.syx --version A0.12
 ```
-The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.11S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds the versions and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
+The tool checks the official firmware's SHA-256, builds the version in `firmware/<version>/` and checks that the `.syx` is identical to the published one. `--version A0.12S` = the safer build; `--list`, `--all`. `python tools/verify_builds.py` rebuilds the versions and compares them with their manifests. Send the `.syx` with `tools/rm_uploader.html`.
 
 ### Fixed Recording at the external clock's tempo: A0.01F / A01FS
 
@@ -209,26 +239,11 @@ The tool checks the official firmware's SHA-256, builds the version in `firmware
 
 **Included in Alpha 0.02.** **A0.01F** (Alpha 0.01 + the fix) and **A01FS** (Alpha 0.01S + the fix): with an external MIDI clock, Fixed Recording uses the clock's tempo, not the project tempo. Installer: [`firmware/a0.01f/a001f_uploader.html`](firmware/a0.01f/a001f_uploader.html). Details and tests: [`docs/FIXEDREC_EN.md`](docs/FIXEDREC_EN.md).
 
-### Card and device app: `tools/rm_sd_app.html`
-
-A page to organise packs, samples and patterns from the computer, with the microSD card or with the Circuit Rhythm connected by USB. It also works with the official firmware.
-
-1. **[Download the app](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_sd_app.zip)** (`rm_sd_app.zip`), unzip it and open `rm_sd_app.html` in Chrome or Edge (it is the repository's [`tools/rm_sd_app.html`](tools/rm_sd_app.html)). It needs no installation and no server.
-2. **Choose where to read from:**
-   - **Open folder…**: the `Rhythm` folder of the card or of a copy on the computer.
-   - **Device…**: the Circuit Rhythm over USB. Close Components and accept the MIDI permission. The transport stops and the panel stays locked until **Disconnect device**.
-3. **Work with the two columns:** tabs **Packs**, **Samples** (all 128, with listening) and **Patterns**. **Copy** and **Move** send what you chose to the other column.
-4. **Patterns** shows the eight tracks with their preview and, with the device connected, their channel. Double click opens the editor: one hit per step, with note, velocity, length, probability, sample flip, micro steps and the 12 automation lanes.
-5. **Export…** saves what you chose on the computer without a full dump: samples (`.wav`), patterns (`.mid` and `.rmpat`) and whole packs. What is exported cannot be loaded back from the app yet.
-6. **Snapshot…** and **Restore…** (with the device connected) save all the packs and the internal pack on the computer, and send back only what changed, after showing you a plan. The internal pack is not written back, and packs that are not in the snapshot stay. It does not include the device's settings or whatever is unsaved in the project.
-7. **Rename…** (Packs and Samples tabs) changes only the name after the `NN_` prefix and refuses a name that would break the data: empty, too long, with characters the card does not allow, with a space or dot at either end, or the same as another file.
-8. **Modules (proof of concept)…** uploads, checks, starts and stops an [Arrhythmia](https://github.com/llcoolkm/arrhythmia) module on a Circuit Rhythm running Alpha 0.11 or later (see the [manual](docs/MANUAL_EN.md#modulos)). The modules are Arrhythmia's (llcoolkm, MIT) and are not in this repository: download them from [its releases](https://github.com/llcoolkm/arrhythmia/releases).
-
-**Before writing:** the app keeps what it replaces in a folder of yours on the computer, never on the card: the device finds files by their `NN_` prefix and a copy inside a pack can take the original's place. Over USB, each write deletes the old file first. **This version has not been tried on a real Circuit Rhythm yet:** it was checked in emulation, against the code of firmware 5706 and of Alpha 0.09 (the Circuit Tracks version has been used on a device). Take a snapshot or a copy of the card first.
-
-## Features (Alpha 0.11)
+## Features (Alpha 0.12)
 
 Full manual, view by view, with a glossary of functions: [`docs/MANUAL_EN.md`](docs/MANUAL_EN.md) (text) or [illustrated](docs/manual/en.html).
+
+**New in Alpha 0.12 (experimental, not tested on the device):** the **engines in Sample mode** (pad 8) and the **track menu as CIRCUIT-HACKS' row 1** (Filter / VCA, Envelope + LFO, OSC 1 / OSC 2); CIRCUIT-HACKS' **VA** and **8-operator FM**; the **voice modes** (legato, glide, unison, poly) and **polyphony**; **latch** in the Note view; **each project's sound on the card**; **retrigger de-click**. See [`CHANGELOG.md`](CHANGELOG.md).
 
 **New in Alpha 0.11 (experimental):** the **fix for 0.09's boot loop**; the **modulation matrix** (8 sources per track to 32 destinations), **lanes with their own destination** (Sequenceable) and the **Non-sequenceable** page, the **extra lane** and **ramps**; **arpeggio modifiers**, **range Nudge**, **save on stop** and the **velocity curve**; 1-in-n that follows its own pattern in chains; the **track flash** with Shift; and **[Arrhythmia](https://github.com/llcoolkm/arrhythmia) modules** over USB (proof of concept; the modules are Arrhythmia's, from its releases). **Alpha 0.10 / 0.10S** = the same without the modules.
 

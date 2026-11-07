@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.11 — manual</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.12 — manual</title><style>
 :root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
 :root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
@@ -23,7 +23,7 @@ footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
 p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
 p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
 </style></head><body>
-<header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.11</p><div class="bar"></div></header><main>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.12</p><div class="bar"></div></header><main>
 <p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>
 <p class="warn">⚠️ <strong>Alpha 0.11 is experimental:</strong> what&#x27;s new (the modulation matrix, the lanes, the ramps, the arpeggio modifiers, the modules) and most things since Alpha 0.04 have mostly been checked in emulation. For serious playing, Alpha 0.03. <strong>Back up your SD card.</strong></p>
 <p>Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.</p>
@@ -41,11 +41,14 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><a href="#menu">2.2 The track menu</a></li>
 <li><a href="#stockplus">2.3 Stock+ page</a></li>
 <li><a href="#granular">2.4 Granular page</a></li>
-<li><a href="#sinte">2.5 Synth page</a></li>
-<li><a href="#envolvente">2.6 Envelope page</a></li>
-<li><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></li>
-<li><a href="#entrada">2.8 Line input and stereo link</a></li>
-<li><a href="#note">2.9 Note view</a></li>
+<li><a href="#sinte">2.5 OSC 1 / OSC 2 pages (the VA)</a></li>
+<li><a href="#filtro">2.6 Filter / VCA and Envelope + LFO pages</a></li>
+<li><a href="#fm">2.7 8-operator FM</a></li>
+<li><a href="#voces">2.8 Voice: modes, polyphony and unison</a></li>
+<li><a href="#envolvente">2.9 Envelope page</a></li>
+<li><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></li>
+<li><a href="#entrada">2.11 Line input and stereo link</a></li>
+<li><a href="#note">2.12 Note view</a></li>
 </ol>
 <h3>3. Steps and pattern</h3><ol>
 <li><a href="#velocity">3.1 Velocity and Micro Step</a></li>
@@ -78,7 +81,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = the 8 knobs. <strong>▲ / ▼</strong> = the arrow buttons.</li>
 <li><strong>Hold</strong> a button = press it and keep it down; <strong>A + B</strong> = B with A held.</li>
 <li><strong>★</strong> = exclusive to Circuit Remix (not in CIRCUIT-HACKS).</li>
-<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.10)</em> or <em>(Alpha 0.11)</em>: new or changed in these releases (0.11 = 0.10 + Arrhythmia&#x27;s modules).</li>
+<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.12)</em>: new or changed in this release; <em>(Alpha 0.11)</em> = 0.10 + Arrhythmia&#x27;s modules (0.11 only).</li>
 <li>At the end, the <strong><a href="#glosario">glossary</a></strong>: one entry per function, with its view and its gesture.</li>
 </ul>
 </section>
@@ -192,13 +195,13 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </section>
 <section class="feat" id="instalar"><h3><span class="code">0.3</span>Install and go back to the original</h3>
 <ol>
-<li>Download <code>rm_uploader.zip</code>, unzip it and open <code>rm_uploader.html</code> in Chrome or Edge.</li>
+<li>Download <code>rm_app.zip</code>, unzip it, open <code>rm_app.html</code> in Chrome or Edge and go to the <strong>Firmware</strong> tab (the same app manages the card and uploads the modules).</li>
 <li>Provide the official Circuit Rhythm firmware 2.0.1 (build 5706): the installer checks its SHA-256 and patches it on your computer.</li>
 <li>Pick the version and send it to the device over USB.</li>
 </ol>
 <p><strong>S versions</strong> (A0.11S, A0.10S): without the functions that create, change or delete files on the card by themselves (project copy, pack delete, sample copy). The safest for your SD.</p>
 <p><strong>Alpha 0.10 / 0.10S</strong> = Alpha 0.11 / 0.11S without the <a href="#modulos">Arrhythmia modules</a>.</p>
-<p><strong>Back to the official firmware:</strong> hold <strong>Sample Rec + Samples + Note</strong> while powering on (Novation&#x27;s bootloader mode) and send the official one with the installer (&quot;Official&quot;) or with Novation Components. Always back up your SD card.</p>
+<p><strong>Back to the official firmware:</strong> hold <strong>Sample Rec + Samples + Note</strong> while powering on (Novation&#x27;s bootloader mode) and send the official one with the app&#x27;s Firmware tab (&quot;Official&quot;) or with Novation Components. Always back up your SD card.</p>
 </section>
 <h2 class="group">1. In any view</h2>
 <section class="feat" id="transporte"><h3><span class="code">1.1</span>Transport, metronome and quantize</h3>
@@ -323,7 +326,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </section>
 <section class="feat" id="menu"><h3><span class="code">2.2</span>The track menu</h3>
 <div class="summary"><p><strong>How to get there:</strong> tap the selected track&#x27;s button (the menu stays open until you pick something or tap again), or hold any track&#x27;s button (the menu only while held)</p></div>
-<figure><svg viewBox="0 0 560 408" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The menu of a track with a sample, on the stock page.">
+<figure><svg viewBox="0 0 560 408" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The menu of a VA track, on OSC 1.">
 <rect x="0" y="0" width="560" height="408" rx="18" fill="#17181b"/>
 <circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
 <text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
@@ -341,29 +344,35 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
 <circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
 <text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
-<rect x="20" y="96" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.95" stroke="#000"/>
-<text x="49.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">stock</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#ffd966" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">sequenc.</text>
 <text x="24" y="150" font-size="8" fill="#7d838a">1</text>
-<rect x="86" y="96" width="58" height="58" rx="7" fill="#14a5fe" fill-opacity="0.32" stroke="#000"/>
-<text x="115.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Stock+</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.95" stroke="#000"/>
+<text x="115.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">OSC 1</text>
 <text x="90" y="150" font-size="8" fill="#7d838a">2</text>
-<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.32" stroke="#000"/>
+<text x="181.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">OSC 2</text>
 <text x="156" y="150" font-size="8" fill="#7d838a">3</text>
-<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#90ef1a" fill-opacity="0.32" stroke="#000"/>
+<text x="247.0" y="118" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Filter /</text>
+<text x="247.0" y="130" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">VCA</text>
 <text x="222" y="150" font-size="8" fill="#7d838a">4</text>
-<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#ff4c7b" fill-opacity="0.32" stroke="#000"/>
+<text x="313.0" y="118" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Env. +</text>
+<text x="313.0" y="130" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">LFO</text>
 <text x="288" y="150" font-size="8" fill="#7d838a">5</text>
-<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#6f00fe" fill-opacity="0.32" stroke="#000"/>
+<text x="379.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Matrix</text>
 <text x="354" y="150" font-size="8" fill="#7d838a">6</text>
 <rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="420" y="150" font-size="8" fill="#7d838a">7</text>
-<rect x="482" y="96" width="58" height="58" rx="7" fill="#ff2020" fill-opacity="0.95" stroke="#000"/>
-<text x="511.0" y="118" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">Project</text>
-<text x="511.0" y="130" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">init</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="150" font-size="8" fill="#7d838a">8</text>
-<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">stock</text>
 <text x="24" y="216" font-size="8" fill="#7d838a">9</text>
-<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#14a5fe" fill-opacity="0.32" stroke="#000"/>
+<text x="115.0" y="190" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Stock+</text>
 <text x="90" y="216" font-size="8" fill="#7d838a">10</text>
 <rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="156" y="216" font-size="8" fill="#7d838a">11</text>
@@ -375,7 +384,9 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="354" y="216" font-size="8" fill="#7d838a">14</text>
 <rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="420" y="216" font-size="8" fill="#7d838a">15</text>
-<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#ff2020" fill-opacity="0.95" stroke="#000"/>
+<text x="511.0" y="184" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">Project</text>
+<text x="511.0" y="196" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">init</text>
 <text x="486" y="216" font-size="8" fill="#7d838a">16</text>
 <rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="24" y="282" font-size="8" fill="#7d838a">17</text>
@@ -411,116 +422,25 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
 <rect x="20" y="368" width="154" height="22" rx="5" fill="#ff6a13"/>
 <text x="97.0" y="383" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">Selected track (tap)</text>
-</svg><figcaption>The menu of a track with a sample, on the stock page.</figcaption></figure>
-<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The menu of a synth track, on its page.">
-<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
-<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
-<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
-<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
-<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
-<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
-<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
-<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
-<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
-<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
-<rect x="20" y="96" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.32" stroke="#000"/>
-<text x="49.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">stock</text>
-<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
-<rect x="86" y="96" width="58" height="58" rx="7" fill="#14a5fe" fill-opacity="0.32" stroke="#000"/>
-<text x="115.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Stock+</text>
-<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
-<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
-<rect x="218" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.95" stroke="#000"/>
-<text x="247.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">Synth</text>
-<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
-<rect x="284" y="96" width="58" height="58" rx="7" fill="#ff4c7b" fill-opacity="0.32" stroke="#000"/>
-<text x="313.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">Envelope</text>
-<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
-<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
-<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
-<rect x="482" y="96" width="58" height="58" rx="7" fill="#ff2020" fill-opacity="0.95" stroke="#000"/>
-<text x="511.0" y="118" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">Project</text>
-<text x="511.0" y="130" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">init</text>
-<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
-<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
-<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
-<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
-<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
-<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
-<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
-<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
-<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
-<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
-<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
-<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
-<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
-<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
-<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
-<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
-<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
-<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
-<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
-<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
-<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
-<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
-<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
-<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
-<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
-<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
-</svg><figcaption>The menu of a synth track, on its page.</figcaption></figure>
-<p>The pads become that track&#x27;s menu <em>(Alpha 0.06)</em>:</p>
-<table><thead><tr><th>Pad</th><th>What it does</th></tr></thead><tbody>
-<tr><td><strong>1</strong></td><td>the <strong>stock</strong> knob page (the original&#x27;s)</td></tr>
-<tr><td><strong>2</strong></td><td>the <strong><a href="#stockplus">Stock+</a></strong> page (with a sample; with the granular or the synth <em>(Alpha 0.07)</em>)</td></tr>
-<tr><td><strong>3</strong></td><td>the <strong><a href="#granular">Granular</a></strong> page (with the granular)</td></tr>
-<tr><td><strong>4</strong></td><td>the <strong><a href="#sinte">Synth</a></strong> page (with the synth)</td></tr>
-<tr><td><strong>5</strong></td><td>the <strong><a href="#envolvente">Envelope</a></strong> page (with the synth or the granular) <em>(Alpha 0.06)</em></td></tr>
-<tr><td><strong>6</strong></td><td>★ the <strong><a href="#matriz">Matrix</a></strong> page <em>(Alpha 0.10)</em></td></tr>
-<tr><td><strong>7</strong></td><td>★ the <strong><a href="#matriz">Sequenceable</a></strong> page <em>(Alpha 0.10)</em></td></tr>
-<tr><td><strong>8</strong></td><td>★ the track&#x27;s voice back to <strong>Project init</strong> (red): K1-K8 and the rest of the voice as the project was last loaded or saved; level, pan, sends and sidechain are left alone <em>(Alpha 0.09)</em>. Stock+ (with the waveshaper) and the Granular, Synth and Envelope pages also go back to factory values <em>(Alpha 0.10)</em></td></tr>
-<tr><td><strong>16</strong></td><td>★ the <strong><a href="#matriz">Non-sequenceable</a></strong> page <em>(Alpha 0.10)</em></td></tr>
+</svg><figcaption>The menu of a VA track, on OSC 1.</figcaption></figure>
+<p>The pads become that track&#x27;s menu. Since <em>(Alpha 0.12)</em> it is <strong>CIRCUIT-HACKS&#x27; row 1</strong>, views only: the track&#x27;s engine and voice are picked in <a href="#samplemode">Sample mode</a>.</p>
+<table><thead><tr><th>Pad</th><th>What it opens</th></tr></thead><tbody>
+<tr><td><strong>1</strong></td><td>★ <strong><a href="#matriz">Sequenceable</a></strong>; <strong>Shift + 1</strong>: ★ <strong><a href="#matriz">Non-sequenceable</a></strong></td></tr>
+<tr><td><strong>2</strong></td><td>the <strong>sound&#x27;s</strong> page: sample or input → the stock page; granular → <strong><a href="#granular">Granular</a></strong>; VA → <strong><a href="#sinte">OSC 1</a></strong>; FM → its <strong><a href="#fm">operators</a></strong></td></tr>
+<tr><td><strong>3</strong></td><td>VA → <strong><a href="#sinte">OSC 2</a></strong>; FM → its <strong><a href="#fm">pitch envelope</a></strong>; dark with the other sounds</td></tr>
+<tr><td><strong>4</strong></td><td>★ <strong><a href="#filtro">Filter / VCA</a></strong> (lime)</td></tr>
+<tr><td><strong>5</strong></td><td>★ <strong><a href="#filtro">Envelope + LFO</a></strong> (rose)</td></tr>
+<tr><td><strong>6</strong></td><td>★ <strong><a href="#matriz">Matrix</a></strong></td></tr>
+<tr><td><strong>9</strong></td><td>the <strong>stock</strong> page (the original&#x27;s)</td></tr>
+<tr><td><strong>10</strong></td><td><strong><a href="#stockplus">Stock+</a></strong></td></tr>
+<tr><td><strong>16</strong></td><td>★ <strong>Project init</strong> (red): the track&#x27;s voice back to how the project was last loaded or saved (K1-K8 and the rest of the voice; level, pan, sends and sidechain are left alone); Stock+, Granular, Synth and Envelope back to factory values</td></tr>
 </tbody></table>
-<p><strong>The track&#x27;s sound, the stereo link and the line input</strong> moved to <a href="#samplemode">Sample mode</a> <em>(Alpha 0.09)</em>: its pads 5-8, 14, 15 and 16.</p>
+<p>The other pads dark. Bright = the page shown.</p>
 <ul>
 <li><strong>Opening it:</strong> a tap on the button of the track already selected leaves it open; it closes when you let go of a menu pad, tap the button again or press any other button. Holding a track&#x27;s button (¼ s) opens it only while held, like the original&#x27;s view buttons.</li>
-<li>Row 1, the track&#x27;s <strong>pages</strong>: only those of its sound (sample: stock and Stock+; granular: stock, Stock+, Granular and Envelope; synth: stock, Stock+, Synth and Envelope; input: stock); the others dark. Bright = the one shown. <strong>Holding</strong> a page pad (½ s or more) shows it only until you let go, then the previous one returns.</li>
-<li><strong>The track&#x27;s sound</strong> (sample, granular, synth or input, one per track) is picked in <a href="#samplemode">Sample mode</a>, pads 5-8 <em>(Alpha 0.09)</em>. Up to Alpha 0.08 it was on row 2 of this menu (pads 11-14), with the link on 9 and the input&#x27;s source on 15.</li>
-<li>With the granular or the synth, the stock page leaves the original&#x27;s knobs (filter, envelope, pitch, level…) acting on them; the <strong>distortion</strong> too, with the same curve as on a sample <em>(Alpha 0.07)</em>.</li>
+<li><strong>Holding</strong> a page pad (½ s or more) shows it only until you let go.</li>
+<li>Up to Alpha 0.11 the menu was: 1 stock, 2 Stock+, 3 Granular, 4 Synth, 5 Envelope, 6 Matrix, 7 Sequenceable, 8 Project init, 16 Non-sequenceable.</li>
 </ul>
-<p>In Alpha 0.04 the menu was: 1-3 pages, 4 granular, 5 / 6 input and gate, 7 link.</p>
 </section>
 <section class="feat" id="stockplus"><h3><span class="code">2.3</span>Stock+ page</h3>
 <div class="summary"><p><strong>How to get there:</strong> track menu, pad 2, on a track with a sample, the granular or the synth</p></div>
@@ -843,19 +763,19 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <p>Lilac with the value as brightness (K4, K5 and Shift + K5: the distance from the centre). Clear + knob = default. Saved with the project.</p>
 <p><strong>The original&#x27;s start and length</strong> <em>(Alpha 0.09)</em> (stock page, K2 / K3): the start adds to the position (this page&#x27;s K3), up to the sample&#x27;s end; the length narrows the zone (fully up, its default, changes nothing).</p>
 </section>
-<section class="feat" id="sinte"><h3><span class="code">2.5</span>Synth page</h3>
-<div class="summary"><p><strong>How to get there:</strong> Sample mode, pad 7 (puts the synth on, with its page), or track menu, pad 4 (its page)</p></div>
-<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Synth page: K1 / K2 in the waveform&#x27;s colour, the rest in mint.">
+<section class="feat" id="sinte"><h3><span class="code">2.5</span>OSC 1 / OSC 2 pages (the VA)</h3>
+<div class="summary"><p><strong>How to get there:</strong> Sample mode, selector (pad 8), pad 20 (puts the VA on); track menu, pads 2 / 3</p></div>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The VA&#x27;s OSC 1.">
 <rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
-<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#ff2020" stroke-width="4"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
 <text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
-<text x="49.0" y="82" font-size="10" fill="#ff2020" text-anchor="middle"></text>
-<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#ff2020" stroke-width="4"/>
+<text x="49.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle"></text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
 <text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
-<text x="115.0" y="82" font-size="10" fill="#ff2020" text-anchor="middle"></text>
-<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
+<text x="115.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle"></text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#ff2020" stroke-width="4"/>
 <text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
-<text x="181.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle"></text>
+<text x="181.0" y="82" font-size="10" fill="#ff2020" text-anchor="middle"></text>
 <circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#8affd0" stroke-width="4"/>
 <text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
 <text x="247.0" y="82" font-size="10" fill="#8affd0" text-anchor="middle"></text>
@@ -935,27 +855,202 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="420" y="348" font-size="8" fill="#7d838a">31</text>
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
-</svg><figcaption>Synth page: K1 / K2 in the waveform&#x27;s colour, the rest in mint.</figcaption></figure>
-<p>★ A monophonic two-oscillator synth on the master DSP, as any track&#x27;s sound <em>(since Alpha 0.05)</em>. <strong>Up to 4 synth tracks.</strong> It gets its notes like a sample does (pads, Note view, sequence, MIDI).</p>
+</svg><figcaption>The VA&#x27;s OSC 1.</figcaption></figure>
+<p>★ CIRCUIT-HACKS&#x27; VA oscillators as any track&#x27;s sound <em>(Alpha 0.12)</em>: two oscillators with a sine → triangle → saw → square morph, a shape per wave (fold, curve, 5-saw supersaw or pulse width), FM both ways, ring, sync and bitwise modes. Up to 4 synth slots (VA or <a href="#fm">FM</a>) across all tracks, shared with the <a href="#voces">polyphony</a>. It gets its notes like a sample does (pads, Note view, sequence, MIDI).</p>
+<p><strong>OSC 1</strong> (menu, pad 2; a VA&#x27;s Synth page):</p>
 <table><thead><tr><th>Knob</th><th>Alone</th><th>With Shift</th></tr></thead><tbody>
-<tr><td>K1</td><td>OSC 1 waveform: saw (red), pulse (yellow), triangle (green), sine (white)</td><td>noise</td></tr>
-<tr><td>K2</td><td>OSC 2 waveform (the same colours)</td><td>sync, on / off (right half = on)</td></tr>
-<tr><td>K3</td><td>OSC 2 pitch (±24 semitones)</td><td>glide (5 ms - 2 s)</td></tr>
-<tr><td>K4</td><td>OSC 2 fine tune (±50 cents)</td><td>octave (−3 … +3)</td></tr>
-<tr><td>K5</td><td>mix OSC 1 ↔ OSC 2</td><td>velocity → FM</td></tr>
-<tr><td>K6</td><td>SUB (an octave below)</td><td>release (2 ms - 4 s)</td></tr>
-<tr><td>K7</td><td>FM (OSC 2 modulates OSC 1)</td><td>envelope → low-pass (from the centre)</td></tr>
-<tr><td>K8</td><td>pulse width (50 % → 2 %)</td><td>—</td></tr>
+<tr><td>K1</td><td>tune (±24 semitones)</td><td>envelope → pitch</td></tr>
+<tr><td>K2</td><td>fine</td><td>glide</td></tr>
+<tr><td>K3</td><td>wave (morph; its LED in the nearest wave&#x27;s colour: sine white, triangle green, saw red, square yellow)</td><td>octave</td></tr>
+<tr><td>K4</td><td>shape</td><td>envelope → shape</td></tr>
+<tr><td>K5</td><td>envelope → FM (from the centre)</td><td>—</td></tr>
+<tr><td>K6</td><td>envelope → ring (from the centre)</td><td>—</td></tr>
+<tr><td>K7</td><td>envelope → morph (from the centre)</td><td>—</td></tr>
+<tr><td>K8</td><td>envelope → mix (from the centre)</td><td>—</td></tr>
+</tbody></table>
+<p><strong>OSC 2</strong> (menu, pad 3):</p>
+<table><thead><tr><th>Knob</th><th>What it does</th></tr></thead><tbody>
+<tr><td>K1</td><td>OSC 2 tune (±24 semitones)</td></tr>
+<tr><td>K2</td><td>OSC 2 fine</td></tr>
+<tr><td>K3</td><td>OSC 2 wave</td></tr>
+<tr><td>K4</td><td>OSC 2 shape</td></tr>
+<tr><td>K5</td><td>FM: nothing in the centre; right OSC 2 → OSC 1, left OSC 1 → OSC 2</td></tr>
+<tr><td>K6</td><td>ring</td></tr>
+<tr><td>K7</td><td>sync and bitwise modes, by zones: none, sync, xor, or, nor, and, nand (each zone in its colour)</td></tr>
+<tr><td>K8</td><td>mix OSC 1 ↔ OSC 2</td></tr>
 </tbody></table>
 <ul>
-<li><strong>The original&#x27;s knobs</strong> of the track still act on the synth (on the stock page): pitch, envelope (left of centre decay, centre sustain, right slow attack), low-pass, high-pass, resonance, distortion <em>(Alpha 0.07)</em>, level, pan, sends, sidechain and mute.</li>
-<li><strong>The original&#x27;s start and length</strong> <em>(Alpha 0.09)</em> (stock page, K2 / K3): <strong>start = morph</strong>: from K1 / K2&#x27;s waveform, each oscillator moves smoothly to the next one (saw → pulse → triangle → sine → saw), up to 3 shapes fully up; <strong>length = unison</strong>: below fully up, each oscillator plays twice, detuned by up to a quarter semitone (length at 0). At the defaults (start 0, length fully up) it sounds as before. Morph and unison use more DSP: four synths like that plus the granular at once may not fit.</li>
-<li><strong>Note-off:</strong> a synth track gets the note-off even in one-shot mode, so the release sounds.</li>
-<li><strong>LEDs:</strong> mint with the value as brightness (K3, K4, Shift + K4, Shift + K7: the distance from the centre); K1 / K2 in their waveform&#x27;s colour.</li>
-<li>Clear + knob = default. <strong>Saved with the project.</strong></li>
+<li><strong>The envelope</strong> is the <a href="#envolvente">Envelope</a> page&#x27;s (its K2 = the release). Glide and octave also on the <a href="#voces">voice dropdown</a>.</li>
+<li><strong>The original&#x27;s knobs</strong> of the track still act: filter, envelope, pitch, distortion, level… (stock page or <a href="#filtro">Filter / VCA</a>).</li>
+<li><strong>LEDs:</strong> mint, brightness = the value; the bipolar ones dark in the centre and lighter to the left <em>(Alpha 0.12)</em>.</li>
+<li>Clear + knob = default. <strong>Saved with the project</strong>; OSC 1&#x27;s tune and fine and the three envelope depths go to the card with the <a href="#guardado">project&#x27;s sound</a>.</li>
+<li>Up to Alpha 0.11 the synth was another one (two classic oscillators with SUB and noise, one page).</li>
 </ul>
 </section>
-<section class="feat" id="envolvente"><h3><span class="code">2.6</span>Envelope page</h3>
+<section class="feat" id="filtro"><h3><span class="code">2.6</span>Filter / VCA and Envelope + LFO pages</h3>
+<div class="summary"><p><strong>How to get there:</strong> track menu, pads 4 and 5 (any track)</p></div>
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Filter / VCA.">
+<rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
+<circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#90ef1a" stroke-width="4"/>
+<text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
+<text x="49.0" y="82" font-size="10" fill="#90ef1a" text-anchor="middle"></text>
+<circle cx="115.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="115.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K2</text>
+<circle cx="181.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
+<text x="181.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K3</text>
+<circle cx="247.0" cy="46" r="21" fill="#26282c" stroke="#90ef1a" stroke-width="4"/>
+<text x="247.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K4</text>
+<text x="247.0" y="82" font-size="10" fill="#90ef1a" text-anchor="middle"></text>
+<circle cx="313.0" cy="46" r="21" fill="#26282c" stroke="#90ef1a" stroke-width="4"/>
+<text x="313.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K5</text>
+<text x="313.0" y="82" font-size="10" fill="#90ef1a" text-anchor="middle"></text>
+<circle cx="379.0" cy="46" r="21" fill="#26282c" stroke="#90ef1a" stroke-width="4"/>
+<text x="379.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K6</text>
+<text x="379.0" y="82" font-size="10" fill="#90ef1a" text-anchor="middle"></text>
+<circle cx="445.0" cy="46" r="21" fill="#26282c" stroke="#90ef1a" stroke-width="4"/>
+<text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
+<text x="445.0" y="82" font-size="10" fill="#90ef1a" text-anchor="middle"></text>
+<circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#90ef1a" stroke-width="4"/>
+<text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
+<text x="511.0" y="82" font-size="10" fill="#90ef1a" text-anchor="middle"></text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="150" font-size="8" fill="#7d838a">1</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="150" font-size="8" fill="#7d838a">2</text>
+<rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="150" font-size="8" fill="#7d838a">3</text>
+<rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="150" font-size="8" fill="#7d838a">4</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="150" font-size="8" fill="#7d838a">5</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="150" font-size="8" fill="#7d838a">6</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="150" font-size="8" fill="#7d838a">7</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="150" font-size="8" fill="#7d838a">8</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="216" font-size="8" fill="#7d838a">9</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="216" font-size="8" fill="#7d838a">10</text>
+<rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="216" font-size="8" fill="#7d838a">11</text>
+<rect x="218" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="216" font-size="8" fill="#7d838a">12</text>
+<rect x="284" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="216" font-size="8" fill="#7d838a">13</text>
+<rect x="350" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="216" font-size="8" fill="#7d838a">14</text>
+<rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="216" font-size="8" fill="#7d838a">15</text>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="216" font-size="8" fill="#7d838a">16</text>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="282" font-size="8" fill="#7d838a">17</text>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="282" font-size="8" fill="#7d838a">18</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="282" font-size="8" fill="#7d838a">19</text>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="282" font-size="8" fill="#7d838a">20</text>
+<rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="282" font-size="8" fill="#7d838a">21</text>
+<rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="282" font-size="8" fill="#7d838a">22</text>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="282" font-size="8" fill="#7d838a">23</text>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="282" font-size="8" fill="#7d838a">24</text>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="24" y="348" font-size="8" fill="#7d838a">25</text>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="90" y="348" font-size="8" fill="#7d838a">26</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="156" y="348" font-size="8" fill="#7d838a">27</text>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="222" y="348" font-size="8" fill="#7d838a">28</text>
+<rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="288" y="348" font-size="8" fill="#7d838a">29</text>
+<rect x="350" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="354" y="348" font-size="8" fill="#7d838a">30</text>
+<rect x="416" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="420" y="348" font-size="8" fill="#7d838a">31</text>
+<rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<text x="486" y="348" font-size="8" fill="#7d838a">32</text>
+</svg><figcaption>Filter / VCA.</figcaption></figure>
+<p>★ Two pages gathering knobs from others <em>(Alpha 0.12)</em>. Each knob moves the usual value (the original&#x27;s, the Envelope&#x27;s or Stock+&#x27;s), with its steps and its Clear, and the matrix&#x27;s lanes record it the same way.</p>
+<p><strong>Filter / VCA</strong> (pad 4, lime):</p>
+<table><thead><tr><th>Knob</th><th>What it does</th></tr></thead><tbody>
+<tr><td>K1</td><td>the track&#x27;s <strong>level</strong> (the Mixer&#x27;s)</td></tr>
+<tr><td>K4</td><td>the original&#x27;s envelope</td></tr>
+<tr><td>K5</td><td>envelope → low-pass (granular and synth; from the centre)</td></tr>
+<tr><td>K6 / K7 / K8</td><td>the original&#x27;s high-pass, low-pass and resonance</td></tr>
+<tr><td>K2 / K3</td><td>nothing (dark)</td></tr>
+</tbody></table>
+<p><strong>Envelope + LFO</strong> (pad 5):</p>
+<table><thead><tr><th>Knob</th><th>What it does</th></tr></thead><tbody>
+<tr><td>K1-K4</td><td>the <a href="#envolvente">Envelope</a> page&#x27;s: start, length, slope, → filter (granular and synth; rose)</td></tr>
+<tr><td>K5</td><td><a href="#stockplus">Stock+</a>&#x27;s LFO rate (from the centre: right free, left synced; sky blue)</td></tr>
+<tr><td>K6</td><td>Stock+&#x27;s LFO depth (sky blue)</td></tr>
+<tr><td>K7 / K8</td><td>nothing</td></tr>
+</tbody></table>
+<p>Both stay until you pick another page or change the track&#x27;s engine.</p>
+</section>
+<section class="feat" id="fm"><h3><span class="code">2.7</span>8-operator FM</h3>
+<div class="summary"><p><strong>How to get there:</strong> Sample mode, selector (pad 8), pad 24 (puts the FM on; one more tap: the FM page)</p></div>
+<p>★ CIRCUIT-HACKS&#x27; 8-operator FM, with DX7 envelopes and 56 algorithms, as any track&#x27;s sound <em>(Alpha 0.12)</em>. It shares the 4 synth slots with the <a href="#sinte">VA</a>.</p>
+<p><strong>The FM page</strong> (Sample mode, a tap on pad 24 of a track with FM; all 32 pads are its own):</p>
+<table><thead><tr><th>Pad</th><th>What it does</th></tr></thead><tbody>
+<tr><td><strong>9-16</strong></td><td>the operator 1-8 to edit (carriers green, modulators blue, the chosen one bright; those the algorithm does not use, off)</td></tr>
+<tr><td><strong>3</strong></td><td>the pitch envelope (lavender)</td></tr>
+<tr><td><strong>7 held</strong></td><td>the 56 algorithms on pads 9-32, in three pages with ▼ / ▲ (the 4-operator ones green, the 8-operator ones amber, the DX7&#x27;s white); one pressed = that algorithm</td></tr>
+<tr><td><strong>Clear + 7</strong></td><td>a playable voicing of the algorithm (every ratio 1)</td></tr>
+<tr><td><strong>8 held</strong></td><td>the 24 starting instruments (in their family&#x27;s colour); one pressed = loaded</td></tr>
+<tr><td><strong>7 (tap)</strong></td><td>closes the page</td></tr>
+</tbody></table>
+<p><strong>The knobs</strong> (on the FM page and on the Synth page of a track with FM: menu, pad 2 = the operator, pad 3 = the pitch envelope):</p>
+<table><thead><tr><th>Knob</th><th>Operator</th><th>With Shift</th></tr></thead><tbody>
+<tr><td>K1</td><td>ratio</td><td>algorithm</td></tr>
+<tr><td>K2</td><td>fine</td><td>feedback</td></tr>
+<tr><td>K3</td><td>output level</td><td>rate scaling</td></tr>
+<tr><td>K4</td><td>velocity sensitivity</td><td>level scaling</td></tr>
+<tr><td>K5-K8</td><td>its envelope&#x27;s R1-R4</td><td>L1-L4</td></tr>
+</tbody></table>
+<p>With the pitch envelope: K1 transpose, K3 noise, K4 its operator, K5-K8 R1-R4 (Shift: L1-L4). Lavender, brightness = the value. Clear + knob = the initial value.</p>
+<ul>
+<li><strong>Sample mode, pad 24 held:</strong> the 24 instruments on rows 1, 2 and 4, without opening the page.</li>
+<li><strong>Polyphony and voice modes:</strong> <a href="#voces">Voice</a>.</li>
+<li><strong>Saved with the project on the card</strong> (the pack&#x27;s patch bank) <em>(Alpha 0.12)</em>; not on the internal pack nor in the S builds.</li>
+</ul>
+</section>
+<section class="feat" id="voces"><h3><span class="code">2.8</span>Voice: modes, polyphony and unison</h3>
+<div class="summary"><p><strong>How to get there:</strong> Sample mode, selector (pad 8), pad 16 (VA and FM)</p></div>
+<p>★ CIRCUIT-HACKS&#x27; voice modes for the VA and the FM <em>(Alpha 0.12)</em>. There are <strong>4 synth slots</strong> across all tracks; polyphony and unison take the free ones.</p>
+<ul>
+<li><strong>A tap on pad 16:</strong> polyphony on / off (back to the last mono mode). With little DSP left, a new note takes the oldest voice.</li>
+<li><strong>Pad 16 held:</strong> the modes on pads 17-24 (the current one bright; pad 16 shows in the mode&#x27;s colour), and the knobs:</li>
+</ul>
+<table><thead><tr><th>Pad</th><th>Mode</th></tr></thead><tbody>
+<tr><td>17 (green)</td><td><strong>retrigger</strong>: every note retriggers the envelope</td></tr>
+<tr><td>18 (yellow)</td><td><strong>legato</strong>: a note overlapping the previous one only changes the pitch (no envelope or FM operator retrigger)</td></tr>
+<tr><td>19 (teal)</td><td><strong>glide</strong>: like legato, and the pitch slides; a detached note starts at its own pitch</td></tr>
+<tr><td>20 (green)</td><td><strong>uni retrig</strong>: all the track&#x27;s voices on the same note, detuned with K2</td></tr>
+<tr><td>21 (yellow)</td><td><strong>uni legato</strong></td></tr>
+<tr><td>22 (teal)</td><td><strong>uni glide</strong></td></tr>
+<tr><td>23 (violet)</td><td><strong>uni always-glide</strong>: always slides, also after a release</td></tr>
+<tr><td>24 (magenta)</td><td><strong>poly</strong>: up to 4 notes at once</td></tr>
+</tbody></table>
+<table><thead><tr><th>Knob (pad 16 held)</th><th>What it does</th></tr></thead><tbody>
+<tr><td>K1 (teal)</td><td>glide</td></tr>
+<tr><td>K2 (blue)</td><td>unison detune (up to ±50 cents on the outer voices)</td></tr>
+</tbody></table>
+<ul>
+<li>With 3 or 4 voices in unison the level drops (0.82 / 0.71) so it does not clip.</li>
+<li>A track that never picked a mode sounds as up to Alpha 0.11.</li>
+<li><strong>Saved with the project on the card</strong> <em>(Alpha 0.12)</em> (not in the S builds).</li>
+</ul>
+</section>
+<section class="feat" id="envolvente"><h3><span class="code">2.9</span>Envelope page</h3>
 <div class="summary"><p><strong>How to get there:</strong> track menu, pad 5, on a synth or granular track</p></div>
 <figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Envelope page: K1-K4 in rose, K5-K8 off.">
 <rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
@@ -1058,7 +1153,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Rose with the value as brightness (K3 / K4: the distance from the centre). Clear + knob = default. <strong>Saved with the project.</strong></li>
 </ul>
 </section>
-<section class="feat" id="matriz"><h3><span class="code">2.7</span>Matrix, Sequenceable and Non-sequenceable</h3>
+<section class="feat" id="matriz"><h3><span class="code">2.10</span>Matrix, Sequenceable and Non-sequenceable</h3>
 <div class="summary"><p><strong>How to get there:</strong> track menu, pads 6, 7 and 16 (any track)</p></div>
 <p>★ Three pages to modulate and automate <em>(Alpha 0.10)</em>. A tap latches the page, holding lasts until you let go, and again removes it.</p>
 <p><strong>Destinations (32 per track):</strong> row 1 = the original&#x27;s K1-K8; row 2 = Stock+&#x27;s K1-K8 (K7: stretch on a sample, the waveshaper on the granular and the synth); rows 3-4 = the sound&#x27;s page (synth 16 values, granular 13, sample Stock+&#x27;s Shift + K5-K8). An input track only has the original&#x27;s. When you pick one, the pads show where it is for 1.5 s, in its page&#x27;s colour.</p>
@@ -1080,14 +1175,14 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <p><strong>Extra lane:</strong> a ninth automation per track, one value per step. The first destination that finds no lane takes it; with no lanes left, other destinations are not recorded. Clear + Shift + any Sequenceable knob erases it in all 8 patterns.</p>
 <p>The menu&#x27;s pad 8 also brings the matrix and the Non-sequenceable page back to factory values; lanes keep their destination and data.</p>
 </section>
-<section class="feat" id="entrada"><h3><span class="code">2.8</span>Line input and stereo link</h3>
+<section class="feat" id="entrada"><h3><span class="code">2.11</span>Line input and stereo link</h3>
 <div class="summary"><p><strong>How to get there:</strong> Sample mode, pads 8 / 15 / 16 and 14</p></div>
-<p>The pads are <a href="#samplemode">Sample mode</a>&#x27;s <em>(Alpha 0.09)</em>; up to Alpha 0.08 they were on the track menu (input 13, gate 14, source 15, link 9).</p>
-<p><strong>Line input</strong> (pad 8; since Alpha 0.04): the audio input plays as the track&#x27;s sound, with its level, pan, sends, filter and envelope.</p>
+<p>Since Alpha 0.12 they are <a href="#samplemode">Sample mode</a>&#x27;s engine selector (pad 8); in Alpha 0.09-0.11, Sample mode&#x27;s pads 8 (input), 15 (source) and 16 (gate); up to Alpha 0.08, the track menu (input 13, gate 14, source 15, link 9).</p>
+<p><strong>Line input</strong> (selector, pads 18 / 19; since Alpha 0.04): the audio input plays as the track&#x27;s sound, with its level, pan, sends, filter and envelope.</p>
 <ul>
 <li>One input track: L + R. Two: the lower-numbered one is L, the higher R. Setting a third removes the first one set.</li>
-<li><strong>Pad 16, the gate:</strong> dim = always sounds; bright = only while its notes play, through the track&#x27;s VCA and filter (low-pass, high-pass, resonance; the filter since Alpha 0.06).</li>
-<li><strong>Pad 15, the source</strong> (Alpha 0.06): the inputs (dim amber, no FX; up to Alpha 0.07, amber) → the <strong>reverb return</strong> (cream) → the <strong>delay return</strong> (peach), in turn; each input track its own. The return arrives a block late (0.67 ms).</li>
+<li><strong>The gate: pad 18 = no gate</strong> (always sounds, straight to the mix); <strong>pad 19 = gated</strong>: only while its notes play, through the track&#x27;s VCA and filter (low-pass, high-pass, resonance; the filter since Alpha 0.06).</li>
+<li><strong>The source</strong> (Alpha 0.06; pad 2 with 18, pad 3 with 19): the inputs (dim amber, no FX; up to Alpha 0.07, amber) → the <strong>reverb return</strong> (cream) → the <strong>delay return</strong> (peach), in turn; each input track its own. The return arrives a block late (0.67 ms).</li>
 <li><strong>An FX into an input</strong> <em>(Alpha 0.09)</em>: the return an input track takes no longer goes to the master; it only sounds through the track. That track&#x27;s send into its own effect is at three quarters <em>(Alpha 0.10)</em> (the full knob = three quarters of a send; half in Alpha 0.09), so the feedback stays contained; its send into the other effect is whole. Up to Alpha 0.08 the return also sounded through the master and the send into its own effect fed back.</li>
 </ul>
 <p><strong>Stereo link</strong> (pad 14; since Alpha 0.04): the track (left) and the next one (right) play together with the first one&#x27;s notes. Pad 14 on either = undo. Dark on track 8 alone. Not linked: Stock+&#x27;s free LFO and scan, and the stretch&#x27;s WSOLA.</p>
@@ -1099,14 +1194,16 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </ul>
 <p>Both are saved with the project.</p>
 </section>
-<section class="feat" id="note"><h3><span class="code">2.9</span>Note view</h3>
+<section class="feat" id="note"><h3><span class="code">2.12</span>Note view</h3>
 <div class="summary"><p><strong>How to get there:</strong> the Note button</p></div>
 <table><thead><tr><th>Gesture</th><th>What it does</th></tr></thead><tbody>
 <tr><td><strong>Keys held</strong> (arpeggiator on)</td><td>★ arpeggio of the held notes on the track&#x27;s sample; recorded with Record and Play <em>(since Alpha 0.0)</em></td></tr>
-<tr><td><strong>Shift held</strong></td><td>★ the track&#x27;s <strong>own scale</strong> editor <em>(since Alpha 0.0)</em></td></tr>
+<tr><td><strong>Shift + key</strong></td><td>★ <strong>latch</strong> <em>(Alpha 0.12)</em>: the note goes into or out of the track&#x27;s chord (up to 6; ice blue). Then every note you play or sequence sounds the chord moved to it (the root = the lowest note): a moving chord. With the arpeggio, the arpeggio plays the chord. A mono track plays the root; chords need <a href="#voces">polyphony</a></td></tr>
+<tr><td><strong>Clear + Note</strong></td><td>★ empties the latch&#x27;s chord <em>(Alpha 0.12)</em></td></tr>
+<tr><td><strong>Shift + Note</strong> in the expanded Note view (Note twice)</td><td>★ the track&#x27;s <strong>own scale</strong> editor (up to 0.11: Shift held in the Note view) <em>(since Alpha 0.0)</em></td></tr>
 </tbody></table>
 <p><strong>The editor:</strong> the 32 pads are two piano octaves from the tonic (row 4 = the white keys of the lower octave, pad 25 = the tonic; row 3 = its black keys; rows 2 / 1 = the upper octave). Each key switches its degree on or off (7 at most); the highest is the <strong>period</strong>: the next iteration&#x27;s tonic (the octave or another, up to 24 semitones). Tonic white, degrees green, period blue.</p>
-<p>When you let go of Shift, the keyboard plays the scale: one iteration per row (two if it has 4 notes or fewer); ▲ / ▼ move a row. With no keys, the original piano returns. Saved with the project.</p>
+<p>When the editor closes, the keyboard plays the scale: one iteration per row (two if it has 4 notes or fewer); ▲ / ▼ move a row. With no keys, the original piano returns. Saved with the project.</p>
 </section>
 <h2 class="group">3. Steps and pattern</h2>
 <section class="feat" id="velocity"><h3><span class="code">3.1</span>Velocity and Micro Step</h3>
@@ -1338,7 +1435,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <h2 class="group">4. Samples</h2>
 <section class="feat" id="samplemode"><h3><span class="code">4.1</span>Sample mode</h3>
 <div class="summary"><p><strong>How to get there:</strong> the Samples button twice</p></div>
-<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sample mode: pads 9 / 10 under 1 / 2; the track&#x27;s sound on 5-8 and the link on 14; pad 19 above loop.">
+<figure><svg viewBox="0 0 560 374" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sample mode with the selector open (a VA track).">
 <rect x="0" y="0" width="560" height="374" rx="18" fill="#17181b"/>
 <circle cx="49.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
 <text x="49.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K1</text>
@@ -1356,33 +1453,26 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="445.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K7</text>
 <circle cx="511.0" cy="46" r="21" fill="#26282c" stroke="#3a3d42" stroke-width="2"/>
 <text x="511.0" y="50" font-size="11" fill="#cfd3d8" text-anchor="middle">K8</text>
-<rect x="20" y="96" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
-<text x="49.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">pitch +</text>
+<rect x="20" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="24" y="150" font-size="8" fill="#7d838a">1</text>
-<rect x="86" y="96" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
-<text x="115.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">pitch −</text>
+<rect x="86" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="90" y="150" font-size="8" fill="#7d838a">2</text>
 <rect x="152" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="156" y="150" font-size="8" fill="#7d838a">3</text>
 <rect x="218" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="222" y="150" font-size="8" fill="#7d838a">4</text>
-<rect x="284" y="96" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.95" stroke="#000"/>
-<text x="313.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">sample</text>
+<rect x="284" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="288" y="150" font-size="8" fill="#7d838a">5</text>
-<rect x="350" y="96" width="58" height="58" rx="7" fill="#ffa2ff" fill-opacity="0.32" stroke="#000"/>
-<text x="379.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">granular</text>
+<rect x="350" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="354" y="150" font-size="8" fill="#7d838a">6</text>
-<rect x="416" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.32" stroke="#000"/>
-<text x="445.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">synth</text>
+<rect x="416" y="96" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="420" y="150" font-size="8" fill="#7d838a">7</text>
-<rect x="482" y="96" width="58" height="58" rx="7" fill="#ffaf2f" fill-opacity="0.32" stroke="#000"/>
-<text x="511.0" y="124" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">line in</text>
+<rect x="482" y="96" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.95" stroke="#000"/>
+<text x="511.0" y="124" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">selector</text>
 <text x="486" y="150" font-size="8" fill="#7d838a">8</text>
-<rect x="20" y="162" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
-<text x="49.0" y="190" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">stretch +</text>
+<rect x="20" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="24" y="216" font-size="8" fill="#7d838a">9</text>
-<rect x="86" y="162" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
-<text x="115.0" y="190" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">stretch −</text>
+<rect x="86" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="90" y="216" font-size="8" fill="#7d838a">10</text>
 <rect x="152" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="156" y="216" font-size="8" fill="#7d838a">11</text>
@@ -1395,33 +1485,44 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="354" y="216" font-size="8" fill="#7d838a">14</text>
 <rect x="416" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="420" y="216" font-size="8" fill="#7d838a">15</text>
-<rect x="482" y="162" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="482" y="162" width="58" height="58" rx="7" fill="#22ee44" fill-opacity="0.95" stroke="#000"/>
+<text x="511.0" y="190" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">voice</text>
 <text x="486" y="216" font-size="8" fill="#7d838a">16</text>
-<rect x="20" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="20" y="228" width="58" height="58" rx="7" fill="#3cd6fe" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="256" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">sample</text>
 <text x="24" y="282" font-size="8" fill="#7d838a">17</text>
-<rect x="86" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="86" y="228" width="58" height="58" rx="7" fill="#ffffff" fill-opacity="0.32" stroke="#000"/>
+<text x="115.0" y="250" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">input</text>
+<text x="115.0" y="262" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">only</text>
 <text x="90" y="282" font-size="8" fill="#7d838a">18</text>
-<rect x="152" y="228" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
-<text x="181.0" y="256" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">de-click</text>
+<rect x="152" y="228" width="58" height="58" rx="7" fill="#ffaf2f" fill-opacity="0.32" stroke="#000"/>
+<text x="181.0" y="250" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">input</text>
+<text x="181.0" y="262" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">→ VCA</text>
 <text x="156" y="282" font-size="8" fill="#7d838a">19</text>
-<rect x="218" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="218" y="228" width="58" height="58" rx="7" fill="#8affd0" fill-opacity="0.95" stroke="#000"/>
+<text x="247.0" y="256" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">VA</text>
 <text x="222" y="282" font-size="8" fill="#7d838a">20</text>
 <rect x="284" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="288" y="282" font-size="8" fill="#7d838a">21</text>
 <rect x="350" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="354" y="282" font-size="8" fill="#7d838a">22</text>
-<rect x="416" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="416" y="228" width="58" height="58" rx="7" fill="#ffa2ff" fill-opacity="0.32" stroke="#000"/>
+<text x="445.0" y="256" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">granular</text>
 <text x="420" y="282" font-size="8" fill="#7d838a">23</text>
-<rect x="482" y="228" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="482" y="228" width="58" height="58" rx="7" fill="#9865ff" fill-opacity="0.32" stroke="#000"/>
+<text x="511.0" y="256" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">FM</text>
 <text x="486" y="282" font-size="8" fill="#7d838a">24</text>
-<rect x="20" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="20" y="294" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.32" stroke="#000"/>
+<text x="49.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">one-shot</text>
 <text x="24" y="348" font-size="8" fill="#7d838a">25</text>
-<rect x="86" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="86" y="294" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.32" stroke="#000"/>
+<text x="115.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">gated</text>
 <text x="90" y="348" font-size="8" fill="#7d838a">26</text>
-<rect x="152" y="294" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.32" stroke="#000"/>
-<text x="181.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">loop</text>
+<rect x="152" y="294" width="58" height="58" rx="7" fill="#44ddff" fill-opacity="0.95" stroke="#000"/>
+<text x="181.0" y="322" font-size="9.5" fill="#111" text-anchor="middle" font-weight="bold">loop</text>
 <text x="156" y="348" font-size="8" fill="#7d838a">27</text>
-<rect x="218" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
+<rect x="218" y="294" width="58" height="58" rx="7" fill="#fc9108" fill-opacity="0.32" stroke="#000"/>
+<text x="247.0" y="322" font-size="9.5" fill="#eee" text-anchor="middle" font-weight="bold">reverse</text>
 <text x="222" y="348" font-size="8" fill="#7d838a">28</text>
 <rect x="284" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="288" y="348" font-size="8" fill="#7d838a">29</text>
@@ -1431,17 +1532,29 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <text x="420" y="348" font-size="8" fill="#7d838a">31</text>
 <rect x="482" y="294" width="58" height="58" rx="7" fill="#2b2d31" stroke="#111"/>
 <text x="486" y="348" font-size="8" fill="#7d838a">32</text>
-</svg><figcaption>Sample mode: pads 9 / 10 under 1 / 2; the track&#x27;s sound on 5-8 and the link on 14; pad 19 above loop.</figcaption></figure>
+</svg><figcaption>Sample mode with the selector open (a VA track).</figcaption></figure>
 <table><thead><tr><th>Gesture</th><th>What it does</th></tr></thead><tbody>
-<tr><td><strong>Pads 1 / 2</strong> (the original&#x27;s)</td><td>fit the sample to the pattern by changing pitch; since Alpha 0.04 they switch the stretch off first</td></tr>
-<tr><td><strong>Pads 9 / 10</strong></td><td>★ the same with the <strong>stretch</strong> (Stock+ K7), without changing pitch: the next / previous length <em>(since Alpha 0.04)</em></td></tr>
-<tr><td><strong>Pad 19</strong></td><td>★ the selected track&#x27;s loop de-clicker (256-sample crossfade), on / off (blue bright / dim); on by default, saved with the project <em>(since Alpha 0.04)</em></td></tr>
-<tr><td><strong>Pads 5-8</strong></td><td>★ the <strong>track&#x27;s sound</strong>, one lit, the others dim: <strong>5</strong> sample (white), <strong>6</strong> <a href="#granular">granular</a> (lilac), <strong>7</strong> <a href="#sinte">synth</a> (mint), <strong>8</strong> <a href="#entrada">line input</a> (amber). Pad 5 removes the granular, the synth or the input; 6 / 7 leave the track&#x27;s knobs on their page; the pad of the sound already playing does nothing <em>(Alpha 0.09)</em></td></tr>
-<tr><td><strong>Pad 14</strong></td><td>★ <a href="#entrada">stereo link</a> with the next track (steel blue) <em>(Alpha 0.09)</em></td></tr>
-<tr><td><strong>Pad 15</strong></td><td>★ the <a href="#entrada">input</a>&#x27;s source: the inputs (dim amber), the reverb return (cream), the delay return (peach); only on an input track <em>(Alpha 0.09)</em></td></tr>
-<tr><td><strong>Pad 16</strong></td><td>★ the <a href="#entrada">input</a>&#x27;s gate (amber bright / dim); only on an input track <em>(Alpha 0.09)</em></td></tr>
+<tr><td><strong>Pads 1 / 2</strong> (the original&#x27;s)</td><td>fit the sample to the pattern by changing its pitch; since Alpha 0.04 they switch the stretch off first</td></tr>
+<tr><td><strong>Pads 9 / 10</strong></td><td>★ the same with the <strong>stretch</strong> (Stock+&#x27;s K7), keeping the pitch: the next / the previous length <em>(since Alpha 0.04)</em></td></tr>
+<tr><td><strong>Pad 19</strong></td><td>★ the selected track&#x27;s loop de-clicker (a 256-sample crossfade) <strong>and its retriggers&#x27;</strong> in any mode, reverse too <em>(Alpha 0.12)</em>, on / off (blue bright / dim); on by default, saved with the project <em>(since Alpha 0.04)</em></td></tr>
+<tr><td><strong>Pad 14</strong></td><td>★ <a href="#entrada">stereo link</a> with the next track (steel blue)</td></tr>
+<tr><td><strong>Pad 8</strong></td><td>★ <strong>the engine selector</strong> <em>(Alpha 0.12)</em>: opens and closes the engine row (in the track&#x27;s engine colour: open bright, closed dim)</td></tr>
 </tbody></table>
-<p>Shift + these pads, as in the original. Pad 19 sits above pad 27 (loop). Very short loops play at their own length (the original repeated them every ~128 samples).</p>
+<p><strong>With the selector open</strong> (pad 8 again, or leaving Sample mode, closes it; picking an engine keeps it open). Rows 1-3 belong to the selector; the sample-only options (1 / 2, 9 / 10, 19, the slices 22-24 and 31 / 32) are hidden; 25-30 as always:</p>
+<table><thead><tr><th>Pad</th><th>What it does</th></tr></thead><tbody>
+<tr><td><strong>17</strong></td><td><strong>sample</strong> (cyan)</td></tr>
+<tr><td><strong>18</strong></td><td><strong>input only</strong> (white): the <a href="#entrada">line input</a> straight to the mix, without filter or VCA; its source on pad <strong>2</strong></td></tr>
+<tr><td><strong>19</strong></td><td><strong>input → VCA / VCF / FX</strong> (amber): with the track&#x27;s filter and envelope; its source on pad <strong>3</strong></td></tr>
+<tr><td><strong>20</strong></td><td><strong>VA</strong> (mint): <a href="#sinte">OSC 1 / OSC 2</a></td></tr>
+<tr><td><strong>21 / 22</strong></td><td>VA-drum and wavetable: dark, not on the Rhythm yet</td></tr>
+<tr><td><strong>23</strong></td><td><strong>granular</strong> (lilac): <a href="#granular">Granular</a></td></tr>
+<tr><td><strong>24</strong></td><td><strong>FM</strong> (lavender): <a href="#fm">8-operator FM</a>; with FM already on, a tap = the FM page, held = the 24 instruments on rows 1, 2 and 4</td></tr>
+<tr><td><strong>16</strong></td><td>the <a href="#voces">voice</a> (VA and FM): tap = polyphony, held = the voice modes on 17-24</td></tr>
+<tr><td><strong>14</strong></td><td>the stereo link</td></tr>
+<tr><td><strong>8</strong></td><td>closes</td></tr>
+</tbody></table>
+<p>The track&#x27;s engine bright, the others dim. The input&#x27;s source: the inputs (dim amber), the reverb return (cream), the delay return (peach).</p>
+<p>Shift + these pads, as the original. Very short loops play at their own length (the original repeated them every ~128 samples). Up to Alpha 0.11 the sound was on pads 5-8, the input on 15 / 16 and VA / FM / poly on 11-13.</p>
 </section>
 <section class="feat" id="samplerec"><h3><span class="code">4.2</span>Sample Rec</h3>
 <div class="summary"><p><strong>How to get there:</strong> the Sample Rec button</p></div>
@@ -1511,6 +1624,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <section class="feat" id="guardado"><h3><span class="code">A.1</span>What is saved and where</h3>
 <table><thead><tr><th>Where</th><th>What</th></tr></thead><tbody>
 <tr><td><strong>With the project</strong></td><td>the matrix, the lanes and the Non-sequenceable page, the arpeggio modifiers, Stock+, Granular, Synth (settings and tracks), Envelope, the input&#x27;s source, line input, stereo link (with the second track&#x27;s offsets), per-track de-clicker, own scale, chain rules, per-step dynamics / mutation / frequency, Velocity marks, Micro Step, GM mode, reverb / delay / sidechain</td></tr>
+<tr><td><strong>On the card, with the project</strong> <em>(Alpha 0.12)</em></td><td>the pack&#x27;s patch bank (<code>Patches/NN_PATCHBANK.cpb</code>): each track&#x27;s 8-operator FM, the voice modes, the unison detune, the VA&#x27;s OSC 1 tune / fine and envelope depths. Not on the internal pack nor in the S builds</td></tr>
 <tr><td><strong>Device settings</strong></td><td>Program Change channels, Thru mode, keyboard into the arpeggiator, USB merge, save on stop, velocity curve, master filter resonance, compressor</td></tr>
 <tr><td><strong>Until power-off</strong></td><td>each track&#x27;s knob page, Project init (what was loaded or saved), cue mode, metronome / count-in, Sample Rec pads 23 / 24</td></tr>
 </tbody></table>
@@ -1521,15 +1635,16 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </section>
 <section class="feat" id="modulos"><h3><span class="code">A.3</span>Arrhythmia modules (proof of concept)</h3>
 <div class="summary"><p><strong>How to get there:</strong> from the computer, over USB</p></div>
-<p>★ <em>(Alpha 0.11)</em> <strong>A proof of concept.</strong> Not in Alpha 0.10 / 0.10S. Circuit Remix runs <strong><a href="https://github.com/llcoolkm/arrhythmia">Arrhythmia</a>&#x27;s modules</strong> (by llcoolkm, MIT licence): small programs (<code>.mod</code>) that take over the lights, pads and buttons and can play notes, move parameters and send MIDI. The modules, their interface and its documentation are Arrhythmia&#x27;s; Circuit Remix brings its own code for that interface, so the same file works on both firmwares. The modules are not in this repository: <strong>download them from <a href="https://github.com/llcoolkm/arrhythmia/releases">Arrhythmia&#x27;s releases</a></strong> and see their controls in <a href="https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md">its modules guide</a>.</p>
+<p>★ <em>(Alpha 0.11)</em> <strong>A proof of concept, only in Alpha 0.11 and 0.11S.</strong> Not in Alpha 0.10 / 0.10S, the earlier ones or the official firmware: with those the app gets no answer. Circuit Remix runs <strong><a href="https://github.com/llcoolkm/arrhythmia">Arrhythmia</a>&#x27;s modules</strong> (by llcoolkm, MIT licence): small programs (<code>.mod</code>) that take over the lights, pads and buttons and can play notes, move parameters and send MIDI. The modules, their interface and its documentation are Arrhythmia&#x27;s; Circuit Remix brings its own code for that interface, so the same file works on both firmwares. The modules are not in this repository: <strong>download them from <a href="https://github.com/llcoolkm/arrhythmia/releases">Arrhythmia&#x27;s releases</a></strong> and see their controls in <a href="https://github.com/llcoolkm/arrhythmia/blob/main/docs/user/modules.md">its modules guide</a>.</p>
 <ul>
-<li><strong>Upload and start:</strong> in the <a href="https://github.com/Ghillermo/CIRCUIT-REMIX#card-and-device-app-toolsrm_sd_apphtml">card app</a>, button <strong>Modules (proof of concept)…</strong>: pick the <code>.mod</code>, the app checks it (header and CRC), uploads it, reads it back and starts it.</li>
+<li><strong>Upload and start:</strong> in the <a href="https://github.com/Ghillermo/CIRCUIT-REMIX#the-circuit-remix-app-toolsrm_apphtml">Circuit Remix app</a> (<code>rm_app.html</code>), button <strong>Modules (proof of concept)…</strong>: pick the <code>.mod</code>, the app checks it (header and CRC), uploads it, reads it back and starts it.</li>
 <li><strong>While it runs:</strong> a module with an input takes the pads and buttons; <strong>Shift</strong> and the knobs stay the original&#x27;s, <strong>Play</strong> still drives the transport. <strong>Shift + Sample Rec</strong> stops it and gives everything back.</li>
 <li><strong>Lost at power-off</strong> (it lives in the processor&#x27;s fast RAM). It does not read the card: no Arrhythmia module picker.</li>
 <li>A module is code that runs on the device: <strong>only use modules you trust.</strong></li>
 </ul>
 </section>
 <h2 class="group" id="glosario">Glossary of functions</h2><section class="feat"><table><thead><tr><th>Function</th><th>What it is / gesture</th><th>Chapter</th><th>Since</th></tr></thead><tbody>
+<tr><td><strong>8-operator FM</strong></td><td>CIRCUIT-HACKS&#x27; FM; Sample mode, selector, pad 24</td><td><a href="#fm">2.7 8-operator FM</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Arpeggio modifiers</strong></td><td>octaves, groove and restart; Pattern Settings, Shift + pads 1-16</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Arrhythmia modules</strong></td><td>proof of concept: its <code>.mod</code> files over USB from the card app; Shift + Sample Rec stops</td><td><a href="#modulos">A.3 Arrhythmia modules (proof of concept)</a></td><td>Alpha 0.11</td></tr>
 <tr><td><strong>Automation view</strong></td><td>steps with knob automation in yellow, and listening to them; Velocity + Shift, or Velocity again (latched)</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.09</td></tr>
@@ -1543,64 +1658,72 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Cue mode</strong></td><td>mix on the left, cue on the right; Mixer, pan, Shift + knob</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Delete a pack</strong></td><td>Clear + pack twice in Packs</td><td><a href="#projects">6.1 Projects and Packs</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Distortion on granular and synth</strong></td><td>the original&#x27;s distortion knob on them too</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.07</td></tr>
-<tr><td><strong>Envelope by play mode</strong></td><td>start, length, slope and → filter of the synth and the granular; menu, pad 5</td><td><a href="#envolvente">2.6 Envelope page</a></td><td>Alpha 0.06</td></tr>
+<tr><td><strong>Engine selector</strong></td><td>sample, input, VA, granular or FM on row 3; Sample mode, pad 8</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.12</td></tr>
+<tr><td><strong>Envelope + LFO</strong></td><td>the Envelope and Stock+&#x27;s LFO on one page; menu, pad 5</td><td><a href="#filtro">2.6 Filter / VCA and Envelope + LFO pages</a></td><td>Alpha 0.12</td></tr>
+<tr><td><strong>Envelope by play mode</strong></td><td>start, length, slope and → filter of the synth and the granular; menu, pad 5</td><td><a href="#envolvente">2.9 Envelope page</a></td><td>Alpha 0.06</td></tr>
 <tr><td><strong>External keyboard into the arpeggiator</strong></td><td>Advanced Setup, pad 22</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
-<tr><td><strong>Extra lane</strong></td><td>a ninth automation, one value per step</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
+<tr><td><strong>Extra lane</strong></td><td>a ninth automation, one value per step</td><td><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
+<tr><td><strong>Filter / VCA</strong></td><td>level, envelope and filter on one page; menu, pad 4</td><td><a href="#filtro">2.6 Filter / VCA and Envelope + LFO pages</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Filter type (24 dB, comb)</strong></td><td>Stock+, Shift + K6</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Fixed length</strong></td><td>hand-entered hits with a set length; Micro Step, pad 31</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Fixed Recording with external clock</strong></td><td>the length at the incoming MIDI clock&#x27;s tempo</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Fractal / deconstructed orders</strong></td><td>Pattern Settings pads 27 / 28</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>FX into an input</strong></td><td>a return taken by an input track leaves the master; its feedback, halved</td><td><a href="#entrada">2.8 Line input and stereo link</a></td><td>Alpha 0.09</td></tr>
-<tr><td><strong>FX returns as a source</strong></td><td>the reverb or the delay as an input track&#x27;s sound; Sample mode, pad 15</td><td><a href="#entrada">2.8 Line input and stereo link</a></td><td>Alpha 0.06</td></tr>
+<tr><td><strong>FX into an input</strong></td><td>a return taken by an input track leaves the master; its feedback, halved</td><td><a href="#entrada">2.11 Line input and stereo link</a></td><td>Alpha 0.09</td></tr>
+<tr><td><strong>FX returns as a source</strong></td><td>the reverb or the delay as an input track&#x27;s sound; Sample mode, selector, pads 2 / 3</td><td><a href="#entrada">2.11 Line input and stereo link</a></td><td>Alpha 0.06</td></tr>
 <tr><td><strong>FX sends on the knobs</strong></td><td>▼ / ▲ in the FX view</td><td><a href="#fx">5.2 FX and Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Gate by press</strong></td><td>the hit lasts as long as the pad is held; Micro Step, pad 32</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>General MIDI</strong></td><td>the tracks on channel 10 with their GM note; Setup, pad 22</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
-<tr><td><strong>Granular</strong></td><td>the granular engine on up to 4 tracks; Sample mode pad 6, menu pad 3</td><td><a href="#granular">2.4 Granular page</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Granular</strong></td><td>the granular engine on up to 4 tracks; Sample mode, selector, pad 23; menu pad 2</td><td><a href="#granular">2.4 Granular page</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Latch</strong></td><td>a chord that follows every note; Shift + key in the Note view</td><td><a href="#note">2.12 Note view</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Level to 100 / 0</strong></td><td>Shift + knob on the Mixer&#x27;s levels</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Line input</strong></td><td>the audio input as a track&#x27;s sound; Sample mode, pads 8 / 16</td><td><a href="#entrada">2.8 Line input and stereo link</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Line input</strong></td><td>the audio input as a track&#x27;s sound; Sample mode, pads 8 / 16</td><td><a href="#entrada">2.11 Line input and stereo link</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Loop de-clicker</strong></td><td>a crossfade at the loop point; Sample mode pad 19, Sample Rec pad 23</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Master compressor</strong></td><td>threshold, soft clip, attack and release in the Sidechain view</td><td><a href="#fx">5.2 FX and Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Master resonance</strong></td><td>Shift + ▲ / ▼ in the FX view</td><td><a href="#fx">5.2 FX and Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Metronome</strong></td><td>four states with Shift + Clear</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Modulation matrix</strong></td><td>8 sources per track to 32 destinations; menu, pad 6</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
+<tr><td><strong>Modulation matrix</strong></td><td>8 sources per track to 32 destinations; menu, pad 6</td><td><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Mute at the bar</strong></td><td>Shift + track pad in the Mixer</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Non-sequenceable</strong></td><td>8 knobs that are never recorded; menu, pad 16</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
-<tr><td><strong>Note arpeggiator</strong></td><td>arpeggiates the keys held in the Note view</td><td><a href="#note">2.9 Note view</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Non-sequenceable</strong></td><td>8 knobs that are never recorded; menu, Shift + pad 1</td><td><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
+<tr><td><strong>Note arpeggiator</strong></td><td>arpeggiates the keys held in the Note view</td><td><a href="#note">2.12 Note view</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Nudge</strong></td><td>moves the chosen range one step; Pattern Settings pad 26</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Own scale</strong></td><td>a scale per track; Shift in the Note view</td><td><a href="#note">2.9 Note view</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Own scale</strong></td><td>a scale per track; Shift in the Note view</td><td><a href="#note">2.12 Note view</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Per-step dynamics</strong></td><td>random velocity and delay within the step; probability row 3</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Per-step frequency</strong></td><td>the step plays on the last of every n passes</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Pitch envelope</strong></td><td>Stock+, K1 / K2</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Pitch LFO</strong></td><td>Stock+, K3 / K4; free or synced</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Polyphony</strong></td><td>up to 4 synth voices (VA or FM); Sample mode, a tap on pad 16</td><td><a href="#voces">2.8 Voice: modes, polyphony and unison</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Program Change</strong></td><td>listen and send channels; Setup, pads 29 / 30</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.0</td></tr>
-<tr><td><strong>Project init</strong></td><td>the track&#x27;s voice as loaded or saved; menu, pad 8 (red)</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.09</td></tr>
+<tr><td><strong>Project init</strong></td><td>the track&#x27;s voice as loaded or saved; menu, pad 16 (red; up to 0.11, pad 8)</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.09</td></tr>
+<tr><td><strong>Project&#x27;s sound on the card</strong></td><td>the FM, the voice modes and the VA&#x27;s values with the project, in the patch bank</td><td><a href="#guardado">A.1 What is saved and where</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Quantize</strong></td><td>Shift + Play while playing</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Ramps</strong></td><td>yellow step held + another step, in the automation view</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Repeat the scene</strong></td><td>the current scene 1-8 times; Mixer, Shift + pads 9-16</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>Retrigger de-click</strong></td><td>no click when a sample retriggers; Sample mode, pad 19</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Ring mod</strong></td><td>Stock+, K5 (Shift: the frequency)</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Rule chains</strong></td><td>patterns chained &quot;n times A, then B&quot;</td><td><a href="#patterns">3.3 Patterns: chains</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Sample arpeggiator</strong></td><td>arpeggiates the held sample pads; Shift + Pattern Settings pad 25 switches it on</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Sample mutation</strong></td><td>sometimes the neighbour plays; probability row 4</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Save on stop</strong></td><td>Save waits for the stop; Advanced Setup, pad 24</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Scan</strong></td><td>moves each note&#x27;s or the loop&#x27;s start; Stock+, K8</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
-<tr><td><strong>Sequenceable</strong></td><td>the 8 automation lanes with their own destination; menu, pad 7</td><td><a href="#matriz">2.7 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
+<tr><td><strong>Sequenceable</strong></td><td>the 8 automation lanes with their own destination; menu, pad 1</td><td><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Sidechain on the knobs</strong></td><td>Sidechain view K1-K4</td><td><a href="#fx">5.2 FX and Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Snapshot</strong></td><td>the moved knobs into a step; Record held + step</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.09</td></tr>
 <tr><td><strong>Start and length on the granular</strong></td><td>the original&#x27;s start adds to the position, the length narrows the zone</td><td><a href="#granular">2.4 Granular page</a></td><td>Alpha 0.09</td></tr>
-<tr><td><strong>Stereo link</strong></td><td>a track and the next as one stereo sound; Sample mode, pad 14; since 0.09 the second as offsets</td><td><a href="#entrada">2.8 Line input and stereo link</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Stereo link</strong></td><td>a track and the next as one stereo sound; Sample mode, pad 14; since 0.09 the second as offsets</td><td><a href="#entrada">2.11 Line input and stereo link</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Stereo recording</strong></td><td>L and R into two slots; Sample Rec, pad 24</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.04</td></tr>
-<tr><td><strong>Stock+ page</strong></td><td>eight more knobs per track; menu, pad 2; since 0.07 on the granular and the synth too</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Stock+ page</strong></td><td>eight more knobs per track; menu, pad 10; since 0.07 on the granular and the synth too</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Stretch</strong></td><td>slower or faster without changing pitch; Stock+ K7, Sample mode pads 9 / 10</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
-<tr><td><strong>Synth</strong></td><td>two oscillators with FM on up to 4 tracks; Sample mode pad 7, menu pad 4</td><td><a href="#sinte">2.5 Synth page</a></td><td>Alpha 0.05</td></tr>
-<tr><td><strong>Synth morph and unison</strong></td><td>the original&#x27;s start and length on the synth</td><td><a href="#sinte">2.5 Synth page</a></td><td>Alpha 0.09</td></tr>
+<tr><td><strong>Synth</strong></td><td>since 0.12 CIRCUIT-HACKS&#x27; VA (OSC 1 / OSC 2); Sample mode, selector, pad 20; menu pads 2 / 3</td><td><a href="#sinte">2.5 OSC 1 / OSC 2 pages (the VA)</a></td><td>Alpha 0.05</td></tr>
 <tr><td><strong>Thru: Out 2 / Merge / Filter</strong></td><td>Duplicate in Advanced Setup</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Track flash</strong></td><td>with Shift, each track&#x27;s button flashes white when it plays</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Track knobs reset</strong></td><td>Clear + the track&#x27;s button</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Track menu</strong></td><td>tap the selected track&#x27;s button (stays open) or hold a track&#x27;s button</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Unison</strong></td><td>a track&#x27;s voices on the same note, detuned; pad 16 held, K2</td><td><a href="#voces">2.8 Voice: modes, polyphony and unison</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>USB merge</strong></td><td>DIN In also over USB; Advanced Setup, pad 23</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Velocity curve</strong></td><td>Advanced Setup, K1</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Velocity marks</strong></td><td>on a marked step the parameters go back to Project init (up to 0.08, to the knob); Shift + step</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Visual metronome</strong></td><td>Clear flashes orange on each click with the click&#x27;s level at 0 (Tempo / Swing K5)</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.08</td></tr>
+<tr><td><strong>Voice modes</strong></td><td>retrigger, legato, glide, unisons and poly; Sample mode, pad 16 held</td><td><a href="#voces">2.8 Voice: modes, polyphony and unison</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Waveshaper</strong></td><td>soft, hard, fold or bitcrush on the granular and the synth; Stock+, K7 (Shift: the type)</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.07</td></tr>
 </tbody></table></section>
 <footer>Circuit Remix — MIT. No Novation code.</footer></main></body></html>

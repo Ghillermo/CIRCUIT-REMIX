@@ -47,6 +47,7 @@ BLK, BLK_LEN = rhrec.OFF["granpage"]
 O_ST = rhstate.OFF["granpage"][0]
 O_KB, O_TH, O_W = rhstate.OFF["kbright"][0], rhstate.OFF["cthresh"][0] + 1, rhstate.OFF["spwait"][0]
 K_MASK, K_VAL, K_CODE = SP.K_MASK, SP.K_VAL, SP.K_CODE
+KB_LEFT = 0x8000                                                    # kbright.BIPLEFT (leftlight)
 LED_TRK0, LED_TRK1, LED_KNOB0 = SP.LED_TRK0, SP.LED_TRK1, SP.LED_KNOB0
 COL_KNOB, COL_BLINK = 0x139, 0x37                          # the delay's colour (stockplus's 24 dB) / magenta (countin's)
 MARK0, MARK1, CHECK = ord("G"), ord("P"), 0x5A
@@ -759,6 +760,8 @@ def TRIM():
 
 
 def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False, noblink=False):
+    import rhbuild as _rb
+    LL = _rb.OPT.get("leftlight")                                        # (RH78) bipolar knobs: the lighter shade left
     nwx = NW_X + (1 if v2 else 0)
     nk, nwg = NK + (1 if stereo else 0), NW_G + (1 if stereo else 0)           # (stereo, RH47) value 12 = the spread (Shift + K2)
     bip = BIP_UI if ui else BIP
@@ -1120,9 +1123,25 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     E(movw, 0, XQ)
     E(movw, 1, XF.XQ)
     a.label("gx_w")
-    E(movs_imm, 2, 1)
-    E(bl, "c_gpw")
-    E(pop_list, [4], pc=True)
+    import rhbuild
+    if rhbuild.OPT.get("rtdc"):                                           # (RH68) a track's switch also to core 0 (tools/rtdc.py)
+        import rtdc
+        E(push_list, [0, 1])
+        E(movs_imm, 2, 1)
+        E(bl, "c_gpw")
+        E(pop_list, [0, 1])
+        E(cmp_imm, 4, 8)
+        E(b_cond, "gx_z", "hs")
+        E(movw, 1, 0x8000 | rtdc.SW)
+        E(adds_reg, 1, 1, 4)
+        E(movs_imm, 2, 0)
+        E(bl, "c_gpw")
+        a.label("gx_z")
+        E(pop_list, [4], pc=True)
+    else:
+        E(movs_imm, 2, 1)
+        E(bl, "c_gpw")
+        E(pop_list, [4], pc=True)
 
     if v2:
         # ---- c_gpmst() -> r0 = our menu state (OFF2), 0 without our RAM; c_gpmflags() -> r0 = its flags (0 without); clobber r1-r3
@@ -1812,6 +1831,8 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
         E(pop_list, [1])
         imm32(2, t_bip)
         E(ldrb_reg, 2, 2, 1)
+        if LL:                                                            # (leftlight) r1 = kbright's left flag
+            E(movs_imm, 1, 0)
         E(cmp_imm, 2, 0)
         E(b_cond, f"lu_{k}", "eq")
         if ui and 2 in tbip:                                              # (ui) a toggle: dim below the middle, full from it
@@ -1829,6 +1850,8 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
         E(subs_reg, 0, 0, 2)
         E(b_cond, f"lq_{k}", "ge")
         E(raw, h(0x4240))                                                 # rsbs r0, r0, #0
+        if LL:
+            E(movw, 1, KB_LEFT)
         a.label(f"lq_{k}")
         E(lsrs_imm, 0, 0, 6)
         E(cmp_imm, 0, 127)
@@ -1840,7 +1863,11 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
         a.label(f"lw_{k}")
         E(strb_imm, 0, 7, K_VAL + k)
         imm32(0, UI_KNOB if ui else COL_KNOB)
-        E(strh_imm, 0, 7, K_CODE + 2 * k)
+        if LL:
+            E(orrs_reg, 1, 0)
+            E(strh_imm, 1, 7, K_CODE + 2 * k)
+        else:
+            E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
     if not noblink:                                                       # (noblink, RH58: no blink; it also lit LED 40 + t, not a track's)
         imm32(0, CI.HAL_TICK)

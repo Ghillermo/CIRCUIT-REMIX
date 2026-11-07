@@ -8,9 +8,39 @@ import cue  # noqa: E402
 import gstereo  # noqa: E402
 import linein  # noqa: E402
 import slink  # noqa: E402
+import rhbuild  # noqa: E402
 import stsplit  # noqa: E402
 
 NAME = "RH50"
+
+
+def _rtdc_segs(L):
+    """(RH68) tools/rtdc.py at core 0's P:$46, going on to sp0's NOTE"""
+    import rtdc
+    import sp0 as SP0
+    probe = []
+    if rhbuild.OPT.get("c0probe"):                                 # (RD37) tools/c0probe.py after DCX
+        import c0probe
+        probe = c0probe.segs()
+    if rhbuild.OPT.get("resmap"):                                  # (RD39) tools/resmap.py: core 0's pass counter and stack levels
+        import resmap
+        probe = probe + resmap.segs()
+    fm = []
+    if rhbuild.OPT.get("fm"):                                      # (RD38) tools/fm0.py, with synth0's labels
+        import fm0
+        import synth0
+        import linein
+        spl = stsplit.code(L["gr"])[1]["spl"]
+        tabs = synth0.code(0, env2=True)[3]
+        li = linein.code(spl, two=True, fx=tabs)[1]["li"]
+        lab = synth0.code(li, env2=True, sp=True, sl=True)[1]
+        if rhbuild.OPT.get("fm8"):                                 # (RD40) tools/fm8c0.py in fm0's places (FMW at the same address)
+            import fm8c0
+            assert fm8c0.PIECES["fmw"][0] == fm0.FMW_AT and fm8c0.NF == fm0.NF
+            fm = fm8c0.code(lab)
+        else:
+            fm = fm0.code(lab)
+    return rtdc.segs(SP0.code(L)[1]["e_note"]) + probe + fm
 
 
 def build(name=NAME, synth=False, **kw):
@@ -36,7 +66,7 @@ def build(name=NAME, synth=False, **kw):
             tabs = synth0.code(0, env2=True)[3]
             li = linein.code(spl, two=True, fx=tabs)[1]["li"]
             return (linein.segs(spl, two=True, fx=tabs, **excl) + synth0.segs(li, env2=True, sp=rh55, sl=rh58) + (SP0.segs(L) if rh55 else [])
-                    + (fxroute.segs() if rh58 else [])
+                    + (fxroute.segs() if rh58 else []) + (_rtdc_segs(L) if rhbuild.OPT.get("rtdc") else [])
                     + gstereo.segs(synth0.code(li, env2=True, sp=rh55)[1]["sy"], multi=True))
         li = linein.code(spl, two=True)[1]["li"]
         if synth:
