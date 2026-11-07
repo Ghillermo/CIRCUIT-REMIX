@@ -56,6 +56,11 @@ SYNC_GAP = 0
 ENTRIES = ("spx", "tick", "note", "spit", "sfm", "sds", "slp", "shp", "s24", "gpm", "gpos", "gdm", "gds", "glp", "ghp")
 
 
+def _rtdc():
+    import rtdc
+    return rtdc
+
+
 def entry(name):
     return AT + 2 * ENTRIES.index(name)
 
@@ -85,6 +90,8 @@ def items(tab_at, gr, part="a", spx=None):
     """gr: granular0's labels (g_save / g_rest, for SPX); part "a" (at P:AT: the entries, the hooks, the distortion) or "b" (after the
     tables at P:TAB: SPX and its effects); spx = part b's SPX (for part a's entry)"""
     import granular0 as G
+    import rhbuild
+    dc = rhbuild.OPT.get("rtdc", False)                    # (RH68) tools/rtdc.py: NOTE through its DCN, SPX calls its DCX
     L = []
 
     def e(*s):
@@ -104,7 +111,7 @@ def items(tab_at, gr, part="a", spx=None):
     # ---- the entries
     e(("label", "entries"))
     for n in ENTRIES:
-        e(("jmp", spx if n == "spx" else f"e_{n}"))
+        e(("jmp", spx if n == "spx" else _rtdc().DCN_AT if dc and n == "note" else f"e_{n}"))
 
     # ================================================================ TICK (from SY, once a block): one track's update in turn; the
     # granular slots' pitch (for the follow); the blocks from zero once
@@ -231,7 +238,7 @@ def items(tab_at, gr, part="a", spx=None):
     e(("label", "e_spx"), ("jsr", gr["g_save"]), f"move {yv(G_MAG)},a", f"move #>${MAGIC:x},x0", "cmp x0,a", ("jcc", "ne", "sx_x"))
     for t in range(NT):
         e(f"move #>${t:x},a", ("jsr", "px_t"))
-    e(("label", "sx_x"), ("jsr", gr["g_rest"]), ("jmp", MIX))
+    e(("label", "sx_x"), *([("jsr", _rtdc().DCX_AT)] if dc else []), ("jsr", gr["g_rest"]), ("jmp", MIX))
     # px_t (a1 = the track)
     e(("label", "px_t"), f"move a1,{yv(G_T)}", *key_r1("pt_x"),
       f"move {yv(G_T)},a", "asl #6,a,a", f"add #>${TRK_BUF:x},a", "movep y:<<$ffffd0,b", "asl #5,b,b", "add b,a",
@@ -328,8 +335,10 @@ def code(gr):
     w, labels = C0.asm_at(short_items(items(tab_at, gr, "a", spx=lb["e_spx"])), AT)
     assert AT + len(w) <= END, f"sp0 ends at {AT + len(w):#x}"
     labels.update(lb)
+    import rhbuild
     for n in ENTRIES:
-        assert w[entry(n) - AT:entry(n) - AT + 2] == [0x0AF080, labels[f"e_{n}"]], n
+        to = _rtdc().DCN_AT if rhbuild.OPT.get("rtdc") and n == "note" else labels[f"e_{n}"]
+        assert w[entry(n) - AT:entry(n) - AT + 2] == [0x0AF080, to], n
     return w, labels, tw + wb, tab_at
 
 

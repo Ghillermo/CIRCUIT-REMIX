@@ -10,6 +10,9 @@ The stock of the Rhythm (read in the firmware, emulated): the LED task writes co
     is set (the stock's dimmed LEDs);
   * so a code of ours is shown at full brightness, and the stock's value codes show the stock's parameters: no code reaches the side-chain,
     the compressor or the reverb / delay parameters.
+leftlight (RH78; the user, 2026-11-06: «los bipolares, con un color en la misma gama (preferentemente más claro) hacia la izquierda»): a colour
+code with bit 15 = that colour's lighter shade (each channel halfway to white) before the scaling; the modules set it in the overlay (never in
+the frame: the stock's stage would read past its table) for a bipolar knob left of its middle (BIPLEFT).
 
 Ours: an overlay in our RAM (rhstate "kbright": [0] the knobs to take (bit k), [1..8] their values 0..127, [10..25] their colour codes) that
 a module's LED code fills for the frame it draws (sckn, fxkeys with bright=True); this module empties it before the LED task builds a frame
@@ -34,12 +37,14 @@ O_DIM, P_DIM, BIT_DIM = 0x88, 2, 10
 LED_KNOB0 = 60
 O_KB = rhstate.OFF["kbright"][0]
 K_MASK, K_VAL, K_CODE = 0, 1, 10
+BIPLEFT = 0x8000                                    # (leftlight) the overlay's code: the lighter shade
 
 
 def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 << 14 if lr else 0))
 
 
 def arm_code(base, L, prev):
+    import rhbuild
     a = Asm(base)
     E = a.emit
 
@@ -103,9 +108,23 @@ def arm_code(base, L, prev):
     E(lsls_imm, 0, 7, 1)
     E(adds_reg, 0, 0, 6)
     E(raw, h(0x8940))                                                      # ldrh r0, [r0, #10]: the colour code
+    LL = rhbuild.OPT.get("leftlight")
+    if LL:                                                                 # (leftlight) bit 15: the colour's lighter shade
+        E(lsrs_imm, 2, 0, 15)
+        E(lsls_imm, 0, 0, 17)
+        E(lsrs_imm, 0, 0, 17)
     imm32(1, COLOURS)
     E(lsls_imm, 0, 0, 2)
     E(raw, h(0x5808))                                                      # ldr r0, [r1, r0]
+    if LL:                                                                 # halfway to white: c + (255 - c) / 2 a channel
+        E(cmp_imm, 2, 0)
+        E(b_cond, "ko_l", "eq")
+        E(raw, h(0x43C1))                                                  # mvns r1, r0
+        E(lsrs_imm, 1, 1, 1)
+        imm32(2, 0x7F7F7F)
+        E(raw, h(0x4011))                                                  # ands r1, r2
+        E(adds_reg, 0, 0, 1)
+        a.label("ko_l")
     E(str_sp, 0, 0)                                                        # [sp] = its RGB
     E(adds_reg, 0, 6, 7)
     E(ldrb_imm, 1, 0, K_VAL)                                               # r1 = the value

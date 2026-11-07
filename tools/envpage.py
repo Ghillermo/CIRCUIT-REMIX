@@ -62,6 +62,7 @@ NW = NSL * NWS + NG * NWG
 # the knobs' defaults by sound (granular, synth): start, length, slope, -> filter
 KDEF = {SY.SND_GRAN: DEF_G, SY.SND_SYNTH: (0, SY.LEN_DEF, 64, 64)}
 BIPK = (0, 0, 1, 1)
+KB_LEFT = 0x8000                                                    # kbright.BIPLEFT (leftlight, RH78)
 
 
 def atk_blocks(v):
@@ -108,6 +109,8 @@ def model_block(sslope=(64,) * 4, gvals=(DEF_G,) * 4):
 
 
 def arm_code(base, L, prev, noblink=False):
+    import rhbuild
+    LL = rhbuild.OPT.get("leftlight")                                    # (RH78) bipolar knobs: the lighter shade left
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -234,7 +237,7 @@ def arm_code(base, L, prev, noblink=False):
     E(lsrs_reg, 1, 2)
     E(movs_imm, 2, 0xFF)
     E(raw, h(0x4011))                                                     # ands r1, r2
-    E(bl, L["c_syv"])
+    E(bl, L.get("c_syvr", L["c_syv"]))                                    # (RH77, synthpage va: the raw indices)
     E(b, "eg_x")
     a.label("eg_ss")
     E(mov_reg, 4, 0)                                                      # the synth slot's slope in our block
@@ -289,7 +292,7 @@ def arm_code(base, L, prev, noblink=False):
     E(movs_imm, 2, 0xFF)
     E(raw, h(0x4011))                                                     # ands r1, r2
     E(mov_reg, 2, 7)
-    E(bl, L["c_syp"])
+    E(bl, L.get("c_sypr", L["c_syp"]))
     E(b, "et_p")
     a.label("et_ss")
     E(bl, "c_evb")
@@ -356,10 +359,10 @@ def arm_code(base, L, prev, noblink=False):
     E(mov_reg, 0, 4)
     E(movs_imm, 1, SY.K_SPARE)
     a.label("c_evk1")
-    E(bl, L["c_syv"])
+    E(bl, L.get("c_syvr", L["c_syv"]))                                    # (va: the start has no knob of the Synth page: raw, no matrix)
     E(mov_reg, 6, 0)                                                      # r6 = start
     E(mov_reg, 0, 4)
-    E(movs_imm, 1, SY.K_REL)
+    E(movs_imm, 1, SY.K_LEN if "c_syvr" in L else SY.K_REL)              # (va: the length = the release, knob 15)
     a.label("c_evk2")
     E(bl, L["c_syv"])
     E(mov_reg, 7, 0)                                                      # r7 = length
@@ -714,10 +717,14 @@ def arm_code(base, L, prev, noblink=False):
             E(mov_reg, 0, 4)
             E(movs_imm, 1, k)
             E(bl, "c_evget")
+            if LL:                                                        # (RH78, leftlight) r1 = kbright's left flag
+                E(movs_imm, 1, 0)
             if BIPK[k]:
                 E(subs_imm8, 0, 64)                                       # from the middle: |v - 64| x 2
                 E(b_cond, f"lq_{k}", "ge")
                 E(raw, h(0x4240))                                         # rsbs r0, r0, #0
+                if LL:
+                    E(movw, 1, KB_LEFT)
                 a.label(f"lq_{k}")
                 E(lsls_imm, 0, 0, 1)
                 E(cmp_imm, 0, 127)
@@ -726,10 +733,14 @@ def arm_code(base, L, prev, noblink=False):
                 a.label(f"lu_{k}")
             E(strb_imm, 0, 7, K_VAL + k)
             E(movs_imm, 0, COL)
+            if LL:
+                E(orrs_reg, 1, 0)
+                E(strh_imm, 1, 7, K_CODE + 2 * k)
         else:
             E(movs_imm, 0, 0)
             E(strb_imm, 0, 7, K_VAL + k)
-        E(strh_imm, 0, 7, K_CODE + 2 * k)
+        if not (LL and k < 4):
+            E(strh_imm, 0, 7, K_CODE + 2 * k)
         E(strh_w_imm, 0, 5, 2 * (LED_KNOB0 + k))
     if not noblink:                                                       # (noblink, RH58: no blink; it also lit LED 40 + t, not a track's)
         imm32(0, CI.HAL_TICK)
@@ -759,6 +770,8 @@ def install(img, report, base_addr, noblink=False):
              **{k: lab("synthpage", k) for k in ("c_sysnd", "c_syslot", "c_syv", "c_syp", "c_syb")},
              **{k: lab("granpage", k) for k in ("c_gpmst", "c_gpmopen", "c_gpw", "c_gnslot", "c_gnb", "c_gnv")},
              **{k: lab("stockplus", k) for k in ("c_spview", "c_spheld")})
+    if report["synthpage"].get("va"):                                     # (RH77, synthpage va) the raw indices 13-15
+        L.update(c_syvr=lab("synthpage", "c_syvr"), c_sypr=lab("synthpage", "c_sypr"))
     prev = dict(knob=u(SLOT_KNOB) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert prev["knob"] == lab("synthpage", "c_syknob")
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)

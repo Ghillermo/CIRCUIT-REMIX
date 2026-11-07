@@ -72,6 +72,7 @@ LED_KNOB0 = SP.LED_KNOB0
 CONT, SUBVIEW = SP.CONT, SP.SUBVIEW
 SLOT_KNOB = GP.SLOT_KNOB
 BIT_CLEAR = SP.BIT_CLEAR
+KB_LEFT = 0x8000                                                    # kbright.BIPLEFT (leftlight, RH78)
 
 
 def clamp(v, i=0): return max(K1_MIN, min(K1_MAX, v)) if i == KNOB_LO else max(0, min(VMAX, v))
@@ -89,6 +90,7 @@ def model_sends(mask, t, i, v, get, gap):
 
 
 def arm_code(base, L, prev, P, Q):
+    import rhbuild
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -636,9 +638,14 @@ def arm_code(base, L, prev, P, Q):
     E(mov_reg, 0, 4)
     E(adds_imm3, 1, 6, KNOB_LO)
     E(bl, L["c_tcget"])
+    LL = rhbuild.OPT.get("leftlight")
+    if LL:                                                                # (RH78, leftlight) r3 = kbright's left flag
+        E(movs_imm, 3, 0)
     E(subs_imm8, 0, CENTRE)                                               # from the centre: |v - 64| x 2
     E(b_cond, "ld_q", "ge")
     E(raw, h(0x4240))                                                     # rsbs r0, r0, #0
+    if LL:
+        E(movw, 3, KB_LEFT)
     a.label("ld_q")
     E(lsls_imm, 0, 0, 1)
     E(cmp_imm, 0, VMAX)
@@ -650,7 +657,11 @@ def arm_code(base, L, prev, P, Q):
     E(lsls_imm, 1, 6, 1)
     E(adds_reg, 1, 1, 7)
     E(movs_imm, 0, COL)
-    E(strh_imm, 0, 1, K_CODE)
+    if LL:
+        E(orrs_reg, 3, 0)
+        E(strh_imm, 3, 1, K_CODE)
+    else:
+        E(strh_imm, 0, 1, K_CODE)
     E(lsls_imm, 1, 6, 1)
     E(adds_reg, 1, 1, 5)
     E(strh_w_imm, 0, 1, 2 * LED_KNOB0)

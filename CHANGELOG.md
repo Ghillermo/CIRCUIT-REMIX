@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## Alpha 0.12 (2026-11-07) — FM de 8 operadores, VA, motores en Sample mode, modos de voz (experimental)
+
+> ⚠️ **Experimental: necesita pulirse. Sin probar en el aparato:** todo lo nuevo se ha comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria, y los DSP en un emulador). Puede haber fallos, ruidos o cuelgues. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.
+
+**Español.** **Alpha 0.12** (marca `A0.12`) y **Alpha 0.12S** (marca `A0.12S`: sin la copia de proyectos, el borrado de packs, la copia de samples ni el sonido del proyecto en la tarjeta). Parten de Alpha 0.10 (no llevan los módulos de Arrhythmia). Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **Motores en Sample mode** (pad 8 = el selector): en la fila 3, sample, solo entrada, entrada → VCA / VCF / FX, VA, granular y FM, con sus opciones en su columna. El menú de pista queda solo para las vistas.
+- **El menú de pista como la fila 1 de CIRCUIT-HACKS:** 1 Secuenciables (Shift: No secuenciables), 2 la página del sonido, 3 OSC 2 / la envolvente de pitch del FM, 4 **Filtro / VCA**, 5 **Envolvente + LFO**, 6 Matriz; 9 stock, 10 Stock+, 16 Project init.
+- **El VA de CIRCUIT-HACKS** (sustituye al sinte anterior): dos osciladores con morph, forma, supersaw, FM, ring, sync y modos bit a bit, en las páginas **OSC 1 / OSC 2**, con envolvente → tono / forma / morph / FM / ring / mezcla.
+- **FM de 8 operadores** de CIRCUIT-HACKS (envolventes del DX7, 56 algoritmos, 24 instrumentos) con su página en Sample mode.
+- **Modos de voz** de CIRCUIT-HACKS (pad 16 de Sample mode): retrigger, legato, glide, cuatro unísonos y poly; glide y desafinación en K1 / K2. **Polifonía** de hasta 4 voces de sinte, con un tope que protege el DSP.
+- **Latch** en la vista Note (Shift + tecla): un acorde que sigue a cada nota. La escala propia pasa a Shift + Note en la vista Note ampliada.
+- **El sonido de cada proyecto en la tarjeta:** el FM, los modos de voz y los valores nuevos del VA viajan con el proyecto (en el banco de patches del pack).
+- **De-click de los redisparos** (pad 19 de Sample mode, el del de-clicker), en cualquier modo y en reverse.
+- Los knobs bipolares, más claros a la izquierda; cada zona de un knob en su color.
+- Para que quepa todo, el código del DSP va empaquetado; el instalador lo empaqueta a partir de tu firmware oficial.
+
+**English.** **Alpha 0.12** (marker `A0.12`) and **Alpha 0.12S** (marker `A0.12S`: without the project copy, the pack delete, the sample copy or the project's sound on the card). They build on Alpha 0.10 (no Arrhythmia modules). Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement. Not tested on the device:** everything new has been checked in emulation (the device's code run on a dump of its memory, and the DSPs in an emulator). There may be bugs, noises or hangs. **Back up your SD card.** If it does not start: **Sample Rec + Samples + Note** at power-on and install Alpha 0.10 or the official firmware.
+
+What's new:
+- **Engines in Sample mode** (pad 8 = the selector): on row 3, sample, input only, input → VCA / VCF / FX, VA, granular and FM, with their options in their column. The track menu is left for the views.
+- **The track menu as CIRCUIT-HACKS' row 1:** 1 Sequenceable (Shift: Non-sequenceable), 2 the sound's page, 3 OSC 2 / the FM's pitch envelope, 4 **Filter / VCA**, 5 **Envelope + LFO**, 6 Matrix; 9 stock, 10 Stock+, 16 Project init.
+- **CIRCUIT-HACKS' VA** (replaces the earlier synth): two oscillators with morph, shape, supersaw, FM, ring, sync and bitwise modes, on the **OSC 1 / OSC 2** pages, with envelope → pitch / shape / morph / FM / ring / mix.
+- **CIRCUIT-HACKS' 8-operator FM** (DX7 envelopes, 56 algorithms, 24 instruments) with its page in Sample mode.
+- **CIRCUIT-HACKS' voice modes** (Sample mode pad 16): retrigger, legato, glide, four unisons and poly; glide and detune on K1 / K2. **Polyphony** of up to 4 synth voices, with a cap that protects the DSP.
+- **Latch** in the Note view (Shift + key): a chord that follows every note. The own scale moves to Shift + Note in the expanded Note view.
+- **Each project's sound on the card:** the FM, the voice modes and the VA's new values travel with the project (in the pack's patch bank).
+- **Retrigger de-click** (Sample mode pad 19, the de-clicker's), in any mode and in reverse.
+- Bipolar knobs lighter to the left; each zone of a knob in its own colour.
+- To fit it all, the DSP code is packed; the installer packs it from your official firmware.
+
 ## Alpha 0.10 (2026-11-04) — sin los módulos de Arrhythmia (experimental)
 
 **Español.** **Alpha 0.10** (marca `A0.10`) y **Alpha 0.10S** (marca `A0.10S`) son **Alpha 0.11 / 0.11S sin los módulos de Arrhythmia**: lo mismo (el arreglo del bucle de arranque de 0.09, la matriz de modulación, los carriles con destino propio, el carril extra y las rampas, los modificadores del arpegio, el Nudge de tramo, guardar al parar, la curva de velocity, el «1 de n» en las cadenas, el destello de las pistas), sin el código que ejecuta módulos. Para quien no quiera ese código en el aparato. Arranca en frío y tras reiniciar. Experimental: **haz una copia de la tarjeta SD.** Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
@@ -27,7 +61,7 @@ Novedades:
 
 **App de la tarjeta** (`tools/rm_sd_app.html`):
 - **Renombrar** packs y samples: cambia solo el nombre tras el prefijo `NN_` y rechaza lo que rompería los datos (vacío, demasiado largo, caracteres que la tarjeta no admite, espacio o punto en un extremo, el mismo nombre que otro fichero).
-- **Módulos (prueba de concepto)…:** subir, comprobar (cabecera, CRC y lectura de vuelta), arrancar y parar un módulo de Arrhythmia, con su estado. Necesita Alpha 0.11 o posterior.
+- **Módulos (prueba de concepto)…:** subir, comprobar (cabecera, CRC y lectura de vuelta), arrancar y parar un módulo de Arrhythmia, con su estado. Solo con Alpha 0.11 / 0.11S.
 
 **English.** Two new versions: **Alpha 0.11** (marker `A0.11`) and **Alpha 0.11S** (marker `A0.11S`: without the project copy, the pack delete or the sample copy). Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
 
@@ -48,7 +82,7 @@ What's new:
 
 **Card app** (`tools/rm_sd_app.html`):
 - **Rename** packs and samples: only the name after the `NN_` prefix changes, and anything that would break the data is refused (empty, too long, characters the card does not allow, a space or dot at either end, the same name as another file).
-- **Modules (proof of concept)…:** upload, check (header, CRC and read-back), start and stop an Arrhythmia module, with its status. Needs Alpha 0.11 or later.
+- **Modules (proof of concept)…:** upload, check (header, CRC and read-back), start and stop an Arrhythmia module, with its status. Only with Alpha 0.11 / 0.11S.
 
 ## App de la tarjeta (2026-11-02)
 

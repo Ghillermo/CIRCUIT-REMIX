@@ -72,6 +72,8 @@ def page_defaults():
     import synthpage as SY
     gdef = GP.DEF + (0,)                                  # (stereo: the spread)
     sdef = SY.DEF[:SY.K_REL] + (SY.LEN_DEF,) + SY.DEF[SY.K_REL + 1:]
+    if SY.va():                                           # (va, RH77) the raw indices 0..17 (c_sypr)
+        sdef = SY.DEF_VA_RAW
     return gdef, sdef, EV.DEF_G
 TP_O = rhstate.OFF2["trkphoto"][0]
 PH_REC = 26                                               # a track's photo: 25 parameters, the selected sample
@@ -936,6 +938,8 @@ def install(img, report, base_addr, cue=False, latch=False, allpages=False, boot
     if allpages:
         L.update(c_s0reset=lab("spall", "c_s0reset"), c_gnslot=lab("granpage", "c_gnslot"), c_gnp=lab("granpage", "c_gnp"),
                  c_evset=lab("envpage", "c_evset"), **{k: lab("synthpage", k) for k in ("c_sysnd", "c_syslot", "c_syp")})
+        if report["synthpage"].get("va"):                                 # (va) the raw indices: 16 bytes + RING / env -> morph
+            L["c_syp"] = lab("synthpage", "c_sypr")
     saves = list(MF.SAVE_CALLS)
     prev = dict(press=u(AR.SV_VT) & ~1, rel=u(AR.SV_VT + 4) & ~1, pad=rhbuild.bw_target(img, GP.PP_ENTRY),
                 rel_p=rhbuild.bw_target(img, GP.PR_ENTRY), btn=rhbuild.bw_target(img, CI.BTN_ENTRY),

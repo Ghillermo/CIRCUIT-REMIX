@@ -33,6 +33,7 @@ import core0 as C0  # noqa: E402
 
 AT = 0x2010                                            # P (granular0's single-track place, free since RH50's multi; RD20's test seg at $2000)
 TAB = 0x2890                                           # P: the tables (after stsplit's $2600-$2883)
+MAIN_END = 0x2600
 Y0, SN, NSLOT = 0x1A00, 0x40, 4                        # core 0 Y (free: docs/RECURSOS.md)
 PB1, PB2, PB3 = 0x1B00, 0x1B20, 0x1B40                 # Y: OSC 1, OSC 2, SUB + noise for one block
 GL = 0x1B60
@@ -90,6 +91,15 @@ S_PH1B, S_PH2B = 62, 63
 P_START, P_LEN = 7, 8
 
 
+def _fmw():
+    """(RD38, OPT fm) FMW's address, else None"""
+    import rhbuild
+    if not rhbuild.OPT.get("fm"):
+        return None
+    import fm0
+    return fm0.FMW_AT
+
+
 def frac(x):
     return max(-(1 << 23), min((1 << 23) - 1, round(x * (1 << 23)))) & 0xFFFFFF
 
@@ -115,7 +125,9 @@ def tables():
     return t
 
 
-def items(tab_at, entry, env2=False, sp=False, sl=False):
+def items(tab_at, entry, env2=False, sp=False, sl=False, poly=None, va=False, vm=None):
+    """va (RD41): tools/va0.py's oscillators at s_play in place of the passes, the waves and (with env2) the old envelope; vm (RH80,
+    tools/vmode0.py): the note-on's snap and attack in VMN, the note-off's stamp VMO, MIXG through VMX"""
     L = []
     if sp:
         import sp0 as SP0
@@ -147,7 +159,7 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
         e(f"move #>${Y0 + SN * s:x},r6", "nop", ("jsr", "sy_slot"))
     if env2:
         for g in range(GE_N):
-            e(f"move #>${GE0 + SN * g:x},r6", "nop", ("jsr", "ge_slot"))
+            e(f"move #>${GE0 + SN * g:x},r6", "nop", ("jsr", (vm["vmx"] if vm else poly["mixg"]) if poly and g == GE_N - 1 else "ge_slot"))
     for k in range(7):
         e(f"move {y(SAVE + k)},r{k}", ("words", [0x05F060 | k, SAVE + 7 + k]))
     e(("jmp", entry))
@@ -167,19 +179,27 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
             e(f"move #>${GE0 + SN * g:x},r6", "nop", ("jsr", "q_slot"))
     e(*hook("note"), ("jmp", "q_lp"), ("label", "q_done"), "rts")
     # q_slot (r6 = the slot; y0 = w0, y1 = w1; keeps x1)
-    e(("label", "q_slot"), f"move {ys(C_KEY)},a", f"move #>${KEY:x},x0", "cmp x0,a", ("jcc", "ne", "q_r"),
+    e(("label", "q_slot"), *([("jmp", poly["pqw"]), ("label", "q_slot2")] if poly else []), f"move {ys(C_KEY)},a", f"move #>${KEY:x},x0", "cmp x0,a", ("jcc", "ne", "q_r"),
       f"move {ys(C_TRK)},a", "tst a", ("jcc", "eq", "q_r"),
       "move y0,b", "and #>$7,b", "move b1,b", "add #>$1,b", "cmp a,b", ("jcc", "ne", "q_r"),
       ("jsr", "s_init"),
       "move y0,b", "and #>$f00000,b", "move b1,b", "move #>$900000,x0", "cmp x0,b", ("jcc", "ne", "q_off"),
       # note-on: the velocity (v / 127 ~ (v << 16) + (v << 9)), the target pitch, snapped when resting or without glide, the attack
       "move y0,a", "asr #8,a,a", "and #>$7f,a", "move a1,a", "move a1,x0", "asl #16,a,a", "move x0,b", "asl #9,b,b", "add b,a",
-      f"move a1,{ys(S_VEL)}", f"move y1,{ys(S_TGT)}",
-      f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "eq", "q_snap"),
-      f"move {ys(C_GLD)},a", f"move #>${ONE:x},x0", "cmp x0,a", ("jcc", "lt", "q_att"),
-      ("label", "q_snap"), f"move y1,{ys(S_PIT)}",
-      ("label", "q_att"), "clr a", f"move a,{ys(S_STG)}")
-    if env2:                                                            # (env2) the note held: the gate
+      f"move a1,{ys(S_VEL)}", f"move y1,{ys(S_TGT)}")
+    if vm and env2:                                                     # (RH80) the voice modes: VMN snaps, attacks and opens the gate
+        e(("jmp", vm["vmn"]),
+          ("label", "q_off"), "move #>$800000,x0", "cmp x0,b", ("jcc", "ne", "q_r"),
+          "clr a", f"move a,{ys(S_GATE)}", ("jsr", vm["vmo"]),
+          ("label", "q_r"), "rts")
+    else:
+        e(f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "eq", "q_snap"),
+          f"move {ys(C_GLD)},a", f"move #>${ONE:x},x0", "cmp x0,a", ("jcc", "lt", "q_att"),
+          ("label", "q_snap"), f"move y1,{ys(S_PIT)}",
+          ("label", "q_att"), "clr a", f"move a,{ys(S_STG)}")
+    if vm and env2:
+        pass
+    elif env2:                                                          # (env2) the note held: the gate
         e(f"move #>${ONE:x},a", f"move a,{ys(S_GATE)}", "rts",
           ("label", "q_off"), "move #>$800000,x0", "cmp x0,b", ("jcc", "ne", "q_r"),
           "clr a", f"move a,{ys(S_GATE)}",
@@ -200,7 +220,7 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
       f"move a1,{ys(S_T)}", "clr b", *[f"move b,{ys(o)}" for o in (S_LL, S_LB, S_HL, S_HB, S_LON, S_HON)], ("label", "s_same"),
       # the buffer Y:$304F0 + 64 t + 32 (y:$FFFFD0), the track's parameters Y:$307C8 + $20 t (r5)
       "move a1,x0", "movep y:<<$ffffd0,b", "asl #5,b,b", "move b1,x1", "tfr a,b", "asl #6,b,b", f"add #>${TRK_BUF:x},b", "add x1,b",
-      f"move b1,{ys(S_BUF)}", "tfr a,b", "asl #5,b,b", f"add #>${PAR:x},b", "move b1,r5",
+      *([("jsr", poly["setb"])] if poly else [f"move b1,{ys(S_BUF)}"]), "tfr a,b", "asl #5,b,b", f"add #>${PAR:x},b", "move b1,r5",
       # glide: PIT += (TGT - PIT) x C_GLD
       f"move {ys(S_TGT)},a", f"move {ys(S_PIT)},b", "sub b,a", "move a,x0", f"move {ys(C_GLD)},y0", "mac y0,x0,b", f"move b,{ys(S_PIT)}",
       # the stock's pitch knob: (p6 - 64) x $3333
@@ -210,13 +230,14 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
       f"lua (r6+${S_INC1:x}),r4", ("jsr", "s_inc"),
       f"move {y(G_T1)},a", f"move {ys(C_P2)},x0", "add x0,a", f"lua (r6+${S_INC2:x}),r4", ("jsr", "s_inc"),
       f"move {ys(S_INC1)},a", "asr a", f"move a,{ys(S_INCS)}",
-      ("jsr", "s_env2" if env2 else "s_env"),
+      ("jsr", _fmw() if env2 and _fmw() else "s_env2" if env2 else "s_env"),       # (RD38, OPT fm) tools/fm0.py's FMW, which calls s_env2
       # resting and silent: zeros, and nothing more
       f"move {ys(S_BUF)},r0", f"move {ys(S_STG)},a", f"move #>${IDLE:x},x0", "cmp x0,a", ("jcc", "ne", "s_play"),
       f"move {ys(S_EC)},a", "tst a", ("jcc", "ne", "s_play"),
       "clr a", "rep #$20", "move a,y:(r0)+", ("label", "s_r"), "rts",
       ("label", "s_play"), *([("jsr", SL_AT), "tst a", ("jcc", "ne", "sy_ps")] if sl else []))
 
+    mark_p = len(L)
     # ---- pass A: OSC 1's phases -> PB1 (its phase at the block's start kept, for the sync)
     e(f"move {ys(S_PH1)},a", f"move a,{y(G_P1O)}", f"move {ys(S_INC1)},x0", f"move #>${PB1:x},r1", "nop",
       "do #$20,${a_end:x}", "add x0,a", "move a1,a", "move a,y:(r1)+", ("label", "a_end"), f"move a,{ys(S_PH1)}")
@@ -261,10 +282,15 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
       ("label", "e_basic"),
       f"move #>${PB1:x},r1", f"move #>${PB2:x},r2", f"move {ys(C_G1)},y0", f"move {ys(C_G2)},y1", "nop",
       "do #$20,${mb_end:x}", "move y:(r1)+,x0", "mpy y0,x0,a", "move y:(r2)+,x0", "mac x0,y1,a", "move a,y:(r0)+", ("label", "mb_end"))
+    if va:                                                                       # (RD41) CIRCUIT-HACKS' oscillators instead
+        import va0
+        del L[mark_p:]
+        L.extend(va0.items(sys.modules[__name__], ys, y, int(va)))
     # ---- the VCA: the envelope x velocity, ramped (EC += ES each sample)
     e(("label", "e_vca"), *hook("sds"), f"move {ys(S_BUF)},r0", f"move {ys(S_EC)},b", f"move {ys(S_ES)},x1", "nop",
       "do #$20,${v_end:x}", "add x1,b", "move y:(r0),x0", "move b,y0", "mpy y0,x0,a", "move a,y:(r0)+", ("label", "v_end"),
       f"move b,{ys(S_EC)}")
+    e(("label", "s_filt"))                                                        # (fm0's FM slots go on from here)
     # ---- the filter: the track's low-pass (+ C_EF x the envelope) and high-pass, as granchain's
     e(f"move y:(r5+${LP_I:x}),a", "and #>$7f,a", "move a1,a", f"move {ys(S_ENV)},x0", f"move {ys(C_EF)},y0", "mpy y0,x0,b",
       "asr #16,b,b", "move b1,b", "add b,a", *hook("slp"), "tst a", ("jcc", "ge", "f_lo"), "clr a", ("label", "f_lo"),
@@ -316,6 +342,7 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
       "tfr b,a", "move #>$0,r3", "nop", "rep #$17", "norm r3,a",
       "move a,x0", "move #>$200000,a", "andi #$fe,ccr", "rep #$18", "div x0,a", "move a0,y:(r4)+",
       "move r3,a", "neg a", "add #>$2,a", "move a1,y:(r4)+", "rts")
+    mark_w = len(L)
     # s_wset: a = inc, r4 -> inc / mantissa / shift: the polyBLEP's words for a wave routine
     e(("label", "s_wset"), f"move #>${ONE:x},b", "sub a,b", f"move b,{y(G_THH)}",
       "move y:(r4)+,a", f"move #>${ONE:x},b", "sub b,a", f"move a,{y(G_THL)}", "move y:(r4)+,a", f"move a,{y(G_RM)}",
@@ -344,6 +371,7 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
     e(("label", "w_puln"), f"move {y(G_K)},x0", "do #$20,${wq_end:x}", "move y:(r1),a", "tfr a,b", "add x0,b", "move b1,b", "sub b,a", "asr a",
       "move a,y:(r1)+", ("label", "wq_end"), ("label", "w_sawn"), "rts")
     # ================================================================ s_env: the envelope's block (r5 = the track's parameters)
+    mark_e = len(L)
     e(("label", "s_env"), f"move y:(r5+${P_ENV:x}),a", "and #>$7f,a", "move a1,a", "move a1,y1", f"add #>${tab_at['ENVT']:x},a", "move a1,r3",
       "nop", "move p:(r3),x0", f"move {ys(S_STG)},b", "tst b", ("jcc", "ne", "e_d"),
       "move y1,a", "move #>$40,y0", "cmp y0,a", ("jcc", "gt", "e_slow"), f"move #>${ONE:x},a", ("jmp", "e_top"),
@@ -359,6 +387,8 @@ def items(tab_at, entry, env2=False, sp=False, sl=False):
       ("label", "e_fl"), f"move #>${FLOOR:x},y0", "cmp y0,a", ("jcc", "ge", "e_st"), "clr a", f"move #>${IDLE:x},b", f"move b,{ys(S_STG)}",
       ("label", "e_st"), f"move a,{ys(S_ENV)}",
       "move a,x0", f"move {ys(S_VEL)},y0", "mpy y0,x0,a", f"move {ys(S_EC)},b", "sub b,a", "asr #5,a,a", f"move a,{ys(S_ES)}", "rts")
+    if va:                                                                       # (RD41) no waves; the old envelope only without env2
+        del L[mark_w:(len(L) if env2 else mark_e)]
     if env2:
         # ============================================================ s_env2 (r6): the envelope by the play mode, shaped (env2 above)
         e(("label", "s_env2"), f"move {ys(S_STG)},b",
@@ -501,18 +531,66 @@ def code(entry, env2=False, sp=False, sl=False):
     for k in names:
         tab_at[k] = at
         at += sizes[k]
-    w, labels = C0.asm_at(items(tab_at, entry, env2, sp, sl), AT)
-    assert AT + len(w) <= 0x2600, hex(AT + len(w))                 # (stsplit at $2600)
-    tw = [labels[n] for n in ("w_saw", "w_pul", "w_tri", "w_sin", "w_sawn", "w_puln", "w_tri", "w_sin")]
+    import rhbuild
+    va = rhbuild.OPT.get("va") or False                                 # (RD41) tools/va0.py; RH58's morph / unison go
+    if va:
+        sl = False
+    short = rhbuild.OPT.get("s0short") or rhbuild.OPT.get("poly")
+    fix = (lambda its: __import__("sp0").short_items(its)) if short else (lambda its: its)      # (RH72: one-word moves)
+    poly = None
+    if rhbuild.OPT.get("poly"):                                      # (RH72) tools/poly0.py: PQW after this code, SETB / MIXG at its B_AT
+        import poly0
+        w0, _ = C0.asm_at(fix(items(tab_at, entry, env2, sp, sl, dict(pqw=AT, setb=AT, mixg=AT), va)), AT)
+        poly = dict(pqw=AT + len(w0), setb=poly0.B_AT, mixg=poly0.B_AT + poly0.SETB_N)
+    vm = None
+    if poly and rhbuild.OPT.get("vmode"):                            # (RH80) tools/vmode0.py: VMN after poly0's piece A
+        import poly0
+        import vmode0
+        ph = dict(vmn=AT, vmo=AT, vmx=AT)
+        w1, l1 = C0.asm_at(fix(items(tab_at, entry, env2, sp, sl, poly, va, ph)), AT)
+        poly = dict(poly, pqw=AT + len(w1))
+        l1["poly"] = poly
+        a_at, wa = poly0.pieces(l1)[0]
+        vm = dict(vmn=a_at + len(wa), vmo=vmode0.O_AT, vmx=vmode0.X_AT)
+    w, labels = C0.asm_at(fix(items(tab_at, entry, env2, sp, sl, poly, va, vm)), AT)
+    if poly:
+        assert AT + len(w) == poly["pqw"]
+        labels["poly"] = poly
+    if vm:
+        labels["vm"] = vm
+    assert AT + len(w) <= MAIN_END, hex(AT + len(w))              # (stsplit at $2600)
+    tw = [0] * 8 if va else [labels[n] for n in ("w_saw", "w_pul", "w_tri", "w_sin", "w_sawn", "w_puln", "w_tri", "w_sin")]
     tw += tb["INCT"] + tb["ENVT"] + tb["F2"] + tb["Q2"]
     assert TAB + len(tw) <= 0x2E00, hex(TAB + len(tw))             # (linein at $2E00)
     return w, labels, tw, tab_at
 
 
+def va_segs(labels=None):
+    """(RD41) tools/va0.py's pieces away from the main (short forms as the main's); labels = the main's (V3's loop calls into it)"""
+    import rhbuild
+    import va0
+    short = rhbuild.OPT.get("s0short") or rhbuild.OPT.get("poly")
+    fix = (lambda its: __import__("sp0").short_items(its)) if short else (lambda its: __import__("sp0").lint(its))
+    return va0.segs(sys.modules[__name__], lambda o: f"y:(r6+${o:x})", fix, int(rhbuild.OPT.get("va") or 1), labels)
+
+
 def segs(entry, env2=False, sp=False, sl=False):
     """for granular0's extra, before gstereo's (GST calls SY, SY goes on to `entry`, the line input's LI); sl: also P:SL_AT"""
     w, labels, tw, tab_at = code(entry, env2, sp, sl)
-    return [(AT, w), (TAB, tw)] + (sl_segs(labels, tab_at, sp) if sl else [])
+    import rhbuild
+    out = [(AT, w), (TAB, tw)] + (sl_segs(labels, tab_at, sp) if sl and not rhbuild.OPT.get("va") else [])
+    if rhbuild.OPT.get("va"):                                        # (RD41) tools/va0.py's va_ctl in sl's place
+        out += va_segs(labels)
+    if "poly" in labels:                                             # (RH72) tools/poly0.py's two pieces
+        import poly0
+        out += poly0.segs(labels)
+    if "vm" in labels:                                               # (RH80) tools/vmode0.py's pieces
+        import poly0
+        import vmode0
+        vp, vl = vmode0.pieces(labels["vm"]["vmn"], labels["poly"]["mixg"])
+        assert (vl["vmn"], vl["vmo"], vl["vmx"]) == (labels["vm"]["vmn"], labels["vm"]["vmo"], labels["vm"]["vmx"])
+        out += vp
+    return out
 
 
 # ================================================================ the model (the tests'): the DSP's arithmetic, bit for bit
@@ -539,15 +617,21 @@ class Model:
     """SY's blocks: ctl[s] = slot s's 16 control words; par[t] = track t's parameter words (6, 9, $B-$D read); msgs = the queue's 16
     pairs (w0, w1), widx = the ARM's write index -> {track: its 32 samples} (y:$FFFFD0 = 0, as in dsptool)"""
 
-    def __init__(self, env2=False, sp=None, sl=False):
-        """sp (RH55): a tools/sp0.py Model, the synth's hooks into it; sl (RH58): the start's morph, the length's unison"""
-        self.sl = sl
+    def __init__(self, env2=False, sp=None, sl=False, va=False):
+        """sp (RH55): a tools/sp0.py Model, the synth's hooks into it; sl (RH58): the start's morph, the length's unison; va (RD41):
+        tools/va0.py's oscillators (its Model: .vam, the X blocks)"""
+        self.sl = sl and not va
+        self.va = va
+        if va:
+            import va0
+            self.vam = va0.Model(int(va))
         self.tab = tables()
         self.g = dict(qkey=0, qrd=0)
         self.env2 = env2
         self.sp = sp
         self.ge = [dict() for _ in range(GE_N)]                    # (env2) the granular slots' envelopes
         self.st = [dict(mag=0) for _ in range(NSLOT)]
+        self.vm = None                                             # (RH80, tools/vmode0.py) dict(flags=[8], off=[4], vblk=0)
 
     def inc(self, P):
         """s_inc: -> (inc, 1 / inc's mantissa, its shift)"""
@@ -572,7 +656,7 @@ class Model:
         while g["qrd"] != widx & 15:
             w0, w1 = msgs[g["qrd"]]
             g["qrd"] = (g["qrd"] + 1) & 15
-            for c, st in blocks:
+            for k, (c, st) in enumerate(blocks):
                 if c[C_KEY] != KEY or c[C_TRK] == 0 or (w0 & 7) + 1 != c[C_TRK]:
                     continue
                 self.init(st)
@@ -581,6 +665,10 @@ class Model:
                     v = (w0 >> 8) & 0x7F
                     st["vel"] = (v << 16) + (v << 9)
                     st["tgt"] = s24(w1)
+                    if self.vm is not None and self.env2 and k < NSLOT:
+                        import vmode0
+                        vmode0.note_on(st, c, self.vm["flags"][w0 & 7], self.vm["vblk"], self.vm["off"][k], w1)
+                        continue
                     if st.get("stg") == IDLE or s24(c[C_GLD]) >= ONE:
                         st["pit"] = s24(w1)
                     st["stg"] = ATT
@@ -588,6 +676,8 @@ class Model:
                         st["gate"] = ONE
                 elif typ == 0x800000 and self.env2:
                     st["gate"] = 0
+                    if self.vm is not None and k < NSLOT:
+                        self.vm["off"][k] = self.vm["vblk"] & 0xFFFFFF
                 elif typ == 0x800000 and st.get("stg") != IDLE:
                     st["stg"] = REL
             if self.sp is not None:
@@ -618,6 +708,8 @@ class Model:
                 if c[C_KEY] == KEY and c[C_TRK] != 0:
                     self.init(st)
                     self.env2_step(st, c)
+        if self.vm is not None:                                    # (RH80) VMX: the block's count after the slots
+            self.vm["vblk"] = (self.vm["vblk"] + 1) & 0xFFFFFF
         return out
 
     def env2_step(self, st, c):
@@ -679,55 +771,59 @@ class Model:
         self.env(st, c, p)
         if st["stg"] == IDLE and st["ec"] == 0:
             return t, [0] * 32
-        morph = (p[P_START] & 0x7F) if self.sl else 0
-        det = (0x7F - (p[P_LEN] & 0x7F)) if self.sl else 0
-
-        def osc(i1, i2, k1, k2):
-            """passes A-D on the phases st[k1] / st[k2] with these increments -> (OSC 1's, OSC 2's samples)"""
-            (inc1, rm1, re1), (inc2, rm2, re2) = i1, i2
-            pb1, ph, p1o = [], st[k1], st[k1]
-            for _ in range(32):
-                ph = s24(ph + inc1)
-                pb1.append(ph)
-            st[k1] = ph
-            pb2, ph, prev = [], st[k2], p1o
-            for i in range(32):
-                ph = s24(ph + inc2)
-                if c[C_SHP] & SHP_SYNC:
-                    if pb1[i] < prev:
-                        ph = -(1 << 23)
-                    prev = pb1[i]
-                pb2.append(ph)
-            st[k2] = ph
-            k = s24(c[C_K])
-            o2 = self.wave_m((c[C_SHP] >> 2) & 3, pb2, inc2, rm2, re2, k, False, morph)
-            afm = _mpy(st["vel"], c[C_VFM]) + (s24(c[C_FM]) << 24)
-            if sp is not None:                                 # (sp) SFM: + the scan LFO
-                afm += sp.S(t)["so"] << 24
-            fm, naive = _sat(afm), afm != 0
-            if naive:
-                pb1 = [_a1((pb1[i] << 24) + (_mpy(fm, o2[i]) << 1)) for i in range(32)]
-            return self.wave_m(c[C_SHP] & 3, pb1, inc1, rm1, re1, k, naive, morph), o2
-        if det == 0:
-            o1, o2 = osc((inc1, rm1, re1), (inc2, rm2, re2), "ph1", "ph2")
-        else:                                                  # (sl) unison: + and - (127 - length) << 7, averaged
-            ctr, dt = _sat(acc1), det << 7
-            a1_, a2_ = osc(self.inc(ctr + dt), self.inc(ctr + dt + s24(c[C_P2])), "ph1", "ph2")
-            b1_, b2_ = osc(self.inc(ctr - dt), self.inc(ctr - dt + s24(c[C_P2])), "ph1b", "ph2b")
-            o1 = [_sat(((x << 24) + (y << 24)) >> 1) for x, y in zip(a1_, b1_)]
-            o2 = [_sat(((x << 24) + (y << 24)) >> 1) for x, y in zip(a2_, b2_)]
-        gs, gn = s24(c[C_GS]), s24(c[C_GN])
-        if gs + gn != 0:
-            gsn, ps, nz, pb3 = _sat(-(gs << 24)), st["phs"], st["nz"], []
-            for i in range(32):
-                ps = s24(ps + incs)
-                sub = gs if ps >= 0 else gsn
-                nz = _a1((s24((_mpy(nz, LCG_A) >> 1) & 0xFFFFFF) << 24) + (LCG_C << 24))
-                pb3.append(_sat(_mpy(nz, gn) + (sub << 24)))
-            st["phs"], st["nz"] = ps, nz
-            buf = [_sat(_mpy(c[C_G1], o1[i]) + _mpy(o2[i], c[C_G2]) + (pb3[i] << 24)) for i in range(32)]
+        if self.va:                                            # (RD41) CIRCUIT-HACKS' oscillators
+            buf = self.vam.block(s, _sat(acc1), st["env"], lambda a_: self.inc(a_ >> 24)[0],
+                                 ext=(s24(c[C_G1]), s24(c[C_G2]), s24(c[C_GS])) if getattr(self, "envx", False) else None)
         else:
-            buf = [_sat(_mpy(c[C_G1], o1[i]) + _mpy(o2[i], c[C_G2])) for i in range(32)]
+            morph = (p[P_START] & 0x7F) if self.sl else 0
+            det = (0x7F - (p[P_LEN] & 0x7F)) if self.sl else 0
+
+            def osc(i1, i2, k1, k2):
+                """passes A-D on the phases st[k1] / st[k2] with these increments -> (OSC 1's, OSC 2's samples)"""
+                (inc1, rm1, re1), (inc2, rm2, re2) = i1, i2
+                pb1, ph, p1o = [], st[k1], st[k1]
+                for _ in range(32):
+                    ph = s24(ph + inc1)
+                    pb1.append(ph)
+                st[k1] = ph
+                pb2, ph, prev = [], st[k2], p1o
+                for i in range(32):
+                    ph = s24(ph + inc2)
+                    if c[C_SHP] & SHP_SYNC:
+                        if pb1[i] < prev:
+                            ph = -(1 << 23)
+                        prev = pb1[i]
+                    pb2.append(ph)
+                st[k2] = ph
+                k = s24(c[C_K])
+                o2 = self.wave_m((c[C_SHP] >> 2) & 3, pb2, inc2, rm2, re2, k, False, morph)
+                afm = _mpy(st["vel"], c[C_VFM]) + (s24(c[C_FM]) << 24)
+                if sp is not None:                                 # (sp) SFM: + the scan LFO
+                    afm += sp.S(t)["so"] << 24
+                fm, naive = _sat(afm), afm != 0
+                if naive:
+                    pb1 = [_a1((pb1[i] << 24) + (_mpy(fm, o2[i]) << 1)) for i in range(32)]
+                return self.wave_m(c[C_SHP] & 3, pb1, inc1, rm1, re1, k, naive, morph), o2
+            if det == 0:
+                o1, o2 = osc((inc1, rm1, re1), (inc2, rm2, re2), "ph1", "ph2")
+            else:                                                  # (sl) unison: + and - (127 - length) << 7, averaged
+                ctr, dt = _sat(acc1), det << 7
+                a1_, a2_ = osc(self.inc(ctr + dt), self.inc(ctr + dt + s24(c[C_P2])), "ph1", "ph2")
+                b1_, b2_ = osc(self.inc(ctr - dt), self.inc(ctr - dt + s24(c[C_P2])), "ph1b", "ph2b")
+                o1 = [_sat(((x << 24) + (y << 24)) >> 1) for x, y in zip(a1_, b1_)]
+                o2 = [_sat(((x << 24) + (y << 24)) >> 1) for x, y in zip(a2_, b2_)]
+            gs, gn = s24(c[C_GS]), s24(c[C_GN])
+            if gs + gn != 0:
+                gsn, ps, nz, pb3 = _sat(-(gs << 24)), st["phs"], st["nz"], []
+                for i in range(32):
+                    ps = s24(ps + incs)
+                    sub = gs if ps >= 0 else gsn
+                    nz = _a1((s24((_mpy(nz, LCG_A) >> 1) & 0xFFFFFF) << 24) + (LCG_C << 24))
+                    pb3.append(_sat(_mpy(nz, gn) + (sub << 24)))
+                st["phs"], st["nz"] = ps, nz
+                buf = [_sat(_mpy(c[C_G1], o1[i]) + _mpy(o2[i], c[C_G2]) + (pb3[i] << 24)) for i in range(32)]
+            else:
+                buf = [_sat(_mpy(c[C_G1], o1[i]) + _mpy(o2[i], c[C_G2])) for i in range(32)]
         if sp is not None:                                     # (sp) SDS: the stock's distortion knob
             sp.dset(t, p[sp_dist_i()])
             buf = sp.drun(t, buf)

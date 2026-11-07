@@ -8,7 +8,7 @@ CIRCUIT-HACKS' patch_official.py).
   2. It is stored as stock/circuitrhythm-firmware-5706-STOCK.bin (+ .syx).
   3. The builder of the version runs (tools/build_*.py) and writes firmware/<dir>/: .bin, .syx, manifest.json.  The result must have the SHA-256 the
      repository records (firmware/<dir>/manifest.json): the build is reproducible, so a mismatch means a different toolchain (capstone) or a modified tree.
-  4. Send the .syx with tools/rm_uploader.html (Chrome / Edge, Web MIDI; it can also patch the official file by itself).
+  4. Send the .syx with the Firmware tab of tools/rm_app.html (Chrome / Edge, Web MIDI; it can also patch the official file by itself).
      Recovery: Sample Rec + Samples + Note at power-on (Novation's bootloader mode), then the official firmware.
 Requirements: Python 3.10+, `pip install -r tools/requirements.txt`.
 """

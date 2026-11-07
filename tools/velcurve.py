@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, adds_imm8, adds_reg, b, b_cond, b_w, bl, cmp_imm, h, ldr_imm, ldrb_imm, lsls_imm, lsrs_imm, mov_reg, movs_imm, movt,  # noqa: E402
-                   movw, muls, pop_list, push_list, raw, strb_imm, strh_imm, strh_w_imm, subs_imm8, subs_reg)
+                   movw, muls, orrs_reg, pop_list, push_list, raw, strb_imm, strh_imm, strh_w_imm, subs_imm8, subs_reg)
 import countin as CI  # noqa: E402
 import midithru as M  # noqa: E402
 import pgmch as PG  # noqa: E402
@@ -48,6 +48,7 @@ def popw(regs, lr=False): return UM.popw(regs, lr)
 
 
 def arm_code(base, L, prev):
+    import rhbuild
     a = Asm(base)
     E = a.emit
 
@@ -192,6 +193,10 @@ def arm_code(base, L, prev):
     UM.advanced(E, imm32, L, "vl_x")
     E(bl, "c_vcget")
     E(raw, h(0x17C1))                                                     # asrs r1, r0, #31
+    LL = rhbuild.OPT.get("leftlight")
+    if LL:                                                                # (RH78, leftlight) r4 = left (the sign)
+        E(lsrs_imm, 4, 1, 31)
+        E(lsls_imm, 4, 4, 15)
     E(raw, h(0x4048))                                                     # eors r0, r1
     E(raw, h(0x1A40))                                                     # subs r0, r0, r1: |c|
     E(movs_imm, 1, 127)
@@ -208,7 +213,11 @@ def arm_code(base, L, prev):
     E(strb_imm, 1, 0, SP.K_MASK)
     E(strb_imm, 6, 0, SP.K_VAL + KNOB)
     E(movs_imm, 1, COL)
-    E(strh_imm, 1, 0, SP.K_CODE + 2 * KNOB)
+    if LL:
+        E(orrs_reg, 4, 1)
+        E(strh_imm, 4, 0, SP.K_CODE + 2 * KNOB)
+    else:
+        E(strh_imm, 1, 0, SP.K_CODE + 2 * KNOB)
     E(strh_w_imm, 1, 5, 2 * (SP.LED_KNOB0 + KNOB))
     a.label("vl_x")
     E(pop_list, [3, 4, 5, 6], pc=True)

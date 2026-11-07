@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -54,9 +54,59 @@ def make_patch(src: bytes, dst: bytes):
     return ops
 
 
+def dz_split_image(img: bytes, man):
+    """(RH80+, dspz OPT dzhole) the image with the packed stream's places zeroed, and the op that rebuilds them from the official image:
+    [2, {blk: the stock block (offset, length) in the official image, ours: our raw stream as a patch of the official image (ops), r1 / r2 /
+    r3: the pieces' places
+    (offset, length), hl: the header's length}].  The installer packs the official block + ours with tools/dspz.py's LZSS (the same
+    bytes: dspz_pack in the page), so no byte of Novation's code travels in the page."""
+    import core0 as C0
+    import dspz as DZ
+    BASE = 0x08010000
+    if bytes(img[C0.BLK0 - BASE:C0.BLK0 - BASE + 4]) != DZ.MAGIC2:
+        return img, None
+    rep = man["report"]["core0"]
+    raw = DZ.unblob2(img, C0.BLK0, BASE)
+    n0 = 6 + 3 * C0.N0
+    (a1, b1), (a2, b2) = [(int(x, 16), int(y, 16)) for x, y in rep["dspz"]["hole"]]
+    cave = int(rep["blocks"][1], 16)
+    p3 = rep["dspz"]["pieces"][2][0]
+    hl = DZ.H_ENT + 4 * DZ.ENT
+    stock = STOCK_BIN.read_bytes()
+    spec = dict(blk=[C0.BLK0 - BASE, n0], ours=make_patch(stock, raw[n0:]), r1=[a1 - BASE, b1 - a1], r2=[a2 - BASE, b2 - a2],
+                r3=[cave - BASE, p3], hl=hl)             # ours: our stream as a patch too (its runs that the official image also has: copies)
+    out = bytearray(img)
+    for o, n in (spec["r1"], spec["r2"], spec["r3"]):
+        out[o:o + n] = bytes(n)
+    assert dz_apply(stock, out, spec) == img
+    return bytes(out), spec
+
+
+def dz_apply(src: bytes, out: bytearray, spec):
+    """op 2: the pieces written into out (bytes) from the official image src"""
+    import dspz as DZ
+    o, n = spec["blk"]
+    raw = bytes(src[o:o + n]) + apply(src, spec["ours"])
+    blob = DZ.pack(raw)
+    (o1, n1), (o2, n2), (o3, n3) = spec["r1"], spec["r2"], spec["r3"]
+    hl = spec["hl"]
+    pieces = DZ.split(blob, [n1 - hl, n2])
+    BASE = 0x08010000
+    hd = DZ.header2(blob, [(BASE + o1 + hl, pieces[0]), (BASE + o2, pieces[1]), (BASE + o3, pieces[2])])
+    out = bytearray(out)
+    out[o1:o1 + n1] = (hd + pieces[0][0]).ljust(n1, bytes([0xFF]))
+    out[o2:o2 + n2] = pieces[1][0].ljust(n2, bytes([0xFF]))
+    assert len(pieces[2][0]) == n3
+    out[o3:o3 + n3] = pieces[2][0]
+    return bytes(out)
+
+
 def apply(src: bytes, ops):
     out = bytearray()
     for op in ops:
+        if op[0] == 2:
+            out = bytearray(dz_apply(src, out, op[1]))
+            continue
         out += src[op[1]:op[1] + op[2]] if op[0] == 0 else base64.b64decode(op[1])
     return bytes(out)
 
@@ -78,9 +128,12 @@ def main(versions):
         d = ROOT / "firmware" / v.lower(); man = json.loads((d / "manifest.json").read_text())
         img = next(d.glob("*.bin")).read_bytes()
         assert hashlib.sha256(img).hexdigest() == man["image_sha256"]
-        ops = make_patch(stock, img)
+        img0, dz = dz_split_image(img, man)
+        ops = make_patch(stock, img0) + ([[2, dz]] if dz else [])
         assert apply(stock, ops) == img
         check_add(stock, ops)
+        if dz:
+            check_add(stock, dz["ours"])
         lit = sum(len(base64.b64decode(o[1])) for o in ops if o[0] == 1)
         assert hashlib.sha256(rh_fw.encode(img)).hexdigest() == man["syx_sha256"]
         patches[v] = dict(dir=v.lower(), image_sha256=man["image_sha256"], syx_sha256=man["syx_sha256"], size=len(img), ops=ops)
@@ -92,7 +145,11 @@ def main(versions):
     print("tools/rm_uploader.html", len(page), "bytes")
 
 
-DESC = {"A0.11": ("⚠️ experimental, necesita pulirse — Alpha 0.11 — la versión completa: Alpha 0.09 más el arreglo de su bucle de arranque, la matriz de modulación, los carriles de automatización con destino propio, el carril extra y las rampas, los modificadores del arpegio, el Nudge de tramo, guardar al parar, la curva de velocity y los módulos de Arrhythmia por USB (prueba de concepto); la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
+DESC = {"A0.12": ("⚠️ experimental, necesita pulirse, sin probar en el aparato — Alpha 0.12 — la versión completa: Alpha 0.10 más los motores en Sample mode (pad 8), el menú de pista como la fila 1 de CIRCUIT-HACKS (Filtro / VCA, Envolvente + LFO, OSC 1 / OSC 2), el VA y el FM de 8 operadores de CIRCUIT-HACKS, los modos de voz (legato, glide, unísono, poly), el latch, el sonido de cada proyecto en la tarjeta y el de-click de los redisparos; la copia de proyectos y de samples, el borrado de packs y el sonido del proyecto escriben en la tarjeta",
+                  "⚠️ experimental, needs refinement, not tested on the device — Alpha 0.12 — full build: Alpha 0.10 plus the engines in Sample mode (pad 8), the track menu as CIRCUIT-HACKS' row 1 (Filter / VCA, Envelope + LFO, OSC 1 / OSC 2), CIRCUIT-HACKS' VA and 8-operator FM, the voice modes (legato, glide, unison, poly), the latch, each project's sound on the card and the retrigger de-click; the project and sample copy, the pack delete and the project's sound write to the card"),
+        "A0.12S": ("⚠️ experimental, necesita pulirse, sin probar en el aparato — Alpha 0.12S — versión más segura: Alpha 0.12 sin la copia de proyectos, el borrado de packs, la copia de samples ni el sonido del proyecto en la tarjeta; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "⚠️ experimental, needs refinement, not tested on the device — Alpha 0.12S — safer build: Alpha 0.12 without the project copy, pack delete, sample copy or the project's sound on the card; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
+        "A0.11": ("⚠️ experimental, necesita pulirse — Alpha 0.11 — la versión completa: Alpha 0.09 más el arreglo de su bucle de arranque, la matriz de modulación, los carriles de automatización con destino propio, el carril extra y las rampas, los modificadores del arpegio, el Nudge de tramo, guardar al parar, la curva de velocity y los módulos de Arrhythmia por USB (prueba de concepto); la copia de proyectos y de samples y el borrado de packs escriben en la tarjeta",
                   "⚠️ experimental, needs refinement — Alpha 0.11 — full build: Alpha 0.09 plus the fix for its boot loop, the modulation matrix, automation lanes with their own destination, the extra lane and ramps, arpeggio modifiers, range Nudge, save on stop, the velocity curve and Arrhythmia's modules over USB (proof of concept); the project and sample copy and the pack delete write to the card"),
         "A0.11S": ("⚠️ experimental, necesita pulirse — Alpha 0.11S — versión más segura: Alpha 0.11 sin la copia de proyectos, el borrado de packs ni la copia de samples; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "⚠️ experimental, needs refinement — Alpha 0.11S — safer build: Alpha 0.11 without the project copy, pack delete or sample copy; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
@@ -295,10 +352,12 @@ function encodeSyx(img) {                               // = rh_fw.encode (proto
   msgs.push(Uint8Array.from([...H, 0x73, ...packBlock(pad.subarray(0, 32)), 0xF7]));
   return msgs;
 }
+__DZJS__
 function applyPatch(src, ops) {
-  let n = 0; for (const o of ops) n += o[0] === 0 ? o[2] : atob(o[1]).length;
+  let n = 0; for (const o of ops) if (o[0] !== 2) n += o[0] === 0 ? o[2] : atob(o[1]).length;
   const out = new Uint8Array(n); let p = 0;
   for (const o of ops) {
+    if (o[0] === 2) { dzApply(src, out, o[1]); continue; }   // (RH80+) core 0's block packed with ours, here, from the official image
     if (o[0] === 0) { if (o[1] + o[2] > src.length) throw Error(t("parche fuera de rango", "patch out of range")); out.set(src.subarray(o[1], o[1] + o[2]), p); p += o[2]; }
     else { const s = atob(o[1]); for (let i = 0; i < s.length; i++) out[p++] = s.charCodeAt(i); }
   }
@@ -472,6 +531,10 @@ setLang(LANG); updateSend();
 </body>
 </html>
 """
+
+import dzjs as _DZJS  # noqa: E402
+TEMPLATE = TEMPLATE.replace("__DZJS__", _DZJS.JS)       # (RH80+) the page packs core 0's block itself
+
 
 if __name__ == "__main__":
     main(sys.argv[1:] or DEFAULT)

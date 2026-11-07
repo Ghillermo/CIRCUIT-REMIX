@@ -75,6 +75,7 @@ BLK, BLK_LEN = rhrec.OFF54["modmx"]
 O, O_LEN = rhstate.OFF2["modmx"]
 O_KB = rhstate.OFF["kbright"][0]
 K_MASK, K_VAL, K_CODE = SP.K_MASK, SP.K_VAL, SP.K_CODE
+KB_LEFT = 0x8000                                                    # kbright.BIPLEFT (leftlight, RH78)
 LED_KNOB0 = SP.LED_KNOB0
 INNER, INNER_VT, INNER_FN = 0x20043700, 0x080696AC, 0x08049B28
 GATE, GATE_SLOT, GATE_THUNK, GATE_FN = 0x20040D88, 0x08068CF8, 0x08036B05, 0x08036B06
@@ -181,9 +182,15 @@ def arm_code(base, L, prev):
     t_cls = bytes((0x01, SP.UI_KNOB, GP.UI_KNOB, SY.UI_KNOB, 0, 0))
     H = lambda vs: b"".join(struct.pack("<H", v) for v in vs)             # noqa: E731
     tabs = t_pbr + t_pdm + t_cls + bytes(PAR_KNOB) + bytes(PAR_MAX) + bytes(PAR_DEF) + bytes(ZC_LFO) + bytes(ZC_ATK) + bytes(PSND)
-    tabs += H(ATK_MS) + H(DIVS) + H(BIP_MASKS) + H(SP.UI_TYPES) + bytes(SY.UI_WAVES)
+    VA = SY.va()                                                          # (RH77, synthpage va) the VA's knobs: their bipolar ones, K1 / K3 the morph
+    bipm = BIP_MASKS[:3] + (sum(1 << i for i, v in enumerate(SY.BIP_VA) if v),) if VA else BIP_MASKS
+    tabs += H(ATK_MS) + H(DIVS) + H(bipm) + H(SP.UI_TYPES) + bytes(SY.UI_WAVES_VA if VA else SY.UI_WAVES)
     assert len(tabs) % 2 == 0 and len(tabs) == 102
+    LL = rhbuild.OPT.get("leftlight")                                     # (RH78) bipolar knobs: the lighter shade left (kbright.BIPLEFT)
+    if VA and LL:                                                         # (va) K7's zones' colours (synthpage.VA_ZONES)
+        tabs += b"".join(struct.pack("<H", v) for v in SY.VA_ZONES + (0,))
     E(raw, tabs)
+    T_VZ = base + 102
     T_PBR, T_PDM, T_CLS, T_PK, T_PM, T_PD, T_ZC, T_PS = base, base + 5, base + 10, base + 16, base + 24, base + 28, base + 32, base + 40
     T_ATK, T_DIV, T_BIP, T_TYP, T_WV = base + 44, base + 52, base + 84, base + 92, base + 98
 
@@ -2032,9 +2039,43 @@ def arm_code(base, L, prev):
     E(mov_reg, 5, 1)
     E(cmp_imm, 0, 3)
     E(b_cond, "ml_1", "ne")
-    E(cmp_imm, 5, 2)
-    E(b_cond, "ml_b", "hs")
-    E(lsrs_imm, 0, 6, 12)                                                 # a synth's wave
+    if VA and LL:                                                         # (va) K7: its zone's colour, the position (zone 0 dark)
+        E(cmp_imm, 5, 6)
+        E(b_cond, "ml_nz", "ne")
+        E(lsrs_imm, 0, 6, 7)
+        E(movs_imm, 1, 7)
+        E(muls, 0, 1)
+        E(lsrs_imm, 1, 0, 7)
+        E(lsls_imm, 1, 1, 1)
+        imm32(2, T_VZ)
+        E(raw, AR.ldrh_reg(1, 2, 1))
+        E(lsls_imm, 0, 0, 25)
+        E(lsrs_imm, 0, 0, 25)
+        E(movs_imm, 2, 13)
+        E(muls, 0, 2)
+        E(lsrs_imm, 0, 0, 4)
+        E(adds_imm8, 0, 24)
+        E(cmp_imm, 1, 0)
+        E(b_cond, "ml_zx", "ne")
+        E(movs_imm, 0, 0)
+        a.label("ml_zx")
+        E(pop_list, [4, 5, 6], pc=True)
+        a.label("ml_nz")
+    if VA:                                                                # (va) K1 / K3: the morph's nearest wave ((v + 21) / 42)
+        E(cmp_imm, 5, 0)
+        E(b_cond, "ml_va", "eq")
+        E(cmp_imm, 5, 2)
+        E(b_cond, "ml_b", "ne")
+        a.label("ml_va")
+        E(lsrs_imm, 0, 6, 7)
+        E(adds_imm8, 0, 21)
+        imm32(1, 1561)
+        E(muls, 0, 1)
+        E(lsrs_imm, 0, 0, 16)
+    else:
+        E(cmp_imm, 5, 2)
+        E(b_cond, "ml_b", "hs")
+        E(lsrs_imm, 0, 6, 12)                                             # a synth's wave
     imm32(1, T_WV)
     E(ldrb_reg, 1, 1, 0)
     E(movs_imm, 0, 127)
@@ -2067,15 +2108,22 @@ def arm_code(base, L, prev):
     E(lsrs_reg, 1, 5)
     E(lsls_imm, 1, 1, 31)
     E(b_cond, "ml_u", "pl")
+    if LL:
+        E(movs_imm, 3, 0)
     E(movw, 0, 8192)                                                      # from the middle: dark there
     E(subs_reg, 0, 6, 0)
     E(b_cond, "ml_a", "pl")
     E(raw, h(0x4240))                                                     # rsbs r0, r0, #0
+    if LL:                                                                # (leftlight) r1 = the flag alone: the page's colour, lighter
+        E(movw, 3, KB_LEFT)
     a.label("ml_a")
     E(lsrs_imm, 0, 0, 6)
     E(movs_imm, 1, 127)
     E(bl, "c_mxc")
-    E(movs_imm, 1, 0)
+    if LL:
+        E(mov_reg, 1, 3)
+    else:
+        E(movs_imm, 1, 0)
     E(pop_list, [4, 5, 6], pc=True)
     a.label("ml_u")
     E(lsrs_imm, 0, 6, 7)
@@ -2115,21 +2163,29 @@ def arm_code(base, L, prev):
     E(b_cond, "k1_b", "ne")
     E(lsls_imm, 3, 3, 1)                                                  # K6: the track's colour, the decay's brightness
     E(adds_imm8, 3, ZC_TRK)
+    if LL:
+        E(movs_imm, 2, 0)
     E(b, "k1_e")
     a.label("k1_b")
     imm32(1, T_ZC)
     E(lsls_imm, 2, 5, 2)
     E(adds_reg, 1, 1, 2)
     E(ldrb_reg, 3, 1, 3)
+    if LL:
+        E(movs_imm, 2, 0)
     E(cmp_imm, 5, 0)
     E(b_cond, "k1_e", "ne")
     E(lsls_imm, 0, 0, 1)                                                  # K4: |2 r - 31|, dark at the zone's centre
     E(subs_imm8, 0, 31)
     E(b_cond, "k1_e", "pl")
     E(raw, h(0x4240))                                                     # rsbs r0, r0, #0
+    if LL:                                                                # (leftlight) the zone's left half (at the tempo): lighter
+        E(movw, 2, KB_LEFT)
     a.label("k1_e")
     E(lsls_imm, 1, 0, 2)
     E(mov_reg, 0, 3)
+    if LL:
+        E(orrs_reg, 0, 2)
     E(pop_list, [4, 5, 6], pc=True)
     a.label("k1_m")
     E(movs_imm, 1, 9)
@@ -2168,11 +2224,24 @@ def arm_code(base, L, prev):
     E(mov_reg, 1, 5)
     E(bl, "mx_led")
     E(mov_reg, 6, 0)
+    if LL:
+        E(movw, 2, KB_LEFT)
+        E(cmp_reg, 1, 2)
+        E(b_cond, "k1_l", "eq")
     E(cmp_imm, 1, 0)
     E(b_cond, "k1_d", "eq")
     E(mov_reg, 0, 1)
     E(mov_reg, 1, 6)
     E(pop_list, [4, 5, 6], pc=True)
+    if LL:
+        a.label("k1_l")
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, "c_mxcol")
+        E(movw, 2, KB_LEFT)
+        E(orrs_reg, 0, 2)
+        E(mov_reg, 1, 6)
+        E(pop_list, [4, 5, 6], pc=True)
     a.label("k1_d")
     E(mov_reg, 0, 4)
     E(mov_reg, 1, 5)
@@ -2241,6 +2310,9 @@ def arm_code(base, L, prev):
     E(mov_reg, 1, 6)
     E(bl, "c_mxk1")
     E(mov_reg, 3, 0)
+    if LL:                                                                # (the frame: the code without kbright's flag)
+        E(lsls_imm, 0, 0, 17)
+        E(lsrs_imm, 0, 0, 17)
     E(lsls_imm, 2, 6, 1)
     E(adds_reg, 2, 5, 2)
     E(strh_w_imm, 0, 2, 2 * LED_KNOB0)
@@ -2733,7 +2805,7 @@ def install(img, report, base_addr):
     rhbuild.patch_word(img, GATE_SLOT, GATE_THUNK, labels["c_mxgatet"] | 1)
     for m, k, tgt, lb in (("stockplus", "c_spvd", L["c_spval"], "c_mxspv"), ("synthpage", "c_sywv", L["c_syv"], "c_mxsyv"), ("spall", "c_wsvd", L["c_wsget"], "c_mxwsv")):
         rhbuild.patch(img, lab(m, k), f"b.w #{tgt:#x}", b_w(lab(m, k), labels[lb]))
-    for k in ("c_evk1", "c_evk2"):
+    for k in ("c_evk2",) if report["synthpage"].get("va") else ("c_evk1", "c_evk2"):   # (RH77, va: the start reads its raw value)
         site = lab("envpage", k)
         rhbuild.patch(img, site, f"bl #{L['c_syv']:#x}", bl(site, labels["c_mxsyv"]))
     site = lab("autoinit", "c_aisk")

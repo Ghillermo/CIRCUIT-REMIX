@@ -66,11 +66,10 @@ def _save():
 
 def core0(img):
     """-> (block address, [program words]) as the table points now."""
-    a = struct.unpack_from("<I", img, TABLE - BASE)[0]
-    o = a - BASE
-    n, load = int.from_bytes(img[o:o + 3], "big"), int.from_bytes(img[o + 3:o + 6], "big")
+    import rhdsp
+    a, n, load, code = rhdsp.block(img, 0, 0)                             # (RH80: also packed in pieces)
     assert load == 0
-    return a, [int.from_bytes(img[o + 6 + 3 * i:o + 9 + 3 * i], "big") for i in range(n)]
+    return a, [int.from_bytes(code[3 * i:3 * i + 3], "big") for i in range(n)]
 
 
 def stock_checks(img):
