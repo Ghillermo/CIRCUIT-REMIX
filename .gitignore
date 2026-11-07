@@ -8,3 +8,4 @@ stock/*.syx
 firmware/*/*.bin
 firmware/*/*.syx
 *.zip
+!tools/rm_app.zip
