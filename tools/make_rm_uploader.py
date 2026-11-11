@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.13", "A0.13S", "A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -68,7 +68,10 @@ def dz_split_image(img: bytes, man):
     rep = man["report"]["core0"]
     raw = DZ.unblob2(img, C0.BLK0, BASE)
     n0 = 6 + 3 * C0.N0
-    (a1, b1), (a2, b2) = [(int(x, 16), int(y, 16)) for x, y in rep["dspz"]["hole"]]
+    holes = [(int(x, 16), int(y, 16)) for x, y in rep["dspz"]["hole"]]
+    if len(holes) != 2:                                  # (RD47+, OPT dzmore) more pieces, and the stock's other DSP blocks packed in place
+        return dz_split_more(img, man, raw, n0, holes)
+    (a1, b1), (a2, b2) = holes
     cave = int(rep["blocks"][1], 16)
     p3 = rep["dspz"]["pieces"][2][0]
     hl = DZ.H_ENT + 4 * DZ.ENT
@@ -82,9 +85,35 @@ def dz_split_image(img: bytes, man):
     return bytes(out), spec
 
 
+def dz_split_more(img: bytes, man, raw: bytes, n0: int, holes):
+    """(RD47+) the op 2 spec v2: {blk, ours, holes: [(offset, length)], cave: (offset, length), hl, more: [(offset, size)]}: more = the stock's
+    DSP blocks packed in place (core 0 mode 1, core 1 modes 0 / 1), packed here from the official image first (their tails are holes);
+    our own packed blocks (rhdsp1's) stay in the patch as they are"""
+    import core0 as C0
+    import dspz as DZ
+    BASE = 0x08010000
+    rep = man["report"]["core0"]
+    stock = STOCK_BIN.read_bytes()
+    more = []
+    for at, size, _ in rep["dzmore"]["blocks"]:
+        o = int(at, 16) - BASE
+        if DZ.unblob2(img, int(at, 16), BASE) == stock[o:o + size]:
+            more.append([o, size])
+    cave = int(rep["blocks"][1], 16)
+    spec = dict(blk=[C0.BLK0 - BASE, n0], ours=make_patch(stock, raw[n0:]), holes=[[lo - BASE, hi - lo] for lo, hi in holes],
+                cave=[cave - BASE, rep["dspz"]["pieces"][-1][0]], hl=DZ.H_ENT + (len(holes) + 2) * DZ.ENT, more=more)
+    out = bytearray(img)
+    for o, n in spec["more"] + spec["holes"] + [spec["cave"]]:
+        out[o:o + n] = bytes(n)
+    assert dz_apply(stock, out, spec) == img
+    return bytes(out), spec
+
+
 def dz_apply(src: bytes, out: bytearray, spec):
     """op 2: the pieces written into out (bytes) from the official image src"""
     import dspz as DZ
+    if "holes" in spec:
+        return dz_apply2(src, out, spec)
     o, n = spec["blk"]
     raw = bytes(src[o:o + n]) + apply(src, spec["ours"])
     blob = DZ.pack(raw)
@@ -98,6 +127,32 @@ def dz_apply(src: bytes, out: bytearray, spec):
     out[o2:o2 + n2] = pieces[1][0].ljust(n2, bytes([0xFF]))
     assert len(pieces[2][0]) == n3
     out[o3:o3 + n3] = pieces[2][0]
+    return bytes(out)
+
+
+def dz_apply2(src: bytes, out: bytearray, spec):
+    """op 2 v2 (RD47+): the stock's other DSP blocks packed in place, then core 0's stream in its holes and the cave"""
+    import struct as st_
+    import dspz as DZ
+    BASE = 0x08010000
+    out = bytearray(out)
+    for o, size in spec["more"]:
+        b1 = DZ.pack(bytes(src[o:o + size]))
+        words = st_.unpack_from("<I", b1, 4)[0]
+        hd = DZ.header2(b1, [(BASE + o + DZ.H_ENT + 2 * DZ.ENT, (b1[12:], words))])
+        body = hd + b1[12:]
+        out[o:o + size] = body + bytes([0xFF]) * (size - len(body))
+    o, n = spec["blk"]
+    blob = DZ.pack(bytes(src[o:o + n]) + apply(src, spec["ours"]))
+    H, hl = spec["holes"], spec["hl"]
+    pieces = DZ.split(blob, [H[0][1] - hl] + [m for _, m in H[1:]])
+    hd = DZ.header2(blob, [(BASE + H[0][0] + hl, pieces[0])] + [(BASE + H[k][0], pieces[k]) for k in range(1, len(H))]
+                    + [(BASE + spec["cave"][0], pieces[-1])])
+    assert len(hd) == hl and len(pieces[-1][0]) == spec["cave"][1]
+    for (ho, hn), body in zip(H, [hd + pieces[0][0]] + [pieces[k][0] for k in range(1, len(H))]):
+        out[ho:ho + hn] = body + bytes([0xFF]) * (hn - len(body))
+    co = spec["cave"][0]
+    out[co:co + spec["cave"][1]] = pieces[-1][0]
     return bytes(out)
 
 
@@ -145,7 +200,11 @@ def main(versions):
     print("tools/rm_uploader.html", len(page), "bytes")
 
 
-DESC = {"A0.12": ("⚠️ experimental, necesita pulirse, sin probar en el aparato — Alpha 0.12 — la versión completa: Alpha 0.10 más los motores en Sample mode (pad 8), el menú de pista como la fila 1 de CIRCUIT-HACKS (Filtro / VCA, Envolvente + LFO, OSC 1 / OSC 2), el VA y el FM de 8 operadores de CIRCUIT-HACKS, los modos de voz (legato, glide, unísono, poly), el latch, el sonido de cada proyecto en la tarjeta y el de-click de los redisparos; la copia de proyectos y de samples, el borrado de packs y el sonido del proyecto escriben en la tarjeta",
+DESC = {"A0.13": ("⚠️ experimental, necesita pulirse — Alpha 0.13 — la versión completa: Alpha 0.12 más el secuenciador de efectos con envíos por pista, el looper / sampler en vivo, Pattern Mutate (diseño de mefisme), los patches del pack y los starters, el sobremuestreo 2× y la relación armónica del VA, todos los parámetros en la matriz; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
+                  "⚠️ experimental, needs refinement — Alpha 0.13 — full build: Alpha 0.12 plus the FX sequencer with per-track sends, the looper / live sampler, Pattern Mutate (mefisme's design), the pack's patches and starters, the VA's 2× oversampling and harmonic ratio, every parameter in the matrix; the project copy, sample copy, pack delete, project's sound and patches write to the card"),
+        "A0.13S": ("⚠️ experimental, necesita pulirse — Alpha 0.13S — versión más segura: Alpha 0.13 sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto ni los patches del pack; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "⚠️ experimental, needs refinement — Alpha 0.13S — safer build: Alpha 0.13 without the project copy, pack delete, sample copy, the project's sound or the pack's patches; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
+        "A0.12": ("⚠️ experimental, necesita pulirse, sin probar en el aparato — Alpha 0.12 — la versión completa: Alpha 0.10 más los motores en Sample mode (pad 8), el menú de pista como la fila 1 de CIRCUIT-HACKS (Filtro / VCA, Envolvente + LFO, OSC 1 / OSC 2), el VA y el FM de 8 operadores de CIRCUIT-HACKS, los modos de voz (legato, glide, unísono, poly), el latch, el sonido de cada proyecto en la tarjeta y el de-click de los redisparos; la copia de proyectos y de samples, el borrado de packs y el sonido del proyecto escriben en la tarjeta",
                   "⚠️ experimental, needs refinement, not tested on the device — Alpha 0.12 — full build: Alpha 0.10 plus the engines in Sample mode (pad 8), the track menu as CIRCUIT-HACKS' row 1 (Filter / VCA, Envelope + LFO, OSC 1 / OSC 2), CIRCUIT-HACKS' VA and 8-operator FM, the voice modes (legato, glide, unison, poly), the latch, each project's sound on the card and the retrigger de-click; the project and sample copy, the pack delete and the project's sound write to the card"),
         "A0.12S": ("⚠️ experimental, necesita pulirse, sin probar en el aparato — Alpha 0.12S — versión más segura: Alpha 0.12 sin la copia de proyectos, el borrado de packs, la copia de samples ni el sonido del proyecto en la tarjeta; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "⚠️ experimental, needs refinement, not tested on the device — Alpha 0.12S — safer build: Alpha 0.12 without the project copy, pack delete, sample copy or the project's sound on the card; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),

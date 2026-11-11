@@ -44,6 +44,13 @@ import synthpage as SY  # noqa: E402
 import vmode0 as VM  # noqa: E402
 
 ESR, ESR_LEN = 0x2004EB80, 112                      # (+ 72..111: tools/vsel.py's values)
+O_PRT, O_RVS, ESR_LEN81 = 112, 113, 116                # (RH81) + 112 the poly tracks that retrigger (bit t), + 113 the slots reversed (bit s)
+O_HENG = 115                                           # (RH81) the engine pad held (20 / 23 / 24: the pack's patches, tools/rpatch.py)
+M_AGL = 8                                              # (RH81) the mono always-glide (the choke's other side of glide)
+TOG = (1, 0, 8, 4, 3, 6, 5, 7, 2)                      # (RH81) the choke: each mode's other side (poly: its retrigger)
+RET = (1, 0, 1, 1, 0, 1, 0, 0, 0)                      # (RH81) the choke on (the envelope retriggers): poly by its own bit
+P_CHOKE, P_GATED, PAR_MODE, PAR_REV, PAR_CHOKE = 28, 25, 1, 2, 3     # (RH81) Sample mode's pads 29 / 26, the track's parameters 1 / 2 / 3
+GETTER = 0x08046410
 MAG = 0x4C455345                                       # "ESEL"
 (O_OPEN, O_H16, O_H24, O_WASFM, O_TICK, O_MODE, O_DET, O_MONO, O_UNI, O_KEYED, O_RR, O_SENT, O_DSENT, O_SWAL, O_MAG) = (
     0, 1, 2, 3, 4, 8, 16, 24, 32, 33, 34, 40, 48, 56, 64)
@@ -57,6 +64,10 @@ COL_GLIDE, COL_DET = 0x4B, 0xC1
 M_POLY = 7
 DET_UNITS = 258                                        # (50 cents for the knob at 127: $10000 / 100 x 50 / 127)
 NSL = 4
+P_OS2, O_OS2 = 3, 35                                   # (RH85, OPT va2x) Sample mode's pad 4 (open, VA): 2x; + 35 the tracks at 2x (bit t)
+O_OSENT, O_OSC = 36, 37                                # (RH85) + 36 the slots granted 2x (their keys written), + 37 the next coefficient
+O_OSIN, O_OSW, O_OSCOST, O_OSWANT = 38, 39, 60, 68     # (RH85) + 38 keys cleared, + 39 frames to wait, + 60.. the costs sent / 2, + 68 the wanted
+OS2_LEAVE, OS2_ENTER, OS2_WAIT, OS2_COSTD = 60, 300, 8, 4     # (RH85) passes (poly0's H): one 2x off below LEAVE, on from ENTER; frames
 
 
 def model_engine(snd, line_byte, fm):
@@ -91,7 +102,45 @@ def inst_pad(i):
     return i if i < 16 else i + 8
 
 
+def rh81():
+    import rhbuild
+    return bool(rhbuild.OPT.get("rh81"))
+
+
+def modes():
+    return VM.MODES + (((VM.F_LEG | VM.F_ALW, 0, 0),) if rh81() else ())
+
+
+def col_m():
+    return COL_M + (((0xC2, 0xD0),) if rh81() else ())
+
+
+def va2x():
+    """(RH85; the user, 2026-11-09: «Per-track switch», «Sample mode pad»): with the selector open on a VA track, pad 4 (VA's column, row 1,
+    as the inputs' options on pads 2 / 3) = the track's 2x on / off (VA's colour: bright / dim); the bit at ESR + O_OS2 (cleared with ESR at
+    its first use, never written by RH80-RH84); c_esos2 sends the slots' keys (a governor on core 0's room) and their costs for poly0's
+    cap, projsnd / rpatch save it"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("va2x"))
+
+
+def starters():
+    """(RH87, OPT starters; the user, 2026-11-10: «al mantener sobre un modo, muestra sólo los starter synths de ese modo», the saved
+    patches on «their own pad … loads their engine» = pad 8 held): esel's side (pad 8's hold, the list without the selector)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("starters"))
+
+
+def va2x1():
+    """(RH85, OPT va2x1; the user, 2026-11-10: «we need better antialiasing» -> «Do both»): one oscillator gets 2x too: a slot is wanted
+    without OSC 2 in use, and while granted its DFLAGS say DUAL (synthpage OPT va2x1), so it runs the two-oscillator loop at 2x with OSC 2
+    silent (the fold C7 -28 -> -37 dB, C5 -35 -> -48); the grant and the loss send its words again (c_sypend)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("va2x1"))
+
+
 def arm_code(base, L, prev):
+    R81 = rh81()
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -119,14 +168,25 @@ def arm_code(base, L, prev):
         T[name] = base + len(data)
         data.extend(bs)
     put("ce", bytes(x for p in COL_E for x in p))
-    put("cm", bytes(x for p in COL_M for x in p))
-    put("fl", bytes(m[0] for m in VM.MODES))                              # each mode's flags
-    put("un", bytes(m[1] | m[2] << 1 for m in VM.MODES))                  # bit 0 unison, bit 1 poly
+    put("cm", bytes(x for p in col_m() for x in p))
+    put("fl", bytes(m[0] for m in modes()))                               # each mode's flags
+    put("un", bytes(m[1] | m[2] << 1 for m in modes()))                   # bit 0 unison, bit 1 poly
+    if R81:
+        put("tog", bytes(TOG))
+        put("ret", bytes(RET))
+    if va2x():
+        import va0 as VA
+        put("oc", b"".join(w.to_bytes(4, "little") for w in VA.OS2_COEF))     # (RH85) the halfband's 12 coefficients
     put("ic", bytes(x for p in inst_cols() for x in p))
     put("ug", b"".join(VM.UNI_GAIN[n].to_bytes(4, "little") for n in range(1, 5)))
     while len(data) % 4:
         data.append(0)
-    E(raw, bytes(data))
+    import tabpack as TBP_L
+    if TBP_L.lowtab():                                                    # (lowtab) the tables in the ITCM's low room
+        lo = TBP_L.region("esel_t", [(bytes(data), 1)], low=True)
+        T = {k: lo + (v - base) for k, v in T.items()}
+    else:
+        E(raw, bytes(data))
 
     # ---- c_esram() -> r0 = our RAM (from zero once: MAG); clobbers r1-r3
     a.label("c_esram")
@@ -136,7 +196,7 @@ def arm_code(base, L, prev):
     E(cmp_reg, 1, 2)
     E(b_cond, "er_x", "eq")
     E(movs_imm, 1, 0)
-    E(movs_imm, 3, ESR_LEN)
+    E(movs_imm, 3, ESR_LEN81 if R81 else ESR_LEN)
     a.label("er_z")
     E(subs_imm8, 3, 4)
     E(raw, h(0x50C1))                                                     # str r1, [r0, r3]
@@ -383,6 +443,40 @@ def arm_code(base, L, prev):
     E(str_imm, 2, 0, O_SWAL)
     E(pop_list, [4], pc=True)
 
+    if R81:
+        # ---- es_hold (r5 = the engine, r7 = our RAM): its pad pressed (held after HOLD: the patches); clobbers r0
+        a.label("es_hold")
+        E(movs_imm, 0, 1)
+        E(strb_imm, 0, 7, O_H24)
+        E(strb_w, 5, 7, O_HENG)
+        imm32(0, CI.HAL_TICK)
+        E(ldr_imm, 0, 0, 0)
+        E(str_imm, 0, 7, O_TICK)
+        E(raw, h(0x4770))
+        # ---- c_eslist() -> r0 = the track whose patch list shows (an engine pad held, the selector open), else 8; clobbers r1-r3
+        a.label("c_eslist")
+        E(push_list, [4], lr=True)
+        E(bl, "c_esram")
+        E(mov_reg, 4, 0)
+        E(ldrb_imm, 0, 4, O_OPEN)
+        E(cmp_imm, 0, 0)
+        if starters():                                                    # (RH87) pad 8 held: the selector open or not
+            E(b_cond, "el_h", "ne")
+            E(ldrb_w, 0, 4, O_HENG)
+            E(cmp_imm, 0, 0xFF)
+            E(b_cond, "el_n", "ne")
+            a.label("el_h")
+        else:
+            E(b_cond, "el_n", "eq")
+        E(ldrb_imm, 0, 4, O_H24)
+        E(cmp_imm, 0, 2)
+        E(b_cond, "el_n", "ne")
+        E(bl, "c_estrk")
+        E(pop_list, [4], pc=True)
+        a.label("el_n")
+        E(movs_imm, 0, 8)
+        E(pop_list, [4], pc=True)
+
     # ---- c_estick(r0 = our RAM): the press's tick = now; clobbers r1
     a.label("c_estick")
     imm32(1, CI.HAL_TICK)
@@ -405,6 +499,35 @@ def arm_code(base, L, prev):
     E(mov_reg, 0, 4)
     E(bl, "c_eseng")
     E(mov_reg, 6, 0)                                                      # r6 = its engine
+    if R81:                                                               # (RH81) the choke on a synth: the mode's other side
+        E(cmp_imm, 5, P_CHOKE)
+        E(b_cond, "pd_ck", "ne")
+        E(cmp_imm, 6, E_VA)
+        E(b_cond, "pd_ck1", "eq")
+        E(cmp_imm, 6, E_FM)
+        bc("pd_q", "ne")
+        a.label("pd_ck1")
+        E(mov_reg, 0, 4)
+        E(bl, "c_esmode")
+        E(cmp_imm, 0, M_POLY)
+        E(b_cond, "pd_ck2", "ne")
+        E(movs_imm, 0, 1)                                                 # poly: its retrigger bit
+        E(lsls_reg, 0, 4)
+        E(ldrb_w, 1, 7, O_PRT)
+        E(raw, h(0x4041))                                                 # eors r1, r0
+        E(strb_w, 1, 7, O_PRT)
+        E(b, "pd_ck3")
+        a.label("pd_ck2")
+        imm32(1, T["tog"])
+        E(ldrb_reg, 1, 1, 0)
+        E(mov_reg, 0, 4)
+        E(bl, "c_esset")
+        a.label("pd_ck3")
+        E(ldr_sp, 0, 0)
+        E(mov_reg, 1, 4)
+        E(bl, "c_eschk")
+        E(b, "pd_w")
+        a.label("pd_ck")
     # pad 16 held: the voice modes on 17-24
     E(ldrb_imm, 0, 7, O_H16)
     E(cmp_imm, 0, 2)
@@ -415,14 +538,20 @@ def arm_code(base, L, prev):
     E(mov_reg, 0, 4)
     E(mov_reg, 1, 5)
     E(bl, "c_esset")
+    if R81:
+        E(ldr_sp, 0, 0)
+        E(mov_reg, 1, 4)
+        E(bl, "c_eschk")
     a.label("pd_1r")
     E(adds_imm8, 5, P_ENG0)
     E(b, "pd_w")
     a.label("pd_1")
-    # pad 24 held: the instruments on rows 1, 2, 4
+    # pad 24 held: the instruments on rows 1, 2, 4 (RH81: rpatch's patches, ahead of us)
     E(ldrb_imm, 0, 7, O_H24)
     E(cmp_imm, 0, 2)
     E(b_cond, "pd_2", "ne")
+    if R81:
+        E(b, "pd_w")
     E(mov_reg, 1, 5)
     E(cmp_imm, 1, 16)
     E(b_cond, "pd_2i", "lo")
@@ -441,6 +570,14 @@ def arm_code(base, L, prev):
     a.label("pd_2")
     E(cmp_imm, 5, P_SEL)                                                  # pad 8: open / close
     E(b_cond, "pd_3", "ne")
+    if starters():                                                        # (RH87) held = the pack's patches; a tap: on its release
+        E(movs_imm, 0, 1)
+        E(strb_imm, 0, 7, O_H24)
+        E(movs_imm, 0, 0xFF)
+        E(strb_w, 0, 7, O_HENG)
+        E(mov_reg, 0, 7)
+        E(bl, "c_estick")
+        E(b, "pd_w")
     E(ldrb_imm, 0, 7, O_OPEN)
     E(movs_imm, 1, 1)
     E(raw, h(0x4048))                                                     # eors r0, r1
@@ -486,6 +623,18 @@ def arm_code(base, L, prev):
         E(bl, "c_esplay")
         E(b, "pd_w")
         a.label(f"pd_s{pad}")
+    if va2x():                                                            # (RH85) pad 4 on a VA track: its 2x
+        E(cmp_imm, 5, P_OS2)
+        E(b_cond, "pd_o2", "ne")
+        E(cmp_imm, 6, E_VA)
+        bc("pd_w", "ne")
+        E(movs_imm, 0, 1)
+        E(lsls_reg, 0, 4)
+        E(ldrb_w, 1, 7, O_OS2)
+        E(raw, h(0x4041))                                                 # eors r1, r0
+        E(strb_w, 1, 7, O_OS2)
+        E(b, "pd_w")
+        a.label("pd_o2")
     E(cmp_imm, 5, P_ENG0)
     bc("pd_w", "lo")                                                      # rows 1-2: hidden
     # the engines
@@ -502,6 +651,8 @@ def arm_code(base, L, prev):
     a.label("pg_1")
     E(cmp_imm, 5, E_GR)
     E(b_cond, "pg_2", "ne")
+    if R81:                                                               # (RH81) held: the patches
+        E(bl, "es_hold")
     E(cmp_imm, 1, SY.SND_GRAN)
     bc("pg_w", "eq")
     E(movs_imm, 1, SM.P_GRAN)
@@ -546,6 +697,17 @@ def arm_code(base, L, prev):
     E(ldr_sp, 0, 0)
     E(movs_imm, 1, SM.P_SYNTH)
     E(bl, "c_esplay")
+    if R81:                                                               # (RH81) a track that becomes a synth: gated (Sample mode's pad 26)
+        E(adds_imm8, 4, 0x10)
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, PAR_MODE)
+        E(bl, GETTER)
+        E(subs_imm8, 4, 0x10)
+        E(cmp_imm, 0, 1)
+        E(b_cond, "pg_4s", "eq")
+        E(ldr_sp, 0, 0)
+        E(movs_imm, 1, P_GATED)
+        E(bl, "c_esplay")
     a.label("pg_4s")
     E(mov_reg, 0, 4)
     E(bl, L["c_syslot"])
@@ -565,13 +727,17 @@ def arm_code(base, L, prev):
     E(mov_reg, 1, 3)
     E(bl, L["c_fmset"])
     a.label("pg_4h")
-    E(cmp_imm, 5, E_FM)                                                   # FM: its tap / hold
-    bc("pg_w", "ne")
-    E(movs_imm, 0, 1)
-    E(strb_imm, 0, 7, O_H24)
-    E(mov_reg, 0, 7)
-    E(bl, "c_estick")
-    E(b, "pg_w")
+    if R81:                                                               # (RH81) VA / FM: held = the patches (FM: a tap = its page)
+        E(bl, "es_hold")
+        E(b, "pg_w")
+    else:
+        E(cmp_imm, 5, E_FM)                                               # FM: its tap / hold
+        bc("pg_w", "ne")
+        E(movs_imm, 0, 1)
+        E(strb_imm, 0, 7, O_H24)
+        E(mov_reg, 0, 7)
+        E(bl, "c_estick")
+        E(b, "pg_w")
     a.label("pg_play")
     E(ldr_sp, 0, 0)
     E(bl, "c_esplay")
@@ -620,6 +786,31 @@ def arm_code(base, L, prev):
     E(bl, "c_esset")
     E(b, "rl_s")
     a.label("rl_1")
+    if starters():                                                        # (RH87) pad 8 let go: a tap opens / closes, a hold is over
+        E(cmp_imm, 5, P_SEL)
+        E(b_cond, "rl_8", "ne")
+        E(ldrb_imm, 6, 7, O_H24)
+        E(movs_imm, 0, 0)
+        E(strb_imm, 0, 7, O_H24)
+        E(strb_w, 0, 7, O_HENG)
+        E(cmp_imm, 6, 1)
+        E(b_cond, "rl_s", "ne")
+        E(ldrb_imm, 0, 7, O_OPEN)
+        E(movs_imm, 1, 1)
+        E(raw, h(0x4048))                                                 # eors r0, r1
+        E(strb_imm, 0, 7, O_OPEN)
+        E(b, "rl_s")
+        a.label("rl_8")
+    if R81:                                                               # (RH81) VA / granular let go: the hold over
+        for e in (E_VA, E_GR):
+            E(cmp_imm, 5, P_ENG0 + e)
+            E(b_cond, "rl_h", "eq")
+        E(b, "rl_hf")
+        a.label("rl_h")
+        E(movs_imm, 0, 0)
+        E(strb_imm, 0, 7, O_H24)
+        E(b, "rl_s")
+        a.label("rl_hf")
     E(cmp_imm, 5, P_ENG0 + E_FM)
     E(b_cond, "rl_s", "ne")
     E(ldrb_imm, 6, 7, O_H24)
@@ -713,6 +904,304 @@ def arm_code(base, L, prev):
     a.label("ka_x")
     E(raw, h(0x4770))
 
+    if va2x():
+        import va0 as VA
+        import fm8c0 as F8C
+        import poly0 as PO
+        import synth0 as S
+        # ---- (RH85) c_esos2 (c_esled, READY): the slots' 2x in core 0, a governor on core 0's measured room (poly0's H, X:$5231):
+        #  * want (bit s of O_OSWANT): the slot's track has 2x on, is not in unison (its voices escape the polyphony cap), the slot not FM and
+        #    on two oscillators (DFLAGS' DUAL, c_syword(s, 31));
+        #  * granted (O_OSENT): the key X:$5258 + $40 s = OS2KEY; a slot no longer wanted loses it at once; with H < LEAVE passes one granted
+        #    slot loses it (the highest), with H >= ENTER one wanted resting slot (its stage IDLE: no click) gets it (the 12 coefficients
+        #    first when none had it), then WAIT frames before the next change;
+        #  * in turn (one slot a frame, O_RR & 3): its key rewritten while any track uses 2x (a lost write, a stale key), its cost for
+        #    poly0's pqa at X:$525C + $40 s (x 16 passes) when it changes: FM 20 + 19 N (its operators), two oscillators C1X / C2X (granted),
+        #    else C1; one coefficient a frame while a slot is granted.  At the first READY frame every key 0 (RD45's switch left in core 0).
+        a.label("c_esos2")
+        E(push_list, [3, 4, 5, 6, 7], lr=True)
+        E(bl, "c_esram")
+        E(mov_reg, 7, 0)
+        E(ldrb_w, 0, 7, O_OSIN)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "o2_g", "ne")
+        E(movs_imm, 4, 0)
+        a.label("o2_i")
+        E(movs_imm, 0, 0)
+        E(mov_reg, 1, 4)
+        E(bl, "c_oskey")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, NSL)
+        E(b_cond, "o2_i", "lo")
+        E(movs_imm, 0, 0)
+        E(strb_w, 0, 7, O_OSENT)
+        E(movs_imm, 0, 1)
+        E(strb_w, 0, 7, O_OSIN)
+        a.label("o2_g")
+        E(bl, L["c_syb"])
+        E(cmp_imm, 0, 0)
+        bc("o2_x", "eq")
+        E(mov_reg, 6, 0)                                                  # r6 = the synth block
+        E(movs_imm, 0, 0)
+        E(strb_w, 0, 7, O_OSWANT)
+        E(movs_imm, 4, 0)
+        a.label("o2_w")
+        E(movs_imm, 1, SY.SL)
+        E(muls, 1, 4)
+        E(adds_reg, 1, 1, 6)
+        E(ldrb_imm, 1, 1, 2)
+        E(subs_imm8, 1, 1)
+        E(b_cond, "o2_wn", "lo")                                          # r1 = its track
+        E(ldrb_w, 0, 7, O_OS2)
+        E(lsrs_reg, 0, 1)
+        E(lsrs_imm, 0, 0, 1)
+        E(b_cond, "o2_wn", "cc")
+        E(ldrb_w, 0, 7, O_UNI)
+        E(lsrs_reg, 0, 1)
+        E(lsrs_imm, 0, 0, 1)
+        E(b_cond, "o2_wn", "cs")
+        E(mov_reg, 0, 4)
+        E(bl, L["c_fmon"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "o2_wn", "ne")
+        if not va2x1():                                                   # (va2x1: one oscillator too, its DFLAGS follow the grant)
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, 16 + 15)                                       # DFLAGS
+            E(bl, L["c_syword"])
+            E(cmp_imm, 0, 0)
+            E(b_cond, "o2_wn", "eq")
+        E(movs_imm, 0, 1)
+        E(lsls_reg, 0, 4)
+        E(ldrb_w, 1, 7, O_OSWANT)
+        E(orrs_reg, 1, 0)
+        E(strb_w, 1, 7, O_OSWANT)
+        a.label("o2_wn")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, NSL)
+        E(b_cond, "o2_w", "lo")
+        E(movs_imm, 4, 0)                                                 # the unwanted lose it
+        a.label("o2_r")
+        E(ldrb_w, 0, 7, O_OSENT)
+        E(lsrs_reg, 0, 4)
+        E(lsrs_imm, 0, 0, 1)
+        E(b_cond, "o2_rn", "cc")
+        E(ldrb_w, 0, 7, O_OSWANT)
+        E(lsrs_reg, 0, 4)
+        E(lsrs_imm, 0, 0, 1)
+        E(b_cond, "o2_rn", "cs")
+        E(mov_reg, 0, 4)
+        E(bl, "c_osoff")
+        a.label("o2_rn")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, NSL)
+        E(b_cond, "o2_r", "lo")
+        E(movs_imm, 0, 0)                                                 # r5 = H in passes
+        E(movw, 1, PO.H16)
+        E(bl, L["c_d16r"])
+        E(lsrs_imm, 5, 0, 12)
+        E(ldrb_w, 0, 7, O_OSW)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "o2_l", "eq")
+        E(subs_imm8, 0, 1)
+        E(strb_w, 0, 7, O_OSW)
+        E(b, "o2_t")
+        a.label("o2_l")
+        E(cmp_imm, 5, OS2_LEAVE)
+        E(b_cond, "o2_gr", "hs")
+        E(ldrb_w, 0, 7, O_OSENT)                                          # no room: the highest granted loses it
+        E(cmp_imm, 0, 0)
+        E(b_cond, "o2_t", "eq")
+        E(movs_imm, 4, NSL - 1)
+        a.label("o2_lh")
+        E(mov_reg, 1, 0)
+        E(lsrs_reg, 1, 4)
+        E(lsrs_imm, 1, 1, 1)
+        E(b_cond, "o2_lv", "cs")
+        E(subs_imm8, 4, 1)
+        E(b_cond, "o2_lh", "pl")
+        E(b, "o2_t")
+        a.label("o2_lv")
+        E(mov_reg, 0, 4)
+        E(bl, "c_osoff")
+        E(b, "o2_wt")
+        a.label("o2_gr")
+        E(movw, 0, OS2_ENTER)
+        E(cmp_reg, 5, 0)
+        E(b_cond, "o2_t", "lo")
+        E(ldrb_w, 0, 7, O_OSWANT)                                         # room: the lowest wanted resting slot gets it
+        E(ldrb_w, 1, 7, O_OSENT)
+        E(bics_reg, 0, 1)
+        E(b_cond, "o2_t", "eq")
+        E(movs_imm, 4, 0)
+        a.label("o2_gl")
+        E(mov_reg, 1, 0)
+        E(lsrs_reg, 1, 4)
+        E(lsrs_imm, 1, 1, 1)
+        E(b_cond, "o2_gs", "cs")
+        E(adds_imm8, 4, 1)
+        E(b, "o2_gl")
+        a.label("o2_gs")
+        E(movs_imm, 0, 0)
+        E(movw, 1, 0x8000 | (S.Y0 + S.S_STG))
+        E(lsls_imm, 2, 4, 6)
+        E(adds_reg, 1, 1, 2)
+        E(bl, L["c_d16r"])
+        E(lsrs_imm, 0, 0, 8)
+        E(cmp_imm, 0, S.IDLE)
+        E(b_cond, "o2_t", "ne")
+        E(ldrb_w, 0, 7, O_OSENT)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "o2_gk", "ne")
+        E(bl, "c_escof")
+        a.label("o2_gk")
+        imm32(0, VA.OS2KEY)
+        E(mov_reg, 1, 4)
+        E(bl, "c_oskey")
+        E(movs_imm, 0, 1)
+        E(lsls_reg, 0, 4)
+        E(ldrb_w, 1, 7, O_OSENT)
+        E(orrs_reg, 1, 0)
+        E(strb_w, 1, 7, O_OSENT)
+        if va2x1():                                                       # (va2x1) its DFLAGS again (DUAL while granted)
+            E(mov_reg, 0, 4)
+            E(bl, L["c_sypend"])
+        a.label("o2_wt")
+        E(movs_imm, 0, OS2_WAIT)
+        E(strb_w, 0, 7, O_OSW)
+        a.label("o2_t")                                                   # in turn: slot O_RR & 3
+        E(ldrb_w, 4, 7, O_RR)
+        E(movs_imm, 0, 3)
+        E(ands_reg, 4, 0)
+        E(ldrb_w, 0, 7, O_OS2)
+        E(ldrb_w, 1, 7, O_OSENT)
+        E(orrs_reg, 0, 1)
+        E(b_cond, "o2_c", "eq")
+        E(lsrs_reg, 1, 4)
+        E(movs_imm, 0, 1)
+        E(ands_reg, 1, 0)
+        E(movs_imm, 0, 0)
+        E(cmp_imm, 1, 0)
+        E(b_cond, "o2_tk", "eq")
+        imm32(0, VA.OS2KEY)
+        a.label("o2_tk")
+        E(mov_reg, 1, 4)
+        E(bl, "c_oskey")
+        a.label("o2_c")
+        E(mov_reg, 0, 4)
+        E(bl, "c_oscls")                                                  # r0 = its cost in passes
+        E(lsrs_imm, 3, 0, 1)
+        E(adds_reg, 1, 7, 4)
+        E(ldrb_w, 2, 1, O_OSCOST)
+        E(cmp_reg, 3, 2)
+        E(b_cond, "o2_q", "eq")
+        E(strb_w, 3, 1, O_OSCOST)
+        E(lsls_imm, 0, 0, 4)
+        E(mov_reg, 1, 4)
+        E(bl, "c_oscost")
+        a.label("o2_q")
+        E(ldrb_w, 0, 7, O_OSENT)                                          # one coefficient in turn while a slot has 2x
+        E(cmp_imm, 0, 0)
+        E(b_cond, "o2_x", "eq")
+        E(ldrb_w, 4, 7, O_OSC)
+        E(mov_reg, 0, 4)
+        E(bl, "c_escf1")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, len(VA.OS2_COEF))
+        E(b_cond, "o2_qq", "lo")
+        E(movs_imm, 4, 0)
+        a.label("o2_qq")
+        E(strb_w, 4, 7, O_OSC)
+        a.label("o2_x")
+        E(pop_list, [3, 4, 5, 6, 7], pc=True)
+        # c_osoff(r0 = slot; r7 = ESR): its key 0, its granted bit off
+        a.label("c_osoff")
+        E(push_list, [4], lr=True)
+        E(mov_reg, 4, 0)
+        E(movs_imm, 0, 0)
+        E(mov_reg, 1, 4)
+        E(bl, "c_oskey")
+        E(movs_imm, 0, 1)
+        E(lsls_reg, 0, 4)
+        E(ldrb_w, 1, 7, O_OSENT)
+        E(bics_reg, 1, 0)
+        E(strb_w, 1, 7, O_OSENT)
+        if va2x1():
+            E(mov_reg, 0, 4)
+            E(bl, L["c_sypend"])
+        E(pop_list, [4], pc=True)
+        # c_oskey(r0 = word, r1 = slot): X:$5258 + $40 s; c_oscost: X:$525C + $40 s (clobber r0-r3)
+        for nm, off in (("c_oskey", 0), ("c_oscost", OS2_COSTD)):
+            a.label(nm)
+            E(push_list, [4], lr=True)
+            E(lsls_imm, 1, 1, 6)
+            E(movw, 2, VA.OS2G + off)
+            E(adds_reg, 1, 1, 2)
+            E(movs_imm, 2, 0)
+            E(bl, L["c_gpw"])
+            E(pop_list, [4], pc=True)
+        # c_oscls(r0 = slot; r7 = ESR) -> r0 = its cost in passes (FM 20 + 19 N; two oscillators C1X, granted C2X; else C1)
+        a.label("c_oscls")
+        E(push_list, [4, 5], lr=True)
+        E(mov_reg, 4, 0)
+        E(bl, L["c_fmon"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "cl_va", "eq")
+        E(movs_imm, 0, 0)
+        E(movw, 1, F8C.FB0 + F8C.G_N)
+        E(lsls_imm, 2, 4, 9)
+        E(adds_reg, 1, 1, 2)
+        E(bl, L["c_d16r"])
+        E(lsrs_imm, 0, 0, 8)
+        E(movs_imm, 1, 7)
+        E(ands_reg, 0, 1)
+        E(cmp_imm, 0, 0)                                                  # N = G_N (1 .. 8: 8 & 7 = 0 -> 8)
+        E(b_cond, "cl_n", "ne")
+        E(movs_imm, 0, 8)
+        a.label("cl_n")
+        E(movs_imm, 1, 19)
+        E(muls, 0, 1)
+        E(adds_imm8, 0, 20)
+        E(b, "cl_x")
+        a.label("cl_va")
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, 16 + 15)
+        E(bl, L["c_syword"])
+        E(mov_reg, 5, 0)
+        E(movs_imm, 0, PO.C1)
+        E(cmp_imm, 5, 0)
+        E(b_cond, "cl_x", "eq")
+        E(movs_imm, 0, PO.C1X)
+        E(ldrb_w, 1, 7, O_OSENT)
+        E(lsrs_reg, 1, 4)
+        E(lsrs_imm, 1, 1, 1)
+        E(b_cond, "cl_x", "cc")
+        E(movw, 0, PO.C2X)
+        a.label("cl_x")
+        E(pop_list, [4, 5], pc=True)
+        # c_escof: the 12 coefficients; c_escf1(r0 = k): X:$5300 + k = the k-th (clobber r0-r3)
+        a.label("c_escof")
+        E(push_list, [4], lr=True)
+        E(movs_imm, 4, 0)
+        a.label("cf_l")
+        E(mov_reg, 0, 4)
+        E(bl, "c_escf1")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, len(VA.OS2_COEF))
+        E(b_cond, "cf_l", "lo")
+        E(pop_list, [4], pc=True)
+        a.label("c_escf1")
+        E(push_list, [4], lr=True)
+        E(mov_reg, 4, 0)
+        imm32(1, T["oc"])
+        E(lsls_imm, 2, 0, 2)
+        E(adds_reg, 1, 1, 2)
+        E(ldr_imm, 0, 1, 0)
+        E(movw, 1, VA.XC)
+        E(adds_reg, 1, 1, 4)
+        E(movs_imm, 2, 0)
+        E(bl, L["c_gpw"])
+        E(pop_list, [4], pc=True)
+
     # ---- c_esled (the LED task's calls: ctrl, frame): the chain; the core 0 words; Sample mode's pads and pad 16's knobs
     a.label("c_esled")
     E(push_list, [3, 4, 5, 6, 7], lr=True)
@@ -749,7 +1238,11 @@ def arm_code(base, L, prev):
     E(cmp_imm, 0, TH.READY)
     bc("ld_v", "ne")
     E(bl, "c_eswords")
+    if va2x():
+        E(bl, "c_esos2")
     a.label("ld_v")
+    if R81:
+        E(bl, "c_esrvs")
     # Sample mode's pads
     E(bl, "c_estrk")
     E(cmp_imm, 0, 8)
@@ -786,8 +1279,8 @@ def arm_code(base, L, prev):
     E(ldrb_imm, 0, 3, 0)
     E(strh_imm, 0, 5, 2 * P_SEL)                                          # pad 8: the engine's colour, bright
     imm32(3, T["ce"])
-    for e in range(8):                                                    # the engines
-        if COL_E[e] == (0, 0):
+    for e in range(8):                                                    # the engines (VA-drum, wavetable: not on the Rhythm yet, dark)
+        if COL_E[e] == (0, 0) or e in (E_VD, E_WT):
             continue
         E(ldrb_imm, 0, 3, 2 * e + 1)
         E(cmp_imm, 6, e)
@@ -811,6 +1304,18 @@ def arm_code(base, L, prev):
             a.label(f"ld_s{pad}{k}")
         E(strh_imm, 1, 5, 2 * pad)
         a.label(f"ld_s{pad}")
+    if va2x():                                                            # (RH85) pad 4 on a VA track: 2x bright, 1x dim
+        E(cmp_imm, 6, E_VA)
+        E(b_cond, "ld_o2", "ne")
+        E(ldrb_w, 1, 7, O_OS2)
+        E(lsrs_reg, 1, 4)
+        E(ldrb_imm, 0, 3, 2 * E_VA + 1)
+        E(lsrs_imm, 1, 1, 1)
+        E(b_cond, "ld_o2b", "cc")
+        E(ldrb_imm, 0, 3, 2 * E_VA)
+        a.label("ld_o2b")
+        E(strh_imm, 0, 5, 2 * P_OS2)
+        a.label("ld_o2")
     E(cmp_imm, 6, E_VA)                                                   # pad 16: the voice, in its mode's colour
     E(b_cond, "ld_vc", "eq")
     E(cmp_imm, 6, E_FM)
@@ -832,12 +1337,24 @@ def arm_code(base, L, prev):
         E(b_cond, f"ld_m{m}", "ne")
         E(ldrb_imm, 0, 3, 2 * m)
         a.label(f"ld_m{m}")
+        if R81 and m == 2:                                                # (RH81) pad 19: the always-glide in its colour (violet)
+            E(cmp_imm, 6, M_AGL)
+            E(b_cond, "ld_mg", "ne")
+            E(ldrb_imm, 0, 3, 2 * M_AGL)
+            a.label("ld_mg")
+        if R81 and m == M_POLY:                                           # (RH81) poly retriggering: blinking
+            E(cmp_imm, 6, M_POLY)
+            E(b_cond, "ld_mp", "ne")
+            E(bl, "c_esblink")
+            a.label("ld_mp")
         E(strh_w_imm, 0, 5, 2 * (P_ENG0 + m))
     E(bl, "c_esknobs")
     a.label("ld_i")
     E(ldrb_imm, 0, 7, O_H24)                                              # pad 24 held: the instruments on rows 1, 2, 4
     E(cmp_imm, 0, 2)
     bc("ld_x", "ne")
+    if R81:                                                               # (RH81: rpatch draws the patches)
+        E(b, "ld_x")
     E(mov_reg, 0, 4)
     E(bl, L["c_syslot"])
     E(cmp_imm, 0, NSL)
@@ -946,6 +1463,12 @@ def arm_code(base, L, prev):
     E(bl, "c_esslots")
     E(lsls_imm, 6, 0, 4)
     E(orrs_reg, 6, 5)                                                     # r6 = the signature: mode + 1 | slots << 4
+    if R81:                                                               # (RH81) | the poly retrigger << 7
+        E(ldrb_w, 0, 7, O_PRT)
+        E(lsrs_reg, 0, 4)
+        E(lsls_imm, 0, 0, 31)
+        E(lsrs_imm, 0, 0, 24)
+        E(orrs_reg, 6, 0)
     E(adds_reg, 0, 7, 4)
     E(ldrb_w, 1, 0, O_SENT)
     E(ldrb_imm, 2, 0, O_DET)
@@ -997,6 +1520,79 @@ def arm_code(base, L, prev):
     a.label("ew_x")
     E(pop_list, [4, 5, 6], pc=True)
 
+    if R81:
+        # ---- c_eschk(r0 = ctrl, r1 = track): the stock's choke (parameter 3) = the mode's retrigger, through Sample mode's pad 29
+        a.label("c_eschk")
+        E(push_list, [4, 5, 6], lr=True)
+        E(mov_reg, 5, 0)
+        E(mov_reg, 4, 1)
+        E(mov_reg, 0, 4)
+        E(bl, "c_esmode")
+        imm32(1, T["ret"])
+        E(ldrb_reg, 6, 1, 0)                                              # r6 = it retriggers
+        E(cmp_imm, 0, M_POLY)
+        E(b_cond, "ck_g", "ne")
+        E(bl, "c_esram")
+        E(ldrb_w, 6, 0, O_PRT)
+        E(lsrs_reg, 6, 4)
+        E(movs_imm, 0, 1)
+        E(ands_reg, 6, 0)
+        a.label("ck_g")
+        E(adds_imm8, 4, 0x10)
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, PAR_CHOKE)
+        E(bl, GETTER)
+        E(cmp_reg, 0, 6)
+        E(b_cond, "ck_x", "eq")
+        E(mov_reg, 0, 5)
+        E(movs_imm, 1, P_CHOKE)
+        E(bl, "c_esplay")
+        a.label("ck_x")
+        E(pop_list, [4, 5, 6], pc=True)
+        # ---- c_esblink(r0 = the colour, r3 = the colour table) -> r0 = poly's colour, blinking with its retrigger (r4 = track, r7 = RAM)
+        a.label("c_esblink")
+        E(ldrb_w, 1, 7, O_PRT)
+        E(lsrs_reg, 1, 4)
+        E(lsrs_imm, 1, 1, 1)
+        E(b_cond, "bk_x", "cc")
+        imm32(1, CI.HAL_TICK)
+        E(ldr_imm, 1, 1, 0)
+        E(lsrs_imm, 1, 1, 9)                                              # (C = the tick's bit 8: 256 ms each)
+        E(b_cond, "bk_x", "cc")
+        E(ldrb_imm, 0, 3, 2 * M_POLY + 1)
+        a.label("bk_x")
+        E(raw, h(0x4770))
+        # ---- c_esrvs (r7 = our RAM): the slots whose track is reversed (parameter 2), for envpage; clobbers r0-r3
+        a.label("c_esrvs")
+        E(push_list, [4, 5, 6], lr=True)
+        E(movs_imm, 6, 0)
+        E(movs_imm, 4, 0)
+        a.label("rv_l")
+        E(bl, L["c_syb"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "rv_x", "eq")
+        E(movs_imm, 1, SY.SL)
+        E(muls, 1, 4)
+        E(adds_reg, 0, 0, 1)
+        E(ldrb_imm, 0, 0, 2)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "rv_n", "eq")
+        E(adds_imm8, 0, 0x10 - 1)
+        E(movs_imm, 1, PAR_REV)
+        E(bl, GETTER)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "rv_n", "eq")
+        E(movs_imm, 0, 1)
+        E(lsls_reg, 0, 4)
+        E(orrs_reg, 6, 0)
+        a.label("rv_n")
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, NSL)
+        E(b_cond, "rv_l", "lo")
+        a.label("rv_x")
+        E(strb_w, 6, 7, O_RVS)
+        E(pop_list, [4, 5, 6], pc=True)
+
     # ---- c_esw (r4 = the track, r7 = our RAM): X:VMF + t = its flags (0 never set), X:UG + t = its unison's gain; clobbers r0-r3
     a.label("c_esw")
     E(push_list, [5], lr=True)
@@ -1007,6 +1603,14 @@ def arm_code(base, L, prev):
     E(b_cond, "ww_f", "eq")
     imm32(0, T["fl"] - 1)
     E(ldrb_reg, 0, 0, 5)
+    if R81:                                                               # (RH81) poly retriggering: F_PRT
+        E(cmp_imm, 5, M_POLY + 1)
+        E(b_cond, "ww_f", "ne")
+        E(ldrb_w, 1, 7, O_PRT)
+        E(lsrs_reg, 1, 4)
+        E(lsrs_imm, 1, 1, 1)
+        E(b_cond, "ww_f", "cc")
+        E(adds_imm8, 0, VM.F_PRT)
     a.label("ww_f")
     E(movw, 1, VM.VMF)
     E(adds_reg, 1, 1, 4)
@@ -1053,6 +1657,8 @@ def install(img, report, base_addr):
              c_fmon=lab("fmpage", "c_fmon"), c_fmset=lab("fmpage", "c_fmset"), c_plis=lab("fmpage", "c_plis"),
              c_plon=lab("fmpage", "c_plon"), c_ploff=lab("fmpage", "c_ploff"), c_f8page=lab("fm8page", "c_f8page"),
              c_f8load=lab("fm8page", "c_f8load"), c_gpw=lab("granpage", "c_gpw"), FMR=F8.FMR, O_INST=F8.O_INST)
+    if va2x():                                                                 # (RH85) c_esos2's reads and the slot's DFLAGS
+        L.update(c_syword=lab("synthpage", "c_syword"), c_d16r=lab("rdiag" if "rdiag" in report else "dsprd", "c_d16r"))
     prev = dict(pad=rhbuild.bw_target(img, GP.PP_ENTRY), rel=rhbuild.bw_target(img, GP.PR_ENTRY), knob=u(SY.SLOT_KNOB) & ~1,
                 ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)

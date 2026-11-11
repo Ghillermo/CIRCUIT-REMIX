@@ -72,7 +72,27 @@ function dzHeader(b, places) {   // places: [[address, [bytes, words]], ...]
   return h;
 }
 function dzB64(s) { const a = atob(s), u = new Uint8Array(a.length); for (let i = 0; i < a.length; i++) u[i] = a.charCodeAt(i); return u; }
+function dzApply2(src, out, spec) {   // op 2 v2 (RD47+): the stock's other DSP blocks packed in place, then core 0's stream in its holes
+  const BASE = 0x08010000, HE = 16, EN = 12;
+  for (const [o, size] of spec.more) {
+    const b1 = dzPack(src.subarray(o, o + size)), hd = dzHeader(b1, [[BASE + o + HE + 2 * EN, [b1.st, b1.words]]]);
+    if (hd.length + b1.st.length > size) throw Error("dz: a block");
+    out.fill(0xFF, o, o + size); out.set(hd, o); out.set(b1.st, o + hd.length);
+  }
+  const ours = applyPatch(src, spec.ours), raw = new Uint8Array(spec.blk[1] + ours.length);
+  raw.set(src.subarray(spec.blk[0], spec.blk[0] + spec.blk[1])); raw.set(ours, spec.blk[1]);
+  const b = dzPack(raw), H = spec.holes, hl = spec.hl;
+  const ps = dzSplit(b, [H[0][1] - hl].concat(H.slice(1).map(h => h[1])));
+  const places = [[BASE + H[0][0] + hl, ps[0]]];
+  for (let k = 1; k < H.length; k++) places.push([BASE + H[k][0], ps[k]]);
+  places.push([BASE + spec.cave[0], ps[ps.length - 1]]);
+  const hd = dzHeader(b, places);
+  if (hd.length !== hl || ps[ps.length - 1][0].length !== spec.cave[1]) throw Error("dz: sizes");
+  H.forEach(([ho, hn], k) => { out.fill(0xFF, ho, ho + hn); if (k === 0) { out.set(hd, ho); out.set(ps[0][0], ho + hl); } else out.set(ps[k][0], ho); });
+  out.set(ps[ps.length - 1][0], spec.cave[0]);
+}
 function dzApply(src, out, spec) {   // op 2: the pieces from the official image (src) into out (in place)
+  if (spec.holes) return dzApply2(src, out, spec);
   const ours = applyPatch(src, spec.ours), raw = new Uint8Array(spec.blk[1] + ours.length);   // (our stream: a patch of the official image)
   raw.set(src.subarray(spec.blk[0], spec.blk[0] + spec.blk[1])); raw.set(ours, spec.blk[1]);
   const b = dzPack(raw), [o1, n1] = spec.r1, [o2, n2] = spec.r2, [o3, n3] = spec.r3, hl = spec.hl, BASE = 0x08010000;

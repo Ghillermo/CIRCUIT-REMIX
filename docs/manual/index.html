@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.12 — manual</title><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.13 — manual</title><style>
 :root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
 :root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
@@ -23,9 +23,9 @@ footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
 p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
 p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
 </style></head><body>
-<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.12</p><div class="bar"></div></header><main>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.13</p><div class="bar"></div></header><main>
 <p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.11 es experimental:</strong> lo nuevo (la matriz de modulación, los carriles, las rampas, los modificadores del arpegio, los módulos) y casi todo desde Alpha 0.04 se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. <strong>Haz una copia de tu tarjeta SD.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.13 es experimental:</strong> el secuenciador de efectos y el looper se han probado en el aparato; casi todo lo demás desde Alpha 0.04, sobre todo en emulación. <strong>Haz una copia de tu tarjeta SD.</strong></p>
 <p>Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.</p>
 <nav class="toc"><h2>Índice</h2>
 <h3>0. Introducción</h3><ol>
@@ -54,14 +54,17 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><a href="#velocity">3.1 Velocity y Micro Step</a></li>
 <li><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></li>
 <li><a href="#patterns">3.3 Patterns: cadenas</a></li>
+<li><a href="#mutate">3.4 Pattern Mutate</a></li>
 </ol>
 <h3>4. Samples</h3><ol>
 <li><a href="#samplemode">4.1 Sample mode</a></li>
 <li><a href="#samplerec">4.2 Sample Rec</a></li>
+<li><a href="#patches">4.3 Patches del pack y starters</a></li>
 </ol>
 <h3>5. Mezcla y efectos</h3><ol>
 <li><a href="#mixer">5.1 Mixer</a></li>
 <li><a href="#fx">5.2 FX y Sidechain</a></li>
+<li><a href="#gridfx">5.3 Grid FX: secuenciador de efectos y looper</a></li>
 </ol>
 <h3>6. Proyectos y ajustes</h3><ol>
 <li><a href="#projects">6.1 Projects y Packs</a></li>
@@ -81,7 +84,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = los 8 knobs. <strong>▲ / ▼</strong> = los botones de flecha.</li>
 <li><strong>Mantener</strong> un botón = pulsarlo y no soltarlo; <strong>A + B</strong> = B con A mantenido.</li>
 <li><strong>★</strong> = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).</li>
-<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.12)</em> es nuevo o cambia en esta versión; <em>(Alpha 0.11)</em> = 0.10 + los módulos de Arrhythmia (solo en 0.11).</li>
+<li><strong>(desde Alpha 0.0x)</strong> = la versión que trajo la función. Lo marcado <em>(Alpha 0.13)</em> es nuevo o cambia en esta versión; <em>(Alpha 0.11)</em> = 0.10 + los módulos de Arrhythmia (solo en 0.11).</li>
 <li>Al final, el <strong><a href="#glosario">glosario</a></strong>: una entrada por función, con su vista y su gesto.</li>
 </ul>
 </section>
@@ -441,6 +444,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>Mantener</strong> un pad de página (½ s o más) la muestra solo hasta que lo sueltas.</li>
 <li>Hasta Alpha 0.11 el menú era: 1 stock, 2 Stock+, 3 Granular, 4 Sinte, 5 Envolvente, 6 Matriz, 7 Secuenciables, 8 Project init, 16 No secuenciables.</li>
 </ul>
+<p><em>(Alpha 0.13)</em>: con el FM, la <strong>fila 3</strong> del menú = los operadores 1-8. El menú fijo ya no se cierra al elegir una página ni con Shift, Clear o Duplicate.</p>
 </section>
 <section class="feat" id="stockplus"><h3><span class="code">2.3</span>Página Stock+</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pad 10 (hasta 0.11, pad 2), en una pista con un sample, el granular o el sinte</p></div>
@@ -886,6 +890,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Clear + knob = por defecto. <strong>Se guarda con el proyecto</strong>; la afinación y el fino de OSC 1 y las tres profundidades de envolvente, en la tarjeta con el <a href="#guardado">sonido del proyecto</a>.</li>
 <li>Hasta Alpha 0.11 el sinte era otro (dos osciladores clásicos con SUB y ruido, una sola página).</li>
 </ul>
+<p><em>(Alpha 0.13)</em>: <strong>OSC 2 sigue a OSC 1</strong> como relación armónica (K5 de OSC 2: 0,25 … 31; su fino ±50 cents), como en CIRCUIT-HACKS. Arreglado: K6 (FM) no hacía nada y RING ponía también el FM. <strong>Sobremuestreo 2×</strong> (Sample mode, selector, pad 4 en una pista VA): menos aliasing en agudos con FM y sync, si el DSP tiene sitio. Choke (pad 29) en un sinte cambia de lado el modo de voz; reverse invierte la Envolvente.</p>
 </section>
 <section class="feat" id="filtro"><h3><span class="code">2.6</span>Páginas Filtro / VCA y Envolvente + LFO</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pads 4 y 5 (cualquier pista)</p></div>
@@ -1174,6 +1179,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <p><strong>Carriles automáticos:</strong> con Record, un knob de Stock+, Granular o Sinte también se graba: en el carril de ese destino o, si no tiene, en el carril libre más alto, que lo adopta. Así la página Secuenciables se rellena sola.</p>
 <p><strong>Carril extra:</strong> una novena automatización por pista, con un valor por paso. La toma el primer destino que no encuentra carril; sin más carriles, los demás destinos no se graban. Clear + Shift + cualquier knob de Secuenciables lo borra en los 8 patrones.</p>
 <p>El pad 8 del menú devuelve también la matriz y los No secuenciables a sus valores de fábrica; los carriles conservan su destino y sus datos.</p>
+<p><em>(Alpha 0.13)</em>: <strong>todos los parámetros</strong> (salvo los operadores del FM) son destinos, en el orden de las vistas de la pista y solo los que tiene su motor: los extras de OSC 1, la Envolvente, el tipo de waveshaper, la capa Shift de Stock+, nivel, panorama y envíos.</p>
 </section>
 <section class="feat" id="entrada"><h3><span class="code">2.11</span>Entrada de línea y enlace estéreo</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> Sample mode, selector (pad 8): pads 18 / 19 y 2 / 3; enlace: pad 14 (hasta 0.11: pads 8 / 15 / 16 y 14)</p></div>
@@ -1432,6 +1438,21 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </tbody></table>
 <p>Cada escena recuerda el modo con que se guardó. Las reglas se guardan con el proyecto.</p>
 </section>
+<section class="feat" id="mutate"><h3><span class="code">3.4</span>Pattern Mutate</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> Patterns o Mixer: Shift + Duplicate</p></div>
+<p>Diseño de <strong><a href="https://github.com/mefisme">mefisme</a></strong> (Rhythm Plus, MIT), con código propio <em>(Alpha 0.13)</em>. Cada pista elegida toca una lista de patrones al azar, hecha de su cadena, en lugar de la cadena.</p>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Shift + Duplicate</strong> (toque, Patterns o Mixer)</td><td>semilla nueva: las pistas elegidas tocan su lista desde su siguiente fin de patrón</td></tr>
+<tr><td><strong>Shift + Duplicate mantenido</strong> (Patterns)</td><td>la página de ajustes (naranja rojizo; elegido = fuerte)</td></tr>
+<tr><td>En la página: <strong>columna 1 / 2</strong></td><td>longitud de la lista 1-4 / 5-8</td></tr>
+<tr><td><strong>columna 3</strong></td><td>tipo de longitud: como la cadena / exacta / al azar hasta la longitud</td></tr>
+<tr><td><strong>columnas 4-5</strong></td><td>cuánto cambia: todo, 7, 6, 5 / 4, 3, 2, 1 huecos</td></tr>
+<tr><td><strong>columna 6</strong></td><td>repeticiones sí / no; <strong>columna 7</strong>: conservar el primer hueco</td></tr>
+<tr><td><strong>Botones de pista</strong></td><td>las pistas que muta</td></tr>
+<tr><td><strong>Clear + Duplicate</strong> (cualquier vista)</td><td>fin de todas las listas; <strong>un pad de patrón</strong> termina la de su pista</td></tr>
+</tbody></table>
+<p>Una pista que muta acaba su cadena en el último hueco de su lista (para que la escena siguiente entre a tiempo).</p>
+</section>
 <h2 class="group">4. Samples</h2>
 <section class="feat" id="samplemode"><h3><span class="code">4.1</span>Sample mode</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> botón Samples dos veces</p></div>
@@ -1566,6 +1587,20 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </tbody></table>
 <p><strong>Copiar un sample</strong> (transporte parado): Duplicate + hueco con sample (parpadea en amarillo); Duplicate + hueco B (de este pack o, tras cargar otro, de ese): verde ~1,5 s y B suena al momento. Si B tiene sample, parpadea en blanco y Duplicate + B otra vez antes de ~5 s lo sobrescribe. Rojo = no se ha podido (memoria llena, aparato ocupado o pack interno).</p>
 </section>
+<section class="feat" id="patches"><h3><span class="code">4.3</span>Patches del pack y starters</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> Sample mode: mantener un pad de motor, o el pad 8</p></div>
+<p>Cada pack tiene <strong>64 patches</strong> de sinte y granular en su banco de patches de la tarjeta <em>(Alpha 0.13)</em>.</p>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Pad 8 mantenido</strong> (con el selector abierto o cerrado)</td><td>los 64 patches del pack en las filas 1, 2 y 4; <strong>▲ / ▼</strong> = la página</td></tr>
+<tr><td>En la lista: <strong>toque</strong></td><td>carga el patch en la pista (pone su motor)</td></tr>
+<tr><td><strong>Clear + patch, dos veces</strong></td><td>guarda el sonido de la pista en ese hueco</td></tr>
+<tr><td><strong>Duplicate + A, luego B</strong></td><td>intercambia A y B; <strong>Duplicate + A, otro pack, Duplicate + B</strong> = copia A en B</td></tr>
+<tr><td><strong>Pad de motor mantenido</strong> (20 VA, 23 granular, 24 FM)</td><td>sus <strong>starters</strong>: 8 VA, 8 granulares o los 24 instrumentos FM; un toque carga</td></tr>
+<tr><td><strong>Clear + botón de pista</strong> (vistas de pista)</td><td>la pista vuelve al último patch o starter que cargó</td></tr>
+<tr><td><strong>Clear + knob</strong> (OSC 1 / OSC 2, Granular, FM)</td><td>ese knob vuelve al valor del patch cargado</td></tr>
+</tbody></table>
+<p>Un hueco vacío del pack enseña primero un patch de ejemplo hasta que guardas encima. <strong>No están en Alpha 0.13S</strong> (escriben en la tarjeta).</p>
+</section>
 <h2 class="group">5. Mezcla y efectos</h2>
 <section class="feat" id="mixer"><h3><span class="code">5.1</span>Mixer</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> botón Mixer</p></div>
@@ -1577,6 +1612,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Modo cue, knob</strong></td><td>el envío al cue de su pista (knobs en rosa, brillo = envío); una pista silenciada con envío suena solo en el cue; Clear + knob = 0</td></tr>
 </tbody></table>
 <p>El pad 9 sin Shift sigue siendo el Mute Recall del original. El modo cue no se guarda.</p>
+<p>La vista Grid FX (Shift + Mixer): ver <a href="#gridfx">Grid FX</a> <em>(Alpha 0.13)</em>. Los huecos fijados con el pad 16 se ven en fuerte, como en el original.</p>
 </section>
 <section class="feat" id="fx"><h3><span class="code">5.2</span>FX y Sidechain</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> botón FX; Sidechain = Shift + FX</p></div>
@@ -1592,6 +1628,31 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>Sidechain</td><td><strong>Clear + knob</strong></td><td>K1-K4: el valor de su preset; K6-K8: el de fábrica; K5: el umbral del original</td></tr>
 </tbody></table>
 <p>Con Shift, el brillo de cada knob muestra su valor. Reverb, delay y sidechain se guardan con el proyecto; la resonancia y el compresor son del aparato. El compresor solo se oye si está encendido (Advanced Setup).</p>
+</section>
+<section class="feat" id="gridfx"><h3><span class="code">5.3</span>Grid FX: secuenciador de efectos y looper</h3>
+<div class="summary"><p><strong>Cómo se llega:</strong> Shift + Mixer (la vista Grid FX); Sample mode, selector, pad 21</p></div>
+<p><strong>Secuenciador de efectos</strong> <em>(Alpha 0.13)</em>: una pista hace sonar los Grid FX en lugar de samples.</p>
+<table><thead><tr><th>Gesto</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><strong>Sample mode, selector (pad 8), pad 21</strong></td><td>la pista elegida es una <strong>pista de efectos</strong> (azul; otra vez = no)</td></tr>
+<tr><td>En su vista: <strong>pads 17-32</strong></td><td>los 16 huecos del Grid FX, cada uno tenue en el color de su efecto; en fuerte el que suena</td></tr>
+<tr><td><strong>Un paso</strong></td><td>enciende el hueco de su sample (flip) mientras dura su nota</td></tr>
+<tr><td><strong>Mantener un paso</strong> (filas 1-2)</td><td>enciende su efecto hasta soltarlo</td></tr>
+<tr><td><strong>Octave ▼ + paso / Octave ▲ + paso</strong></td><td>ese paso: un efecto al azar / repetir el último</td></tr>
+<tr><td><strong>K1-K8</strong> de la pista de efectos</td><td>cuánto de cada pista pasa por el Grid FX (todo al empezar); se automatizan</td></tr>
+<tr><td><strong>Vista Grid FX: hueco mantenido + Shift + K1</strong></td><td>el tipo del hueco, también los nuevos <strong>delay throw</strong> (melocotón) y <strong>reverb throw</strong> (crema)</td></tr>
+</tbody></table>
+<p><strong>Looper / sampler en vivo</strong> <em>(Alpha 0.13)</em>, en la vista Grid FX (Shift + Mixer):</p>
+<table><thead><tr><th>Pad</th><th>Toque</th><th>Mantener</th><th>Shift + pad</th></tr></thead><tbody>
+<tr><td><strong>9</strong> (graba la entrada de línea)</td><td>N compases</td><td>mientras se mantiene</td><td>armado: empieza en el compás siguiente; parado, al arrancar</td></tr>
+<tr><td><strong>10</strong> (remuestrea la mezcla tras el Grid FX, sin los loops)</td><td>N compases</td><td>mientras se mantiene</td><td>igual</td></tr>
+<tr><td><strong>11-14</strong> (los 4 loops)</td><td>una vez desde el principio</td><td>en bucle hasta soltar</td><td>bucle a tempo sí / no</td></tr>
+</tbody></table>
+<ul>
+<li>Graba en el loop del último pad 11-14 tocado: <strong>overdub</strong> si ese pad está mantenido o su loop suena en bucle; si no, sustituye.</li>
+<li><strong>Shift + K8</strong> = N: ½, 1, 2 o 4 compases (un cuarto de vuelta por paso; K8 en amarillo, naranja, rojo anaranjado o salmón). <strong>Clear + pad 11-14</strong> = vaciar.</li>
+<li>LEDs: 9 / 10 rojo tenue, rojo fuerte grabando, ámbar armado; 11-14 oscuro vacío, ámbar tenue con audio, medio el elegido, fuerte sonando.</li>
+<li>Hasta ≈ 6,7 s por loop, estéreo. Los loops no se guardan.</li>
+</ul>
 </section>
 <h2 class="group">6. Proyectos y ajustes</h2>
 <section class="feat" id="projects"><h3><span class="code">6.1</span>Projects y Packs</h3>
@@ -1619,6 +1680,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td>Advanced</td><td><strong>K1</strong></td><td>★ <strong>curva de velocity</strong>: −8 .. +8, 2 clics por paso, centro = el original; a la derecha los golpes flojos suenan más fuerte, a la izquierda al revés <em>(Alpha 0.10)</em></td></tr>
 </tbody></table>
 <p>Todo se guarda en los ajustes del aparato, salvo el modo GM, que va con el proyecto. Si los dos canales de Program Change son distintos, el recibido se reenvía por el de salida.</p>
+<p><em>(Alpha 0.13)</em>: modo GM, los knobs muestran su nota con el brillo, y una nota nueva suena en la pista.</p>
 </section>
 <h2 class="group">A. Apéndice</h2>
 <section class="feat" id="guardado"><h3><span class="code">A.1</span>Qué se guarda y dónde</h3>
@@ -1660,6 +1722,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Curva de velocity</strong></td><td>Advanced Setup, K1</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>De-click de redisparos</strong></td><td>sin clic al volver a disparar un sample; Sample mode, pad 19</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>De-clicker de loops</strong></td><td>crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Delay / reverb throw</strong></td><td>tipos nuevos de Grid FX; hueco mantenido + Shift + K1</td><td><a href="#gridfx">5.3 Grid FX: secuenciador de efectos y looper</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Destello de las pistas</strong></td><td>con Shift, el botón de cada pista en blanco al sonar</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Dinámicas por paso</strong></td><td>velocity y retraso al azar dentro del paso; fila 3 de la probabilidad</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Distorsión en granular y sinte</strong></td><td>el knob de distorsión del original también en ellos</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.07</td></tr>
@@ -1668,6 +1731,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Envolvente + LFO</strong></td><td>la Envolvente y el LFO de Stock+ en una página; menú, pad 5</td><td><a href="#filtro">2.6 Páginas Filtro / VCA y Envolvente + LFO</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Envolvente de tono</strong></td><td>Stock+, K1 / K2</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Envolvente por modo</strong></td><td>inicio, longitud, pendiente y → filtro del sinte y el granular; menú, pad 5</td><td><a href="#envolvente">2.9 Página Envolvente</a></td><td>Alpha 0.06</td></tr>
+<tr><td><strong>Envíos al Grid FX</strong></td><td>cuánto de cada pista pasa por el Grid FX; K1-K8 de la pista de efectos</td><td><a href="#gridfx">5.3 Grid FX: secuenciador de efectos y looper</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Envíos de FX en los knobs</strong></td><td>▼ / ▲ en la vista FX</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Escala propia</strong></td><td>una escala por pista; Shift en la vista Note</td><td><a href="#note">2.12 Vista Note</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Filtro / VCA</strong></td><td>nivel, envolvente y filtro en una página; menú, pad 4</td><td><a href="#filtro">2.6 Páginas Filtro / VCA y Envolvente + LFO</a></td><td>Alpha 0.12</td></tr>
@@ -1685,6 +1749,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Latch</strong></td><td>un acorde que sigue a cada nota; Shift + tecla en la vista Note</td><td><a href="#note">2.12 Vista Note</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>LFO de tono</strong></td><td>Stock+, K3 / K4; libre o a tempo</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Longitud fija</strong></td><td>los golpes a mano con una longitud; Micro Step, pad 31</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Looper</strong></td><td>4 loops grabados de la entrada o la mezcla; vista Grid FX, pads 9-14</td><td><a href="#gridfx">5.3 Grid FX: secuenciador de efectos y looper</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Marcas de Velocity</strong></td><td>en el paso marcado los parámetros vuelven a Project init (hasta 0.08, al knob); Shift + paso</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Matriz de modulación</strong></td><td>8 fuentes por pista hacia 32 destinos; menú, pad 6</td><td><a href="#matriz">2.10 Matriz, Secuenciables y No secuenciables</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Menú de pista</strong></td><td>tocar el botón de la pista elegida (se queda abierto) o mantener el de una pista</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.04</td></tr>
@@ -1701,6 +1766,8 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Nudge</strong></td><td>mueve el tramo elegido un paso; pad 26 de Pattern Settings</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Órdenes fractal / deconstruido</strong></td><td>pads 27 / 28 de Pattern Settings</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Página Stock+</strong></td><td>ocho knobs más por pista; menú, pad 10; desde 0.07 también en el granular y el sinte</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
+<tr><td><strong>Patches del pack</strong></td><td>64 patches de sinte y granular por pack; Sample mode, pad 8 mantenido</td><td><a href="#patches">4.3 Patches del pack y starters</a></td><td>Alpha 0.13</td></tr>
+<tr><td><strong>Pattern Mutate</strong></td><td>listas de patrones al azar por pista (diseño de mefisme); Shift + Duplicate</td><td><a href="#mutate">3.4 Pattern Mutate</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Polifonía</strong></td><td>hasta 4 voces de sinte (VA o FM); Sample mode, un toque al pad 16</td><td><a href="#voces">2.8 Voz: modos, polifonía y unísono</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Program Change</strong></td><td>canales de escucha y salida; Setup, pads 29 / 30</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Project init</strong></td><td>la voz de la pista como se cargó o guardó; menú, pad 16 (rojo; hasta 0.11, pad 8)</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.09</td></tr>
@@ -1712,11 +1779,14 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Ring mod</strong></td><td>Stock+, K5 (Shift: la frecuencia)</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Scan</strong></td><td>mueve el inicio de cada nota o del loop; Stock+, K8</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Secuenciables</strong></td><td>los 8 carriles de automatización con destino propio; menú, pad 1</td><td><a href="#matriz">2.10 Matriz, Secuenciables y No secuenciables</a></td><td>Alpha 0.10</td></tr>
+<tr><td><strong>Secuenciador de efectos</strong></td><td>una pista toca los Grid FX; Sample mode, selector, pad 21</td><td><a href="#gridfx">5.3 Grid FX: secuenciador de efectos y looper</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Selector de motores</strong></td><td>sample, entrada, VA, granular o FM en la fila 3; Sample mode, pad 8</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Sidechain por knobs</strong></td><td>K1-K4 de la vista Sidechain</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Sinte</strong></td><td>desde 0.12 el VA de CIRCUIT-HACKS (OSC 1 / OSC 2); Sample mode, selector, pad 20; menú pads 2 / 3</td><td><a href="#sinte">2.5 Páginas OSC 1 / OSC 2 (el VA)</a></td><td>Alpha 0.05</td></tr>
 <tr><td><strong>Snapshot</strong></td><td>los knobs movidos, a un paso; Record mantenido + paso</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.09</td></tr>
+<tr><td><strong>Sobremuestreo 2×</strong></td><td>el VA con menos aliasing; Sample mode, selector, pad 4</td><td><a href="#sinte">2.5 Páginas OSC 1 / OSC 2 (el VA)</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Sonido del proyecto en la tarjeta</strong></td><td>el FM, los modos de voz y los valores del VA con el proyecto, en el banco de patches</td><td><a href="#guardado">A.1 Qué se guarda y dónde</a></td><td>Alpha 0.12</td></tr>
+<tr><td><strong>Starters</strong></td><td>sonidos de partida por motor; Sample mode, pad de motor mantenido</td><td><a href="#patches">4.3 Patches del pack y starters</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Stretch</strong></td><td>más lento o rápido sin cambiar el tono; Stock+ K7, Sample mode pads 9 / 10</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Teclado externo al arpegiador</strong></td><td>Advanced Setup, pad 22</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Thru: Out 2 / Merge / Filter</strong></td><td>Duplicate en Advanced Setup</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.0</td></tr>

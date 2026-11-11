@@ -92,6 +92,18 @@ def pushw(regs, lr=False): return h(0xE92D) + h(sum(1 << r for r in regs) | (1 <
 POP_LR, BX_LR = h(0xF85D) + h(0xEB04), h(0x4770)
 
 
+def mutate():
+    """(RH86, OPT mutate) tools/mutate.py answers the next pattern after the rules (a stub at the end of c_pcnext)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("mutate"))
+
+
+def mtend():
+    """(RH88, OPT mtend) a mutating track's end of its chain = its list's last slot (tools/mutate.py's c_mtme, a stub at the head of c_pcend)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("mtend"))
+
+
 def arm_code(base, L, prev, iterled=False):
     import rhbuild
     NIB = rhbuild.OPT.get("armods", False)                                # (RH63) the high nibbles of B + 1 and C + 1 are arpmods'
@@ -530,8 +542,23 @@ def arm_code(base, L, prev, iterled=False):
     E(b_cond, "nx_x", "eq")
     E(mov_reg, 7, 0)
     a.label("nx_x")
+    if mutate():                                                          # (RH86) the mutate's say: c_pcmt(track, choice, the frame, look-ahead)
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 7)
+        E(raw, h(0xA800 | 2 << 8 | F // 4))                               # add r2, sp, #F
+        E(mov_reg, 3, 11)
+        E(bl, "c_pcmt")
+        E(mov_reg, 7, 0)
     E(raw, strb_sp(7, F + 1))
     E(pop_list, [4, 5, 6, 7], pc=True)
+    if mutate():                                                          # (RH86) a stub tools/mutate.py turns into its b.w: the choice as it is
+        a.label("c_pcmt")
+        E(mov_reg, 0, 1)
+        E(raw, BX_LR)
+    if mtend():                                                           # (RH88) a stub tools/mutate.py turns into its b.w: 0 = not ours
+        a.label("c_pcme")
+        E(movs_imm, 0, 0)
+        E(raw, BX_LR)
 
     # ---- c_pcsflag (r0 = the tail, r1 = scene) -> r0 = 0xFF when the scene was saved in the chain mode, else 0; clobbers r1-r3
     a.label("c_pcsflag")
@@ -564,6 +591,14 @@ def arm_code(base, L, prev, iterled=False):
     E(mov_reg, 5, 11)
     E(cmp_imm, 4, 8)
     E(b_cond, "en_s", "hs")
+    if mtend():                                                           # (RH88) a mutating track: its list's last slot is the end
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, "c_pcme")
+        E(cmp_imm, 0, 1)
+        E(b_cond, "en_e", "eq")
+        E(cmp_imm, 0, 2)
+        E(b_cond, "en_n", "eq")
     E(bl, "c_pcst")
     E(cmp_imm, 0, 0)
     E(b_cond, "en_s", "eq")
@@ -588,6 +623,7 @@ def arm_code(base, L, prev, iterled=False):
     E(lsrs_reg, 2, 0)
     E(lsls_imm, 2, 2, 31)
     E(b_cond, "en_n", "ne")                                               # B played, C to come
+    a.label("en_e")
     imm32(0, t_eq - 1)
     E(adds_reg, 0, 0, 5)
     E(b, "en_o")                                                          # the end: [r0, #1] = the pattern

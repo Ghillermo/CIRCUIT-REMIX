@@ -10,8 +10,10 @@ NAME = "RH28"
 
 
 def build(name=NAME, **kw):
+    import rhbuild
     b = build_rh27.build(name, **kw)
-    b.add("mfsess", mfsess, **({"track": True} if kw.get("rh30") else {}))
+    if not rhbuild.OPT.get("nomfsess"):                                   # (RH91) out: the resonance stays global on the device anyway
+        b.add("mfsess", mfsess, **({"track": True} if kw.get("rh30") else {}))
     return b
 
 

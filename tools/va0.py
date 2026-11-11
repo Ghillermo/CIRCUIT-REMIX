@@ -40,6 +40,17 @@ VMAGIC = 0x7A5A01
 VMAGIC3 = 0x7A5A03                                    # (V3) the blocks' magic: FM's default 64 (the centre)
 DL_AT, DL_END = 0x2D7B, 0x2DDA                        # (V3) P: the two-oscillator loop (after fxroute's FXZ; synth0 sl's MW's place; fm0's FMW at $2DDA)
 VB_AT, VB_END = 0x3F92, 0x3FE0                        # (V3) P: va_bs4 (synth0 sl's UNI's place; the loader at $3FE0)
+
+
+def fmcap():
+    """(RD44, OPT fmcap; the user, 2026-11-07: «el FM ha perdido volumen desde el antialiasing en las notas agudas?»): OSC 1's effective
+    increment under FM (|its modulated phase's step|), the one its BLEP uses, held to 3 x its own increment.  Unlimited, a deep FM's step
+    made almost every sample «within 2 increments of a wrap»: the BLEP corrected the ramp everywhere (measured on the model against a 16 x
+    oversampled reference: a saw under FM -4.8 dB at its fundamental at C7, -0.7 at C6).  Held to 3 x: -1.5 / -0.2, the error against
+    the reference as before at every note (2 x gave the level back whole but 1-2 dB more error at C5).  va_cap after va_bs4 (VB_AT),
+    called from the loop (the same size as the two moves it replaces)."""
+    import rhbuild
+    return bool(rhbuild.OPT.get("fmcap"))
 SIDES3 = (0, 1, 4, 5)                                 # (V3) the side saws kept: +-D, +-6D (the +-3D pair goes: 5 saws, the user's «reduce el máximo de sierras»)
 O12 = 38                                              # (V3) OSC 2's block: the OSC 1 -> OSC 2 FM amount
 O1P, BWS, PMP, ISV = 39, 40, 41, 44                   # (V3) OSC 1's block (Hacks' O1_PREV, BW_S, PM_PREV, INC_SV): OSC 1's last output, the bitwise
@@ -56,11 +67,77 @@ FOLD_K = 0x020000
 FMOD = 6                                              # OSC 1's ENVW (+6); OSC 2's +6 is FM
 
 
+def fmword():
+    """(RH84, OPT fmword; found 2026-11-08 checking RD44): V3 read OSC 2's FM amount from +7 (FM in the names' tuple is 7, RING's word),
+    while the ARM (synthpage.VA_WORDS) and CIRCUIT-HACKS (vcf21_dsp: OS2B0 +6 FM, +7 RING) put FM at +6: on RH77-RH83 the Synth page's
+    FM knob (K6) did nothing and RING (Shift + K6) set both the ring and the FM (its value - 64: RING 0 = FM fully left, both ways at the
+    ends, as soon as the second oscillator was on).  With fmword V3 reads FM from +6 (FMOD)."""
+    import rhbuild
+    return bool(rhbuild.OPT.get("fmword"))
+
+
+def os2():
+    """(RD45, OPT os2; the user, 2026-11-08: «Study oversampling» -> «Yes, RD45»): the two-oscillator loop at 2x for every slot on two
+    oscillators while X:OS2G holds OS2KEY (set from the computer: tools/rhos2.py; zero after power-on = 1x): its increments halved where synth0's are
+    copied into the blocks (so va_ctl's supersaw detune and fold limit follow the inner rate), 64 inner samples into the slot's Y buffer
+    OB + OBS s (HIST words of history first), then a 23-tap halfband (OS2_COEF, 12 non-zero words at X:XC + the centre 1/2) down to the 32 of
+    S_BUF.  Measured on the model: a saw under FM 90, C7 -4.7 -> -0.7 dB at its fundamental, the aliasing below 8 kHz C6 -37 -> -71 dB, C7
+    -15 -> -41; the cost 1.5-1.9 x the loop.  Only with the second oscillator (DUAL): one oscillator stays 1x."""
+    import rhbuild
+    return bool(rhbuild.OPT.get("os2"))
+
+
+OS2G, OS2KEY = 0x5258, 0x2C5A02                                # (os2) X: the switch (2x for every slot on two oscillators)
+OS2S = 0x40                                                     # (os2slot) X:$5258 + $40 s = slot s's key (= x:(r6 + KEYD))
+XC, OBS, HIST = 0x5300, 0x80, 22                               # (os2) X: the 12 coefficients; Y: the slots' buffers (22 + 64 words each)
+OB = 0x3400                                                     # (os2) Y:$3400 + $80 s (= 2 r6 + OB - 2 Y0: synth0's slot blocks at $1A00 + $40 s)
+OS2_COEF = (0xFFCF30, 0x00C402, 0xFDDF07, 0x04FB1D, 0xF49318, 0x27FA46, 0x27FA46, 0xF49318, 0x04FB1D, 0xFDDF07, 0x00C402, 0xFFCF30)
+# (the halfband: scipy.signal.remez(23, [0, 16 / 96, 0.5 - 16 / 96, 0.5], [1, 0]), odd taps 0, the centre 1/2: flat to 16 kHz, -0.9 dB at
+#  20 kHz, -6 dB at 24 kHz, 70 dB down from 32 kHz; the even taps n = 0, 2, .. 22 rounded to 24 bits)
+OSI_P = ((0x36C4, 12), (0x3F44, 12), (0x39E4, 9))            # (os2) P: va_osi in three free pieces of RH84, chained
+OSD_P = ((0x3FD4, 12), (0x2007, 9))                           # (os2) P: va_osd in two
+OSI_AT, OSD_AT = OSI_P[0][0], OSD_P[0][0]
+DX_AT = 0x25EE - 44                                            # (os2) P: the decimator at the end of the free tail before fm8c0's amp1
+DX_END = 0x25EE
+
+
+def os2slot():
+    """(RH85, OPT os2 = 2; the user, 2026-11-09: «Per-track switch»): the 2x loop of RD45 per slot, the key at X:OS2G + OS2S s (written by the
+    ARM: esel OPT va2x, OS2KEY for a slot whose track has the 2x pad on while core 0 has room, else 0), read as x:(r6 + KEYD) (r6 = synth0's slot at
+    Y:$1A00 + $40 s); va_osi in one piece at OSI2_AT (poly0 polycap 3 frees the place); a slot at 1x (one oscillator, no key) clears its
+    history (Y:2 r6 .. + HIST - 1) every block, so it enters 2x from zeros.  The halfband's coefficients at X:XC are the ARM's too."""
+    import rhbuild
+    o = rhbuild.OPT.get("os2")
+    return o == 2 and o is not True
+
+
+OSI2_AT, OSI2_END = 0x365A, 0x3675                             # (os2slot) P: after poly0's piece B (polycap 3), before fm8c0's fen
+
+
+def ratio2():
+    """(RH85, OPT ratio2; the user, 2026-11-10: «Hacks version sounds much cleaner» -> «Yes, port it»): OSC 2's FINE word in 1/256 semitone
+    (OSC 1's stays 1/128): the ARM (synthpage) sends OSC 2's pitch as CIRCUIT-HACKS' RATIO2 does, an exact harmonic ratio of OSC 1 (0.25, 0.5,
+    1, 2 .. 31: round(12 log2 r x 256)) + the detune (+-50 cents), the TUNE word 0.  Equal-tempered semitones put FM / sync's sidebands off the
+    harmonics (+19 st = 2.997: -24 dB off them at C3 under FM 96; ratio 3: -57)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("ratio2"))
+
+
+def key_addr(s):
+    """(os2slot) slot s's key in core 0's X"""
+    return OS2G + OS2S * s
+
+
+def fm2():
+    """OSC 2's FM word: +6 with fmword, else V3's +7 (RH77-RH83)"""
+    return FMOD if fmword() else FM
+
+
 def block_words(v=1, **kw):
     """{X offset: word} for a slot's block from Hacks' code values (OSC 1's names plain, OSC 2's with a 2: tune2, wave2, ...; dual=1); v = the
     version (V3: its magic, FM 64 = none by default)"""
     o1 = dict(tune=TUNE, fine=FINE, wave=WAVE, pw=PW, envp=ENVP, envw=ENVW, envm=ENVM)
-    o2 = dict(tune2=TUNE, fine2=FINE, wave2=WAVE, pw2=PW, mix=MIX, fm=FM, ring=RING, bitsync=BSR)
+    o2 = dict(tune2=TUNE, fine2=FINE, wave2=WAVE, pw2=PW, mix=MIX, fm=fm2(), ring=RING, bitsync=BSR)
     d = dict(pw=50, pw2=50, **({"fm": 64} if int(v) >= 3 else {}))
     d.update(kw)
     w = {o: 0 for o in range(2 * O2)}
@@ -109,7 +186,7 @@ def items(S, ys, y, v=1):
     L += ["move r6,a", f"sub #>${S.Y0:x},a", "move a1,b", "asr b", "add b,a", f"add #>${XB0:x},a", "move a1,r1", f"add #>${O2:x},a", "move a1,r2",
           "nop", f"move {R2(VMAG)},a", f"move #>${VMAGIC3 if v3 else VMAGIC:x},x0", "cmp x0,a", ("jcc", "eq", "va_ok"),
           "clr a", "move r1,r0", "nop", f"rep #${2 * O2:x}", "move a,x:(r0)+", "move #>$32,a", f"move a,{R1(PW)}", f"move a,{R2(PW)}",
-          *(["move #>$40,a", f"move a,{R2(FM)}"] if v3 else []),
+          *(["move #>$40,a", f"move a,{R2(fm2())}"] if v3 else []),
           f"move x0,{R2(VMAG)}",
           ("label", "va_ok")]
     if v3:                                                                     # (V3) the zone and its position first (the sync's sweep)
@@ -117,16 +194,19 @@ def items(S, ys, y, v=1):
               f"move a1,{R2(ZONE)}"]
     # ---- the pitches: synth0's (G_T1) + TUNE, FINE, ENVP x the envelope (Hacks' +-24 semitones) -> s_inc (S_INC1 / S_INC2)
     for blk, inc in (("r1", S.S_INC1), ("r2", S.S_INC2)):
-        L += [f"move {y(S.G_T1)},a", f"move x:({blk}+${TUNE:x}),b", "asl #16,b,b", "add b,a", f"move x:({blk}+${FINE:x}),b", "asl #9,b,b",
+        L += [f"move {y(S.G_T1)},a", f"move x:({blk}+${TUNE:x}),b", "asl #16,b,b", "add b,a", f"move x:({blk}+${FINE:x}),b",
+              "asl #8,b,b" if ratio2() and blk == "r2" else "asl #9,b,b",
               "add b,a",
               *([f"move {R2(ZONE)},b", "cmp #>$1,b", ("jcc", "ne", "va_nsw"), f"move {R2(POS)},b", "asl #14,b,b", "add b,a",
                  ("label", "va_nsw")] if v3 and blk == "r2" else []),
               *mod(ENVP, 0x180000, "r1"), "add b,a", f"lua (r6+${inc:x}),r4", ("jsr", "s_inc")]
     L += ["move r1,r3", "move r2,r4", "nop",
-          f"move {ys(S.S_INC1)},x0", f"move x0,{X1(INC)}", f"move {ys(S.S_INC2)},x0", f"move x0,{X2(IU)}", f"move x0,{X2(INC)}",
+          *([("jsr", OSI2_AT if os2slot() else OSI_AT)] if v3 and os2() else
+            [f"move {ys(S.S_INC1)},x0", f"move x0,{X1(INC)}", f"move {ys(S.S_INC2)},x0", f"move x0,{X2(IU)}", f"move x0,{X2(INC)}"]),
           ("jsr", CTL_AT)]
     # ---- one oscillator
     L += [f"move {X1(DFL)},a", f"and #>${DUAL:x},a", ("jcc", "ne", "va_dual"),
+          *([f"move {ys(S.S_INC1)},x0", f"move x0,{X1(INC)}"] if v3 and os2() else []),   # (os2) 1x here, whatever va_osi saw
           f"move {ys(S.S_BUF)},r0", "move r3,r4", "nop",
           "do #$20,${va_se:x}", f"move {X1(INC)},x0", f"move {X1(PH)},a", "add x0,a", f"move a1,{X1(PH)}", "move a1,x1", "clr a",
           ("jsr", "va_wv"), *([] if v2 else ["asl a"]), "move a,y:(r0)+", ("label", "va_se"),
@@ -141,7 +221,7 @@ def items(S, ys, y, v=1):
             if envx and src != POS:
                 L += [f"move {ys(S.C_GS if src == MIX else S.C_G2)},b", "asl #17,b,b", "move b,x0", "mac y0,x0,a", "tst a", "tlt x1,a"]
             L += ["move a,x0", "mac x0,y1,a", f"move a,{X2(dst)}"]
-        L += [f"move {X2(FM)},a", "sub #>$40,a", "asl #17,a,a"]
+        L += [f"move {X2(fm2())},a", "sub #>$40,a", "asl #17,a,a"]
         if envx:
             L += [f"move {ys(S.C_G1)},b", "asl #17,b,b", "move b,x0", "mac y0,x0,a"]
         L += ["move a,x0", "move x0,b", "abs b", "move #>$400000,y0", "cmp y0,b",
@@ -149,7 +229,7 @@ def items(S, ys, y, v=1):
               ("label", "va_fh"), "move b,a", "sub y0,a", "move #>$7fffff,b", "sub a,b",
               ("label", "va_fs"), "move a,y0", "move x0,a", "tst a", "move y0,a", ("jcc", "ge", "va_ft"), "move b,a", "move y0,b",
               ("label", "va_ft"), f"move b,{X2(FMS)}", f"move a,{X2(O12)}",
-              f"move {ys(S.S_BUF)},r0", "nop", ("jmp", DL_AT)]
+              *([("jmp", OSD_AT)] if os2() else [f"move {ys(S.S_BUF)},r0", "nop", ("jmp", DL_AT)])]
         return L + wv_items(v) + bw_items()
     # ---- two: OSC 2's controls (its shape, morph; the signed increment, the zone, the amounts), then the loop
     L += [("label", "va_dual"), "move r4,r1", "nop", ("jsr", CTL_AT),
@@ -202,7 +282,7 @@ def dl_items(lab):
     X2 = lambda o: f"x:(r4+${o:x})"                    # noqa: E731
     WV = lab["va_wv"]
     return [
-        "do #$20,${dl_e:x}",
+        "do n0,${dl_e:x}" if os2() else "do #$20,${dl_e:x}",
         f"move {X1(PH)},y1", f"move {X1(INC)},x0", "move y1,a", "add x0,a", f"move a1,{X1(PH)}", "move a1,y0",
         f"move {X2(PH)},b", f"move {X2(INC)},x1", "add x1,b", "move y0,a", "cmp y1,a", ("jcc", "ge", "dl_hs"),
         f"move {X2(ZONE)},a", "cmp #>$1,a", ("jcc", "ne", "dl_hs"),
@@ -212,7 +292,8 @@ def dl_items(lab):
         ("jsr", WV),
         f"move a,{X2(OUT2)}", f"move {X1(PH)},x1",
         f"move {X2(OUT2)},y0", f"move {X2(FMS)},x0", "mpy y0,x0,b", "asl #3,b,b", "move x1,a", "add b,a", "move a1,x1",
-        f"move {X1(PMP)},y0", f"move x1,{X1(PMP)}", "move x1,b", "sub y0,b", "move b1,y0", "move y0,b", "abs b",
+        f"move {X1(PMP)},y0", f"move x1,{X1(PMP)}", "move x1,b", "sub y0,b", "move b1,y0",
+        *((("jsr", lab["va_cap"]),) if "va_cap" in lab else ("move y0,b", "abs b")),
         f"move {X1(INC)},y0", f"move y0,{X1(ISV)}", f"move b,{X1(INC)}", "clr a",
         "move r4,n4", "move r3,r4", ("jsr", WV), "move n4,r4",
         f"move {X1(ISV)},y0", f"move y0,{X1(INC)}", "move a,x1", f"move x1,{X1(O1P)}", f"move {X2(OUT2)},y0",
@@ -220,7 +301,67 @@ def dl_items(lab):
         f"move {X2(RING)},b", "tst b", ("jcc", "eq", "dl_nr"),
         f"move {X2(OUT2)},x0", "mpy x1,x0,b", "asl #1,b,b", "sub a,b", "move b,y1", f"move {X2(RINGS)},x0", "mpy x0,y1,b", "add b,a",
         ("label", "dl_nr"), ("jsr", lab["va_bw"]), "move a,y:(r0)+", ("label", "dl_e"),
-        ("jmp", lab["e_vca"])]
+        ("jmp", DX_AT if os2() else lab["e_vca"])]
+
+
+def osi_parts(S, ys):
+    """(os2) va_osi (r3 / r4 = OSC 1's / OSC 2's blocks, r6 = the slot): synth0's increments into the blocks, halved when the slot runs at
+    2x (the second oscillator on and the switch X:OS2G = OS2KEY); va_osd / va_dx tell the mode from OSC 1's increment (halved = 2x).  Three
+    parts at OSI_P (the jumps absolute)"""
+    (a1, _), (a2, _), (a3, _) = OSI_P
+    return [
+        [f"move {ys(S.S_INC1)},x0", f"move {ys(S.S_INC2)},y0", f"move x:(r3+${DFL:x}),a", f"move x:>${OS2G:x},b", f"and #>${DUAL:x},a",
+         ("jcc", "eq", a3), ("jmp", a2)],
+        [f"cmp #>${OS2KEY:x},b", ("jcc", "ne", a3), "move x0,a", "asr a", "move a,x0", "move y0,a", "asr a", "move a,y0", ("jmp", a3)],
+        [f"move x0,x:(r3+${INC:x})", f"move y0,x:(r4+${IU:x})", f"move y0,x:(r4+${INC:x})", "rts"]]
+
+
+def osi2_items(S, ys):
+    """(os2slot) va_osi at OSI2_AT (r3 / r4 = OSC 1's / OSC 2's blocks, r6 = the slot): synth0's increments into the blocks, halved with the
+    second oscillator on and the slot's key x:(r6 + KEYD) = OS2KEY; at 1x the slot's history Y:2 r6 .. + HIST - 1 = 0 (va_osd / va_dx tell
+    the mode from OSC 1's increment, as RD45)"""
+    keyd = OS2G - S.Y0
+    assert keyd == 0x3858 and OB == 2 * S.Y0 and OBS == 2 * S.SN, (hex(keyd), hex(OB), hex(S.SN))
+    return [
+        f"move {ys(S.S_INC1)},x0", f"move {ys(S.S_INC2)},y0", f"move x:(r3+${DFL:x}),a", f"and #${DUAL:x},a", f"move x:(r6+${keyd:x}),b",
+        ("bcc", "eq", "o_1x"), f"cmp #>${OS2KEY:x},b", ("bcc", "ne", "o_1x"),
+        "move x0,a", "asr a", "move a,x0", "move y0,a", "asr a", "move a,y0", ("bra", "o_st"),
+        ("label", "o_1x"), "move r6,a", "asl a", "move a1,r0", "clr a", f"rep #${HIST:x}", "move a,y:(r0)+",
+        ("label", "o_st"), f"move x0,x:(r3+${INC:x})", f"move y0,x:(r4+${IU:x})", f"move y0,x:(r4+${INC:x})", "rts"]
+
+
+def osd_parts(S, ys):
+    """(os2) va_osd: the loop's buffer and count (2x: the slot's buffer after its history, 64), then the loop; two parts at OSD_P"""
+    (a1, _), (a2, _) = OSD_P
+    return [
+        [f"move {ys(S.S_BUF)},r0", "move #$20,n0", f"move {ys(S.S_INC1)},a", f"move x:(r3+${INC:x}),x0", "cmp x0,a", ("jcc", "eq", DL_AT),
+         "move r6,a", ("jmp", a2)],
+        ["asl a", f"add #>${OB - 2 * S.Y0 + HIST:x},a", "move a1,r0", "move #$40,n0", ("jmp", DL_AT)]]
+
+
+def dx_items(S, ys, e_vca):
+    """(os2) va_dx at DX_AT, the loop's end: 1x = on to e_vca; 2x = the halfband (12 even taps from X:XC, the centre x 1/2, rounded) from the
+    slot's buffer to S_BUF, then its last HIST words to the front (the next block's history); the XY MACs hand-encoded (dsptool's assembler
+    has no ALU + XY form): D098D0 = mpy y0,x0,a x:(r0)+,x0 y:(r4)+n4,y0, D098D2 = mac (the same moves)"""
+    return [
+        f"move {ys(S.S_INC1)},a", f"move x:(r3+${INC:x}),x0", "cmp x0,a", ("jcc", "eq", e_vca),
+        "move r6,a", "asl a", *([f"add #>${OB - 2 * S.Y0:x},a"] if OB != 2 * S.Y0 else []), "move a1,r4", "move a1,r3",
+        f"move #>${XC:x},r0", "move #$2,n4", "move #$2,n1",
+        "lua (r4+$c),r1", "lua (r4+$1),r4", f"move {ys(S.S_BUF)},r2", "move #>$400000,y1",
+        "do #$20,${dc_e:x}",
+        "move x:(r0)+,x0 y:(r4)+n4,y0",
+        ("words", [0xD098D0]),
+        "rep #$a",
+        ("words", [0xD098D2]),
+        "mac y0,x0,a y:(r1)+n1,y0",
+        f"move #>${XC:x},r0",
+        "macr y1,y0,a",
+        "lua (r4-$16),r4",
+        "move a,y:(r2)+",
+        ("label", "dc_e"),
+        "lua (r4-$1),r4", "nop",
+        f"do #${HIST:x},${{hc_e:x}}", "move y:(r4)+,y0", "move y0,y:(r3)+", ("label", "hc_e"),
+        ("jmp", e_vca)]
 
 
 def bw_items():
@@ -258,7 +399,11 @@ def vb_items():
         ("label", "vb_ap"), "move b,y0", "move r2,b", "tst b", ("jcc", "lt", "vb_ad"),
         "mpy -y1,y0,b", ("jmp", "vb_x"),
         ("label", "vb_ad"), "mpy y1,y0,b",
-        ("label", "vb_x"), "asl b", "add b,a", "move r1,x0", "move n2,x1", "rts"]
+        ("label", "vb_x"), "asl b", "add b,a", "move r1,x0", "move n2,x1", "rts"] + (
+        # (fmcap) va_cap: b = min(|the step|, 3 x OSC 1's increment) (r3 = OSC 1's block, y0 = the step; a is free here)
+        [("label", "va_cap"), "move y0,b", "abs b", f"move x:(r3+${INC:x}),y0", "move y0,a", "asl #1,a,a", "add y0,a", "cmp a,b", "tgt a,b",
+         "rts"]
+        if fmcap() else [])
 
 
 def ctl_items(S, ys, v=1):
@@ -298,11 +443,24 @@ def segs(S, ys, fix, v=1, lab=None):
     assert CTL_AT + len(w) <= CTL_END, hex(CTL_AT + len(w))
     out = [(CTL_AT, w)]
     if int(v) >= 3:
+        wb, lb = C0.asm_at(fix(vb_items()), VB_AT)
+        if fmcap():
+            lab = dict(lab, va_cap=lb["va_cap"])
+        extra = []
+        if os2():
+            assert not fmcap() and VB_AT + len(wb) <= OSD_P[0][0], "va0: os2's va_osd sits after va_bs4 (not with fmcap)"
+            osi = ([(OSI2_AT, OSI2_END, osi2_items(S, ys))] if os2slot() else
+                   [(a, a + n, it) for (a, n), it in zip(OSI_P, osi_parts(S, ys))])
+            for at, end, its in (osi
+                                 + [(a, a + n, it) for (a, n), it in zip(OSD_P, osd_parts(S, ys))]
+                                 + [(DX_AT, DX_END, dx_items(S, ys, lab["e_vca"]))]):
+                w_, _ = C0.asm_at(fix(its), at)
+                assert at + len(w_) <= end, f"va0 os2: the piece at {at:#x} ends at {at + len(w_):#x} (> {end:#x})"
+                extra.append((at, w_))
         wd, _ = C0.asm_at(fix(dl_items(lab)), DL_AT)
         assert DL_AT + len(wd) <= DL_END, hex(DL_AT + len(wd))
-        wb, _ = C0.asm_at(fix(vb_items()), VB_AT)
         assert VB_AT + len(wb) <= VB_END, hex(VB_AT + len(wb))
-        out += [(DL_AT, wd), (VB_AT, wb)]
+        out += [(DL_AT, wd), (VB_AT, wb)] + extra
     return out
 
 
@@ -408,6 +566,11 @@ class Model:
         self.x = {}
         self.v = int(v)
         self.v2, self.v3 = self.v >= 2, self.v >= 3
+        self.fmcap = self.v3 and fmcap()
+        self.fm2 = fm2()
+        self.os2, self.hist = self.v3 and os2(), {}
+        self.os2slot = self.v3 and os2slot()
+        self.ratio2 = ratio2()
 
     def g(self, o): return s24(self.x.get(o, 0))
     def p(self, o, v): self.x[o] = v & 0xFFFFFF
@@ -615,6 +778,24 @@ class Model:
             a = self.chk(a, x0, x1, y1)
         return a
 
+    def decim(self, s, x):
+        """(os2) va_dx: the halfband from the slot's history + 64 inner samples to 32 (the DSP's MACs, x 2 each, the centre x 1/2, macr's
+        convergent rounding)"""
+        buf = self.hist.get(s, [0] * HIST) + [s24(v) for v in x]
+        c = [s24(self.x.get(XC + j, 0)) for j in range(12)]
+        y = []
+        for m in range(32):
+            a = 0
+            for j in range(12):
+                a += (c[j] * buf[2 * m + 1 + 2 * j]) << 1
+            a += (0x400000 * buf[2 * m + 12]) << 1
+            r = (a + 0x800000) >> 24
+            if (a & 0xFFFFFF) == 0x800000:
+                r &= ~1
+            y.append(max(-(1 << 23), min((1 << 23) - 1, r)) & 0xFFFFFF)
+        self.hist[s] = buf[64:64 + HIST]
+        return y
+
     def dual3(self, r3, r4, out):
         """(V3) Hacks' SC52.4 two oscillators"""
         g, p = self.g, self.p
@@ -629,7 +810,7 @@ class Model:
                     a = 0
             a = wrap(a + mpy(lim(a), 0x20800))
             p(r4 + dst, lim(a))
-        a = wrap(ld(g(r4 + FM)) - ld(0x40))
+        a = wrap(ld(g(r4 + self.fm2)) - ld(0x40))
         a = wrap(a << 17)
         if ext is not None:
             a = wrap(a + mpy(lim(wrap(ld(ext[0]) << 17)), env))
@@ -670,6 +851,10 @@ class Model:
             y0 = g(r3 + PMP)
             p(r3 + PMP, x1)
             b = abs(ld(a1(wrap(ld(x1) - ld(y0)))))
+            if getattr(self, "fmcap", False):                             # (fmcap) at most 3 x OSC 1's own increment
+                cap = ld(g(r3 + INC)) * 3
+                if b > cap:
+                    b = cap
             p(r3 + ISV, g(r3 + INC))
             p(r3 + INC, lim(b))
             a = self.wv(r3, x1, 0)
@@ -712,7 +897,7 @@ class Model:
             p(r1 + PW, 0x32)
             p(r2 + PW, 0x32)
             if self.v3:
-                p(r2 + FM, 0x40)
+                p(r2 + self.fm2, 0x40)
             p(r2 + VMAG, mg)
         if self.v3:
             x0 = g(r2 + BSR)
@@ -722,12 +907,19 @@ class Model:
         incs = []
         for blk in (r1, r2):
             a = wrap(ld(t1) + (ld(g(blk + TUNE)) << 16))
-            a = wrap(a + (ld(g(blk + FINE)) << 9))
+            a = wrap(a + (ld(g(blk + FINE)) << (8 if self.ratio2 and blk == r2 else 9)))
             if self.v3 and blk == r2 and g(r2 + ZONE) == 1:
                 a = wrap(a + (ld(g(r2 + POS)) << 14))
             a = wrap(a + self.mod(r1, ENVP, 0x180000, env))
             incs.append(inc_of(a))
         r3, r4 = r1, r2
+        two = False
+        key = g(key_addr(s)) if self.os2slot else g(OS2G)
+        if self.os2 and g(r3 + DFL) & DUAL and key == s24(OS2KEY):              # (os2) 2x: the increments halved
+            two = True
+            incs = [s24(i) >> 1 for i in incs]
+        elif self.os2slot:                                                       # (os2slot) at 1x the history from zeros
+            self.hist[s] = [0] * HIST
         p(r3 + INC, incs[0])
         p(r4 + IU, incs[1])
         p(r4 + INC, incs[1])
@@ -742,6 +934,8 @@ class Model:
             return out
         self.ctl(r4, r3, env)
         if self.v3:
+            if two:
+                return self.decim(s, self.dual3(r3, r4, self.dual3(r3, r4, out)))
             return self.dual3(r3, r4, out)
         a = ld(g(r4 + IU))
         if g(r4 + DIR):

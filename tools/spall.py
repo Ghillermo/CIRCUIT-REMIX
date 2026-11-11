@@ -129,15 +129,19 @@ def arm_code(base, L, prev, tabs):
         E(b, target)
         a.label(n)
 
-    t_gain = base
-    E(raw, b"".join(x.to_bytes(4, "little") for x in gain_table()))
+    import tabpack as TBP
+    parts = [(b"".join(x.to_bytes(4, "little") for x in gain_table()), 4), (b"".join(x.to_bytes(2, "little") for x in WS_COLS), 1),
+             (b"".join(x.to_bytes(2, "little") for x in neutral_addrs()), 1)]
+    n_ = sum(len(x) for x, _ in parts)
+    parts.append((bytes(-n_ % 4), 1))
+    if TBP.on():                                                          # (RH87, tabpack: in the ITCM)
+        t_gain = TBP.region("spall", parts)
+    else:
+        t_gain = base
+        for x, _ in parts:
+            E(raw, x)
     t_cols = t_gain + 4 * 129
-    E(raw, b"".join(x.to_bytes(2, "little") for x in WS_COLS))
     t_neut = t_cols + 2 * len(WS_COLS)
-    E(raw, b"".join(x.to_bytes(2, "little") for x in neutral_addrs()))
-    t_end = t_neut + 2 * len(neutral_addrs())
-    if t_end % 4:
-        E(raw, bytes(4 - t_end % 4))
 
     # ---- c_wsb() -> r0 = our block (made anew when missing or wrong: every track off / soft), 0 without a record; clobbers r1-r3
     a.label("c_wsb")
@@ -348,7 +352,7 @@ def arm_code(base, L, prev, tabs):
     E(mov_reg, 6, 0)                                                      # r6 = the amount
     E(mov_reg, 0, 4)
     E(movs_imm, 1, 1)
-    E(bl, "c_wsget")
+    E(bl, WSV if rhbuild.OPT.get("mx64") else "c_wsget")                 # (RH87: + the matrix's destination 41)
     E(lsrs_imm, 7, 0, 12)                                                 # r7 = the type 0..3
     E(cmp_imm, 6, 0)
     E(b_cond, "sd_w0", "ne")

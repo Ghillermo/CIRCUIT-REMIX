@@ -54,6 +54,16 @@ BLK, BLK_LEN = rhrec.OFF["gmmode"]
 B_FL, B_NOTES = 3, 4
 O = rhstate.OFF2["gmmode"][0]
 R_SOUND, R_ACC = 0, 8
+R_PEND, R_PT = 16, 18                                     # (RH90, gmui2) the tracks played by a knob, their note-off pending; the play's tick (u16)
+NOTE_DSP, NOTE_OFF = 0x08040778, 0x0804083C               # the stock's note-on (code, note, velocity) / note-off (code, note) to the DSP
+OFF_MS = 200
+
+
+def gmui2():
+    """(RH90, OPT gmui2; the user, 2026-11-10: «knobs lit, but don't change anything in the interface on GM mode» -> «Brightness + play
+    track»): the knobs one colour (pad 22's green), the brightness = the GM note; a new note also plays its track (note 60, 200 ms)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("gmui2"))
 assert BLK_LEN >= B_NOTES + 8 and rhstate.OFF2["gmmode"][1] >= R_ACC + 8
 
 
@@ -64,6 +74,9 @@ def ldrsb_reg(rt, rn, rm): return h(0x5600 | rm << 6 | rn << 3 | rt)
 
 
 def arm_code(base, L, prev, ui=False):
+    G2 = gmui2()
+    O_KB = rhstate.OFF["kbright"][0]
+    SPK_MASK, SPK_VAL, SPK_CODE = 0, 1, 10                                # (stockplus' K_MASK, K_VAL, K_CODE)
     a = Asm(base)
     E = a.emit
 
@@ -414,6 +427,22 @@ def arm_code(base, L, prev, ui=False):
     E(mov_reg, 2, 6)
     E(movs_imm, 3, 0)
     E(bl, "c_gmsend")
+    if G2:                                                                # (RH90) the track itself, its note-off in 200 ms (the LED task)
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, 60)
+        E(movs_imm, 2, 100)
+        E(bl, NOTE_DSP)
+        E(bl, "c_gmram")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "gk_x", "eq")
+        E(ldrb_imm, 1, 0, R_PEND)
+        E(movs_imm, 2, 1)
+        E(raw, h(0x40A2))                                                 # lsls r2, r4
+        E(raw, h(0x4311))                                                 # orrs r1, r2
+        E(strb_imm, 1, 0, R_PEND)
+        imm32(1, CI.HAL_TICK)
+        E(ldr_imm, 1, 1, 0)
+        E(strh_imm, 1, 0, R_PT)
     a.label("gk_x")
     E(pop_list, [0, 1, 2, 4, 5, 6, 7], pc=True)
     a.label("gk_s")
@@ -439,8 +468,68 @@ def arm_code(base, L, prev, ui=False):
     E(movs_imm, 1, COL_ON)
     a.label("gl_p")
     E(strh_imm, 1, 5, 2 * PAD)
+    if G2:                                                                # (RH90) the note-offs due
+        E(bl, "c_gmram")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "gl_o", "eq")
+        E(mov_reg, 4, 0)
+        E(ldrb_imm, 3, 4, R_PEND)
+        E(cmp_imm, 3, 0)
+        E(b_cond, "gl_o", "eq")
+        imm32(1, CI.HAL_TICK)
+        E(ldr_imm, 1, 1, 0)
+        E(raw, h(0x8A62))                                                 # ldrh r2, [r4, #R_PT]
+        E(subs_reg, 1, 1, 2)
+        E(raw, h(0xB289))                                                 # uxth r1, r1
+        E(cmp_imm, 1, OFF_MS)
+        E(b_cond, "gl_o", "lo")
+        E(movs_imm, 0, 0)
+        E(strb_imm, 0, 4, R_PEND)
+        E(movs_imm, 0, 0)
+        a.label("gl_f")
+        E(push_list, [0, 3])
+        E(raw, h(0x40C3))                                                 # lsrs r3, r0
+        E(lsls_imm, 3, 3, 31)
+        E(b_cond, "gl_fn", "pl")
+        E(movs_imm, 1, 60)
+        E(bl, NOTE_OFF)
+        a.label("gl_fn")
+        E(pop_list, [0, 3])
+        E(adds_imm8, 0, 1)
+        E(cmp_imm, 0, 8)
+        E(b_cond, "gl_f", "lo")
+        a.label("gl_o")
     E(cmp_imm, 6, 0)
     E(b_cond, "gl_x", "eq")
+    if G2:                                                                # (RH90) one colour, the brightness = the note (kbright)
+        E(bl, L["c_rst"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "gl_x", "eq")
+        E(movw, 1, O_KB)
+        E(adds_reg, 6, 0, 1)                                              # r6 = kbright's
+        E(movs_imm, 0, 0xFF)
+        E(strb_imm, 0, 6, SPK_MASK)
+        E(movs_imm, 4, 0)
+        a.label("gl_g")
+        E(mov_reg, 0, 4)
+        E(bl, "c_gmnote")
+        E(subs_imm8, 0, NMIN)
+        E(movs_imm, 1, 11)
+        E(raw, h(0x4348))                                                 # muls r0, r1
+        E(lsrs_imm, 0, 0, 2)
+        E(adds_reg, 1, 6, 4)
+        E(strb_imm, 0, 1, SPK_VAL)
+        E(lsls_imm, 1, 4, 1)
+        E(adds_reg, 1, 1, 6)
+        E(movs_imm, 0, COL_ON)
+        E(strh_imm, 0, 1, SPK_CODE)
+        E(lsls_imm, 1, 4, 1)
+        E(adds_reg, 1, 1, 5)
+        E(raw, h(0xF8A1) + h(0x0000 | 2 * 60))                            # strh.w r0, [r1, #120]: knob LED 60 + k
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 4, 8)
+        E(b_cond, "gl_g", "lo")
+        E(b, "gl_x")
     E(movw, 1, COL_TRK)
     E(movs_imm, 2, 0)
     a.label("gl_k")
@@ -463,7 +552,8 @@ def install(img, report, base_addr, ui=False):
     BASE = rhbuild.BASE
     u = lambda a_: struct.unpack_from("<I", img, a_ - BASE)[0]                 # noqa: E731
     lab = lambda m, k: int(report[m]["labels"][k], 16)                         # noqa: E731
-    L = dict(c_ciok=lab("countin", "c_ciok"), c_rrt=lab("rhrec", "c_rrt"), c_rram=lab("rhstate", "c_rram"), c_pgsetup=lab("pgmch", "c_pgsetup"))
+    L = dict(c_ciok=lab("countin", "c_ciok"), c_rrt=lab("rhrec", "c_rrt"), c_rram=lab("rhstate", "c_rram"), c_pgsetup=lab("pgmch", "c_pgsetup"),
+             c_rst=lab("rhstate", "c_rst"))
     prev = dict(on=u(TX_VT) & ~1, off=u(TX_VT + 4) & ~1, pad=u(SETUP_VT) & ~1, knob=u(KNOB_SLOT) & ~1,
                 ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)

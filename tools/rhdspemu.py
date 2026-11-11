@@ -69,6 +69,8 @@ def run(core, call=None, pc=None, stop=None, mem=(), files=(), dumps=(), maxins=
     try:
         lines = []
         for k, (sp, addr, ws) in enumerate(segs if segs is not None else segments(core, mode)):
+            if sp == "p" and addr & 0x800000:                                     # (RD49, synth0 OPT xtab) an X segment
+                sp, addr = "x", addr & 0xFFFF
             fn = os.path.join(d, f"seg{k}.bin")
             if sp == "p":
                 Path(fn).write_bytes(b"".join(w.to_bytes(3, "big") for w in ws))

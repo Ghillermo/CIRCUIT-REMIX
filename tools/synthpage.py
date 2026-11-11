@@ -116,6 +116,7 @@ VA_ZONES = (0x00, 0x12, 0x43, 0x7B, 0x66, 0x2D, 0x1B)
 UI_WAVES_VA = (0x01, 0x1E, 0x55, 0x2F)                               # sine white, triangle green, saw red, square yellow (UI_WAVES' colours)
 VA_PW, VA_SEMI, VA_BIP, VA_ZERO, VA_DUAL, VA_MAG = 1, 2, 3, 4, 5, 6  # (kind 0: the value as it is)
 VA_EXT = 7                                                           # (RH80, OPT vsel) tools/vsel.py's value (the knob field = which)
+VA_R2F = 8                                                           # (RH85, OPT ratio2) OSC 2's FINE word: the ratio (knob 4) + the detune (knob 12)
 VA_DUALW, VMAGIC3 = 2, 0x7A5A03                                      # va0.DUAL, va0.VMAGIC3
 VA_XB0, VA_XS = 0x4E00, 0x60                                         # va0.XB0, XS
 KB_LEFT = 0x8000                                                    # kbright.BIPLEFT
@@ -130,6 +131,53 @@ ORDER_VA = tuple(range(16, 15 + NVA, 2)) + tuple(range(17, 15 + NVA, 2)) + (15 +
                                                                      # last; not 16..31 in a row: a plain run the provenance check finds
                                                                      # in any image), then synth0's (the key last)
 ORDER_VA64 = ORDER_VA + ORDER_VA[:64 - len(ORDER_VA)]                # (in turn: 64 a slot)
+
+
+
+def pclr():
+    """(RH90, OPT pclr; the user, 2026-11-10: «clear+track should restore to chosen preset, knob+clear should restore knobs» -> «Preset,
+    else as now», «Only the sound's pages»): Clear + a knob of this page = the value of the preset the track loaded last (rpatch's stub)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("pclr"))
+
+def ratio2():
+    """(RH85, OPT ratio2; CIRCUIT-HACKS' SC52.2 RATIO2): OSC 2's coarse knob (4: the Synth page's TUNE 2, the OSC 2 page's K1) = a harmonic
+    ratio of OSC 1, r2_ratio(v - 64) (0.25, 0.5, 1, 2 .. 31), its fine knob (12: FINE 2, the OSC 2 page's K2) = the detune, +-50 cents; both
+    in OSC 2's FINE word in 1/256 semitone (va0 OPT ratio2), its TUNE word 0"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("ratio2"))
+
+
+def r2_ratio(v):
+    """(ratio2) OSC 2's TUNE value -64..63 -> its ratio, as CIRCUIT-HACKS' vcf21.r2_ratio: 0 = 1; -1..-32 = 0.5, -33..-64 = 0.25; 1..63 = 2..31"""
+    if v == 0:
+        return 1
+    if v < 0:
+        return 0.5 if v >= -32 else 0.25
+    return 2 + (v - 1) * 30 // 63
+
+
+def r2_word(k):
+    """(ratio2) the knob 0..127 -> the ratio's offset in 1/256 semitone"""
+    import math
+    return round(12 * math.log2(r2_ratio(k - 64)) * 256)
+
+
+def va_words_table():
+    """the (offset, knob, kind) table the ARM reads (vsel's EXT kinds, ratio2's)"""
+    import rhbuild
+    t = VA_WORDS_EXT if rhbuild.OPT.get("vsel") else VA_WORDS
+    if ratio2():
+        t = tuple((o, k, VA_ZERO if (o, k) == (0x30, 4) else VA_R2F if (o, k) == (0x31, 12) else kind) for o, k, kind in t)
+    return t
+
+
+def dualext():
+    """(RH85, OPT dualext with vsel; the bug since RH80: OSC 1's K5 / K8 silent while OSC 2 was off) DFLAGS' DUAL also for OSC 1's envelope
+    -> FM (c_syext 2 <> 0) or -> mix upwards (c_syext 4 > 0): va0 applies them (envx) only in the two-oscillator loop; -> ring (K6) needs
+    RING > 0, which already turns it on"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("dualext") and rhbuild.OPT.get("vsel"))
 
 
 def va():
@@ -177,14 +225,21 @@ def va_raw_bytes(knobs, raw13=LEN_DEF, raw14=64, raw15=0):
     return b
 
 
-def va_words(knobs):
-    """(va) {va0 X offset in the block: word} the ARM writes for a slot's 16 knob values (the tests')"""
+def va_words(knobs, ext=None, granted=False):
+    """(va) {va0 X offset in the block: word} the ARM writes for a slot's 16 knob values (the tests'); ext = tools/vsel.py's 5 stored bytes of
+    the track (OPT dualext, RH85: OSC 1's envelope -> FM (a stored byte <> 0) or -> mix upwards (stored 1 .. 63: XOR 64) turns the second
+    oscillator on; -> ring alone changes nothing with RING 0)"""
     import va0 as V
     out = {}
     for off, k, kind in VA_WORDS:
         v = knobs[k]
+        dual = knobs[7] or knobs[5] != 64 or knobs[K_RING] or knobs[6] >= 19 or (ext is not None and (ext[2] or 1 <= ext[4] <= 63)) or granted
         w = {0: v, VA_PW: (v * 807) >> 10, VA_SEMI: ((3 * v + 4) >> 3) - 24, VA_BIP: v - 64, VA_ZERO: 0,
-             VA_DUAL: V.DUAL if knobs[7] or knobs[5] != 64 or knobs[K_RING] or knobs[6] >= 19 else 0, VA_MAG: V.VMAGIC3}[kind]
+             VA_DUAL: V.DUAL if dual else 0, VA_MAG: V.VMAGIC3}[kind]
+        if ratio2() and off == 0x30:                                    # (ratio2) TUNE 2's word 0, FINE 2's = the ratio + the detune
+            w = 0
+        elif ratio2() and off == 0x31:
+            w = r2_word(knobs[4]) + 2 * (knobs[12] - 64)
         out[off] = w & 0xFFFFFF
     return out
 
@@ -530,7 +585,8 @@ def _pad_ui(a, E, bc, L, prev, menu2=False, env=False, spall=False):
         E(strb_imm, 2, 0, off)
         a.label(f"rs_{n}")
     a.label("rl_p")
-    if menu2:                                                             # (menu2) a menu pad let go: the sticky menu closes
+    if menu2 and not rhbuild.OPT.get("menustay"):                         # (menu2) a menu pad let go: the sticky menu closes (RH82 menustay:
+                                                                          # it stays open; the track button, another button or leaving closes it)
         E(bl, L["c_gpmst"])
         E(cmp_imm, 0, 0)
         E(b_cond, "rl_q", "eq")
@@ -606,26 +662,42 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         t_kdef, t_step, t_bip = t_def + 20, t_def + 36, t_def + 52
         t_order, t_map = t_def + 68, t_def + 132
         t_vw = t_def + 148
-        tb += b"".join(bytes(w) for w in (VA_WORDS_EXT if rhbuild.OPT.get("vsel") else VA_WORDS)) + bytes(1)
+        tb += b"".join(bytes(w) for w in va_words_table()) + bytes(1)
         assert len(tb) == 148 + 3 * NVA + 1 and len(tb) % 4 == 0
-        E(raw, tb)
-        t_gld = t_def + len(tb)
+        import tabpack as TBP_L
+        if TBP_L.lowtab():                                                # (lowtab) in the ITCM's low room
+            lo = TBP_L.region("synthpage_v", [(tb, 1)], low=True)
+            t_def, t_kdef, t_step, t_bip = lo, lo + 20, lo + 36, lo + 52
+            t_order, t_map, t_vw = lo + 68, lo + 132, lo + 148
+            t_gld = base
+        else:
+            E(raw, tb)
+            t_gld = t_def + len(tb)
     else:
         t_kdef = t_def
         dft = DEF[:K_REL] + (LEN_DEF,) + DEF[K_REL + 1:] if env else DEF
         E(raw, bytes(dft) + bytes(STEP) + bytes(BIP_UI if ui else BIP) + bytes(ORDER))
         t_step, t_bip, t_order = t_def + 16, t_def + 32, t_def + 48
         t_gld = t_def + 64
-    E(raw, b"".join(x.to_bytes(4, "little") for x in glide_t()))
-    t_rel = t_gld + 512
-    E(raw, b"".join(x.to_bytes(4, "little") for x in rel_t()))
-    t_wave = t_rel + 512
-    if ui:
-        E(raw, b"".join(x.to_bytes(2, "little") for x in (UI_WAVES_VA if V else UI_WAVES)))
+    import tabpack as TBP
     LL = rhbuild.OPT.get("leftlight")
-    t_zone = t_wave + 8
+    R2 = V and ratio2()
+    parts = [(b"".join(x.to_bytes(4, "little") for x in glide_t()), 4), (b"".join(x.to_bytes(4, "little") for x in rel_t()), 4)]
+    if ui:
+        parts.append((b"".join(x.to_bytes(2, "little") for x in (UI_WAVES_VA if V else UI_WAVES)), 1))
     if V and LL:
-        E(raw, b"".join(x.to_bytes(2, "little") for x in VA_ZONES + (0,)))
+        parts.append((b"".join(x.to_bytes(2, "little") for x in VA_ZONES + (0,)), 1))
+    if R2:                                                                # (ratio2) the 128 ratios' offsets (1/256 semitone, signed halfwords)
+        parts.append((b"".join((r2_word(k) & 0xFFFF).to_bytes(2, "little") for k in range(128)), 1))
+    if TBP.on():                                                          # (RH87, tabpack: in the ITCM)
+        t_gld = TBP.region("synthpage", parts)
+    else:
+        for x, _ in parts:
+            E(raw, x)
+    t_rel = t_gld + 512
+    t_wave = t_rel + 512
+    t_zone = t_wave + 8
+    t_r2 = t_zone + (16 if V and LL else 0)
 
     # ---- c_syram() -> r0 = our RAM (OFF2), 0 without it; clobbers r1-r3
     a.label("c_syram")
@@ -732,6 +804,13 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(adds_reg, 0, 0, 1)
     if V:
         E(adds_imm8, 0, 3)                                                # r0 = the slot's 16 bytes
+        if pclr():                                                        # (RH90) a preset's copy instead (rpatch's, while it asks)
+            imm32(2, 0x33f4)
+            E(ldr_imm, 2, 2, 0)
+            E(cmp_imm, 2, 0)
+            E(b_cond, "yv_r", "eq")
+            E(mov_reg, 0, 2)
+            a.label("yv_r")
         E(cmp_imm, 5, 16)
         E(b_cond, "yv_pk", "hs")
         E(ldrb_reg, 0, 0, 5)
@@ -1011,9 +1090,19 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         a.label("c_sydt")
         E(mov_reg, 0, 1)
         E(raw, h(0x4770))
+    if rhbuild.OPT.get("mx64"):                                           # (RH87) c_syevr: b.w c_syvr, modmx's b.w c_mxsyr
+        a.label("c_syevr")
+        E(b_w, "c_syvr")
     if rhbuild.OPT.get("vsel"):                                           # (RH80) c_syext(r0 = slot, r1 = e) -> r0: vsel's b.w c_vsext
         a.label("c_syext")
         E(movs_imm, 0, 0)
+        E(raw, h(0x4770))
+    if pclr():                                                            # (RH90) c_sycd(r0 = slot, r1 = k) -> the default; rpatch's b.w
+        a.label("c_sycd")
+        E(b_w, "sycd_d")
+        a.label("sycd_d")
+        imm32(0, t_kdef)
+        E(ldrb_reg, 0, 0, 1)
         E(raw, h(0x4770))
     a.label("c_syword")
     E(push_list, [4, 5, 6], lr=True)
@@ -1086,7 +1175,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         case(S.C_EF, "v7")
         E(mov_reg, 0, 4)                                                  # the Envelope page's (raw 14): (v - 64) << 17
         E(movs_imm, 1, 14)
-        E(bl, "c_syvr")
+        E(bl, "c_syevr" if rhbuild.OPT.get("mx64") else "c_syvr")        # (RH87: + the matrix's destination 39, modmx's c_mxsyr)
         E(subs_imm8, 0, 64)
         E(lsls_imm, 0, 0, 17)
         E(b, "w_x")
@@ -1119,6 +1208,21 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
             E(bl, "c_syext")
             E(b, "w_x")
             a.label("vx")
+        if R2:                                                            # (ratio2) the ratio's offset + 2 (detune - 64)
+            E(cmp_imm, 6, VA_R2F)
+            E(b_cond, "vr2", "ne")
+            val(12)
+            E(subs_imm8, 0, 64)
+            E(lsls_imm, 6, 0, 1)
+            val(4)
+            E(lsls_imm, 0, 0, 1)
+            imm32(1, t_r2)
+            E(adds_reg, 1, 1, 0)
+            E(ldrh_imm, 0, 1, 0)
+            E(raw, h(0xB200))                                             # sxth r0, r0
+            E(adds_reg, 0, 0, 6)
+            E(b, "w_x")
+            a.label("vr2")
         E(cmp_imm, 6, VA_MAG)
         E(b_cond, "vm", "eq")
         E(cmp_imm, 6, VA_DUAL)
@@ -1152,6 +1256,13 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         imm32(0, VMAGIC3)
         E(b, "w_x")
         a.label("vd")                                                     # DFLAGS: OSC 2 heard (MIX) or used (FM off the middle, RING, a zone)
+        if rhbuild.OPT.get("va2x1"):                                      # (RH85, va2x1) or its slot granted 2x (esel ESR + O_OSENT, bit s)
+            import esel as _ES
+            imm32(0, _ES.ESR + _ES.O_OSENT)
+            E(ldrb_imm, 0, 0, 0)
+            E(lsrs_reg, 0, 4)
+            E(lsls_imm, 0, 0, 31)
+            E(b_cond, "vd1", "ne")
         val(7)
         E(cmp_imm, 0, 0)
         E(b_cond, "vd1", "ne")
@@ -1164,6 +1275,17 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         val(5)
         E(cmp_imm, 0, 64)
         E(b_cond, "vd1", "ne")
+        if dualext():                                                     # (RH85) or OSC 1's envelope -> FM, or -> mix upwards (vsel's 2 / 4;
+            E(mov_reg, 0, 4)                                              # -> ring needs RING > 0, -> mix down from 0 changes nothing)
+            E(movs_imm, 1, 2)
+            E(bl, "c_syext")
+            E(cmp_imm, 0, 0)
+            E(b_cond, "vd1", "ne")
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, 4)
+            E(bl, "c_syext")
+            E(cmp_imm, 0, 0)
+            E(b_cond, "vd1", "gt")
         E(movs_imm, 0, 0)
         E(b, "w_x")
         a.label("vd1")
@@ -1391,8 +1513,14 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
     E(bl, L["c_spheld"])
     E(lsls_imm, 0, 0, 31 - SP.BIT_CLEAR)
     E(b_cond, "kn_t", "pl")
-    imm32(0, t_kdef)                                                      # Clear + the knob: its default
-    E(ldrb_reg, 2, 0, 5)
+    if pclr():                                                            # (RH90) Clear + the knob: the preset's, else the default
+        E(mov_reg, 0, 6)
+        E(mov_reg, 1, 5)
+        E(bl, "c_sycd")
+        E(mov_reg, 2, 0)
+    else:
+        imm32(0, t_kdef)                                                  # Clear + the knob: its default
+        E(ldrb_reg, 2, 0, 5)
     E(b, "kn_w")
     a.label("kn_t")
     E(mov_reg, 0, 6)

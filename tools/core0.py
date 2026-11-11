@@ -24,10 +24,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rhdsp  # noqa: E402
 import rhdsppatch as DP  # noqa: E402
-from thumb import Asm, b_cond, bl, cmp_reg, mov_reg, movs_imm, movt, movw, pop_list, push_list  # noqa: E402
+from thumb import Asm, b, b_cond, b_w, bl, cmp_reg, ldr_imm, mov_reg, movs_imm, movt, movw, pop_list, push_list  # noqa: E402
 
 BASE = rhdsp.BASE
 UPLOAD_BL0, SEND = 0x0803115E, 0x080310B0
+UPLOAD_BL1 = 0x08031170                     # (RD47) the bl that sends core 1's block (both modes)
 BLK0, N0 = 0x0801A838, 0x1FED                          # core 0's mode 0 block (0x08031658[0])
 LD = 0x3FE0                                            # our loader (top of the 16K of P)
 VEC = 0x46                                             # our probe routine, in the unused vectors (P:$46..$FF are nop in the stock)
@@ -81,13 +82,42 @@ def asm_at(items, at):
     return out, labels
 
 
-def loader_items(port=True):
-    """our second-stage loader at P:LD; port=False (tests): the words from X:(r6)+ instead of the SHI"""
+def shorten(items, at):
+    """(RH81) the long conditional jumps to a label of these items that a one-word bcc reaches (in the long layout: shortening only brings
+    the targets closer) -> bcc"""
+    probe = []
+    for i, it in enumerate(items):
+        if isinstance(it, tuple) and it[0] == "jcc" and isinstance(it[2], str):
+            probe.append(("label", f"__j{i}"))
+        probe.append(it)
+    _, lab = asm_at(probe, at)
+    out = []
+    for i, it in enumerate(items):
+        if isinstance(it, tuple) and it[0] == "jcc" and isinstance(it[2], str) and it[2] in lab:
+            d = lab[it[2]] - lab[f"__j{i}"]
+            if -200 <= d <= 200:
+                it = ("bcc", it[1], it[2])
+        out.append(it)
+    return out
+
+
+def loader_items(port=True, xl=False):
+    """our second-stage loader at P:LD; port=False (tests): the words from X:(r6)+ instead of the SHI; xl (RD49, OPT xtab): an address with
+    bit 23 = an X segment: sent with its X address, $4000 or above (P ends at $3FFF), which the loader tells by its bit 14"""
     def wait(lab):
         return [("label", lab), PORT_WAIT.replace("{a:x}", "{" + lab + ":x}")] if port else [("label", lab)]
 
     def read(r):
         return PORT_READ.format(r=r) if port else f"move x:(r6)+,{r}"
+    if xl:
+        return [*wait("l_cnt"), read("y1"),
+                *wait("l_adr"), read("x1"), "move x1,r7",
+                "move y1,a", "tst a", ("jcc", "eq", "l_go"),
+                "jclr #14,x1,${l_p:x}",
+                "do y1,${l_xe:x}", *wait("l_xw"), read("x0"), "move x0,x:(r7)+", ("label", "l_xe"), ("jmp", "l_cnt"),
+                ("label", "l_p"),
+                "do y1,${l_end:x}", *wait("l_w"), read("x0"), "move x0,p:(r7)+", ("label", "l_end"), ("jmp", "l_cnt"),
+                ("label", "l_go"), "jmp (r7)"]
     return [*wait("l_cnt"), read("y1"),                    # the count
             *wait("l_adr"), read("r7"),                    # the address
             "move y1,a", "tst a", ("jcc", "eq", "l_go"),   # count 0: the end
@@ -122,6 +152,57 @@ def hole_places():
     return [(BLK0, CT.TAB_FLASH), (CT.TAB_FLASH + 3 * CT.TAB_N, BLK0 + 6 + 3 * N0)]
 
 
+def more_blocks(img, report):
+    """(RD47) the blocks packed by OPT dzmore: the stock's core 0 mode 1, core 1 modes 0 and 1 (from the upload table), and rhdsp1's core 1
+    blocks of ours (c_d1up sends them) when packing saves more than its header"""
+    out = [struct.unpack_from("<I", img, rhdsp.TABLE - BASE + 4 * k)[0] for k in (1, 2, 3)]
+    pm = report.get("pitchmod", {})
+    out += [int(x, 16) for x in pm.get("blocks", [pm[k] for k in ("blk_a", "blk_b") if k in pm])]
+    return out
+
+
+def d1up_sends(img, report):
+    """(RD47) the bl SEND sites of rhdsp1's c_d1up (its code runs up to its first block)"""
+    import rhbuild
+    pm = report["pitchmod"]
+    lo = int(pm["labels"]["c_d1up"], 16)
+    hi = min(int(x, 16) for x in pm.get("blocks", [pm["blk_a"]]))
+    out = []
+    for x in range(lo, hi - 2, 2):
+        h1, h2 = struct.unpack_from("<HH", img, x - BASE)
+        if (h1 & 0xF800) == 0xF000 and (h2 & 0xD000) == 0xD000 and rhbuild.bl_target(img, x) == SEND:
+            out.append(x)
+    assert out and rhbuild.bl_target(img, UPLOAD_BL1) == lo
+    return out
+
+
+def pack_more(img, rep, rep_all):
+    """(RD47, OPT dzmore) each of the other three DSP blocks packed where it is (a DZ2 header with one piece: c_dzs sends it as the stock
+    sends a block); -> the tails they free [(start, end)], for core 0's stream"""
+    import dspz as DZ
+    out = []
+    info = []
+    for at in more_blocks(img, rep_all):
+        o = at - BASE
+        assert bytes(img[o:o + 4]) != DZ.MAGIC2
+        n = int.from_bytes(img[o + 1:o + 3], "big")                      # (the stock sender's count: bytes 1-2 of the first word)
+        size = 6 + 3 * n
+        b1 = DZ.pack(bytes(img[o:o + size]))
+        st_, words = b1[12:], struct.unpack_from("<I", b1, 4)[0]
+        hl = DZ.H_ENT + 2 * DZ.ENT
+        hd = DZ.header2(b1, [(at + hl, (st_, words))])
+        body = hd + st_
+        if len(body) + 16 >= size:
+            continue                                                      # (not worth it: left as it is)
+        img[o:o + size] = body + bytes([0xFF]) * (size - len(body))
+        assert DZ.unblob2(img, at, BASE) == DZ.unblob(b1)
+        lo = at + len(body)
+        out.append((lo, at + size))
+        info.append((hex(at), size, len(body)))
+    rep["dzmore"] = dict(blocks=info, freed=sum(hi - lo for lo, hi in out))
+    return out
+
+
 def patch_p0(img, addr, old, new):
     o = BLK0 - BASE + 6 + 3 * addr
     have = int.from_bytes(img[o:o + 3], "big")
@@ -147,15 +228,19 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         rep.update(vec=hex(VEC), vec_words=len(vw), y_pass=hex(Y_PASS))
     if not loader:
         return {}
-    lw, _ = asm_at(loader_items(), LD)
+    xl = any(a & 0x800000 for a, _ in (segs or []))                      # (RD49) X segments: the loader writes X too
+    lw, _ = asm_at(loader_items(xl=xl), LD)
     assert LD + len(lw) <= 0x4000
     if segs is None:
         sw, _ = asm_at(seg_items(), SEG)
         segs = [(SEG, sw)]
     for a, w in segs:                                                     # (our free P; or a hook inside the stock program, its old words
-        assert (N0 <= a and a + len(w) <= LD) or a + len(w) <= N0, hex(a)  #  checked by the caller: it lands after the stock block)
+        if a & 0x800000:                                                  #  checked by the caller: it lands after the stock block)
+            assert 0x4000 <= a & 0xFFFF and (a & 0xFFFF) + len(w) <= 0x6000, hex(a)    # (RD49: X, told by bit 14)
+            continue
+        assert (N0 <= a and a + len(w) <= LD) or a + len(w) <= N0, hex(a)
     pack = lambda xs: b"".join(x.to_bytes(3, "big") for x in xs)           # noqa: E731
-    blks = [pack([len(lw), LD] + lw)] + [pack([len(w), a] + list(w)) for a, w in segs] + [pack([0, 0])]
+    blks = [pack([len(lw), LD] + lw)] + [pack([len(w), a & 0xFFFF] + list(w)) for a, w in segs] + [pack([0, 0])]
     assert rhbuild.bl_target(img, UPLOAD_BL0) == SEND
     dz = rhbuild.OPT.get("dspz", False)                                   # (RH69) the segments and the end as one packed stream (tools/dspz.py)
     if dz:
@@ -165,13 +250,16 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         blks = [blks[0], DZ.pack(raw)]
         rep["dspz"] = dict(raw=len(raw), packed=len(blks[1]), ring=hex(DZ.RING), stage=hex(DZ.STAGE), state=hex(DZ.S))
     hole = dz and rhbuild.OPT.get("dzhole", False)                        # (RH80) the stock block too, the stream in pieces in its flash
+    more = hole and rhbuild.OPT.get("dzmore", False)                     # (RD47) the other three DSP blocks packed in place too
     if hole:
         o = BLK0 - BASE
         blob = DZ.pack(bytes(img[o:o + 6 + 3 * N0]) + raw)
         R = hole_places()
-        HL = DZ.H_ENT + 4 * DZ.ENT                                        # three pieces + the end entry
-        pieces = DZ.split(blob, [R[0][1] - R[0][0] - HL, R[1][1] - R[1][0]])
-        blks = [blks[0], pieces[2][0]]
+        if more:
+            R = R + pack_more(img, rep, report)
+        HL = DZ.H_ENT + (len(R) + 2) * DZ.ENT                             # the pieces + the cave's + the end entry
+        pieces = DZ.split(blob, [R[0][1] - R[0][0] - HL] + [hi - lo for lo, hi in R[1:]])
+        blks = [blks[0], pieces[-1][0]]
         rep["dspz"].update(hole=[(hex(a), hex(b)) for a, b in R], packed=len(blob), pieces=[(len(p), w) for p, w in pieces])
 
     def gen(ats, inv=False):
@@ -194,7 +282,7 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         if inv:                                                           # (more segments than a forward b<c> reaches, RH58: the stock's first)
             E(b_cond, "d0_ours", "eq")
             E(mov_reg, 0, 4)
-            E(bl, SEND)
+            E(bl, "c_dzs" if more else SEND)
             E(pop_list, [4], pc=True)
             a.label("d0_ours")
         else:
@@ -221,8 +309,17 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         if not inv:
             a.label("d0_stock")
             E(mov_reg, 0, 4)
-            E(bl, SEND)
+            E(bl, "c_dzs" if more else SEND)
             E(pop_list, [4], pc=True)
+        if more:                                                          # (OPT dzmore) c_dzs(r0 = block, r1 = core): a DZ2 one unpacked, else the stock's
+            a.label("c_dzs")
+            E(ldr_imm, 2, 0, 0)
+            imm32(3, int.from_bytes(DZ.MAGIC2, "little"))
+            E(cmp_reg, 2, 3)
+            E(b_cond, "dzs_s", "ne")
+            E(b, "c_dzp")
+            a.label("dzs_s")
+            E(b_w, SEND)
         if dz:
             DZ.emit(a, E, pieces=hole)
         return a.assemble(plain=True)
@@ -243,14 +340,17 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         img += bytes([0xFF]) * (x - BASE - len(img)) + blk
     while len(img) % 4:
         img += bytes([0xFF])
-    if hole:                                                              # the header and the first two pieces in the block's flash
-        hd = DZ.header2(blob, [(R[0][0] + HL, pieces[0]), (R[1][0], pieces[1]), (ats[1], pieces[2])])
+    if hole:                                                              # the header and the pieces in the holes, the last in the cave
+        hd = DZ.header2(blob, [(R[0][0] + HL, pieces[0])] + [(R[k][0], pieces[k]) for k in range(1, len(R))] + [(ats[1], pieces[-1])])
         assert len(hd) == HL
-        for (lo, hi), body in zip(R, (hd + pieces[0][0], pieces[1][0])):
+        for (lo, hi), body in zip(R, [hd + pieces[0][0]] + [pieces[k][0] for k in range(1, len(R))]):
             assert len(body) <= hi - lo
             img[lo - BASE:hi - BASE] = body + bytes([0xFF]) * (hi - lo - len(body))
         assert DZ.unblob2(img, BLK0, BASE) == DZ.unblob(blob)
     rhbuild.patch(img, UPLOAD_BL0, f"bl #{SEND:#x}", bl(UPLOAD_BL0, labels["c_d0up"]))
+    if more:                                                              # core 1's sends (rhdsp1's c_d1up: the stock block, ours) through c_dzs
+        for x in d1up_sends(img, report):
+            rhbuild.patch(img, x, f"bl #{SEND:#x}", bl(x, labels["c_dzs"]))
     rep.update(labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")}, blocks=[hex(b) for b in ats], ld=hex(LD),
                ld_words=len(lw), segs=[(hex(a), len(w)) for a, w in segs])
     return labels

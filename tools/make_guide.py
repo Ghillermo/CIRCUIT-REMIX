@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "Alpha 0.12"
+VERSION = "Alpha 0.13"
 OUT = ROOT / "public" / "docs" if (ROOT / "public").is_dir() else ROOT / "docs"     # (the development tree / the public one)
 
 # ---------------------------------------------------------------------------------------------------- colours (the LEDs' RGB, docs/INTERFAZ.md)
@@ -93,6 +93,8 @@ def view(vid, part, es, en, figs=()):
     V.append(dict(id=vid, part=part, es=es, en=en, figs=list(figs)))
 
 
+A13 = "*(Alpha 0.13)*"
+A13_EN = "*(Alpha 0.13)*"
 A12 = "*(Alpha 0.12)*"
 A12_EN = "*(Alpha 0.12)*"
 A = "*(Alpha 0.10)*"
@@ -118,7 +120,7 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.12)* es nuevo o cambia en esta versión; *(Alpha 0.11)* = 0.10 + los módulos de Arrhythmia (solo en 0.11).
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.13)* es nuevo o cambia en esta versión; *(Alpha 0.11)* = 0.10 + los módulos de Arrhythmia (solo en 0.11).
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 """), ("How to read this manual", "—", """
 Each chapter is a view of the device: how you get there, and what its pads, knobs and buttons do with Circuit Remix. Everything else works as in Novation's original firmware (see its manual); the new gestures are combinations that did nothing in the original or repeated the plain gesture.
@@ -127,7 +129,7 @@ Each chapter is a view of the device: how you get there, and what its pads, knob
 - **K1-K8** = the 8 knobs. **▲ / ▼** = the arrow buttons.
 - **Hold** a button = press it and keep it down; **A + B** = B with A held.
 - **★** = exclusive to Circuit Remix (not in CIRCUIT-HACKS).
-- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.12)*: new or changed in this release; *(Alpha 0.11)* = 0.10 + Arrhythmia's modules (0.11 only).
+- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.13)*: new or changed in this release; *(Alpha 0.11)* = 0.10 + Arrhythmia's modules (0.11 only).
 - At the end, the **[glossary](#glosario)**: one entry per function, with its view and its gesture.
 """))
 
@@ -1147,9 +1149,165 @@ view("modulos", "A", ("Módulos de Arrhythmia (prueba de concepto)", "desde el o
 - A module is code that runs on the device: **only use modules you trust.**
 """))
 
+# ===== Alpha 0.13: new chapters and additions to earlier ones (more(): a paragraph at the end of a chapter)
+def more(vid, es, en):
+    v = next(x for x in V if x["id"] == vid)
+    v["es"] = (v["es"][0], v["es"][1], v["es"][2].rstrip() + "\n\n" + es.strip() + "\n")
+    v["en"] = (v["en"][0], v["en"][1], v["en"][2].rstrip() + "\n\n" + en.strip() + "\n")
+
+
+view("patches", "4", ("Patches del pack y starters", "Sample mode: mantener un pad de motor, o el pad 8", f"""
+Cada pack tiene **64 patches** de sinte y granular en su banco de patches de la tarjeta {A13}.
+
+| Gesto | Qué hace |
+|---|---|
+| **Pad 8 mantenido** (con el selector abierto o cerrado) | los 64 patches del pack en las filas 1, 2 y 4; **▲ / ▼** = la página |
+| En la lista: **toque** | carga el patch en la pista (pone su motor) |
+| **Clear + patch, dos veces** | guarda el sonido de la pista en ese hueco |
+| **Duplicate + A, luego B** | intercambia A y B; **Duplicate + A, otro pack, Duplicate + B** = copia A en B |
+| **Pad de motor mantenido** (20 VA, 23 granular, 24 FM) | sus **starters**: 8 VA, 8 granulares o los 24 instrumentos FM; un toque carga |
+| **Clear + botón de pista** (vistas de pista) | la pista vuelve al último patch o starter que cargó |
+| **Clear + knob** (OSC 1 / OSC 2, Granular, FM) | ese knob vuelve al valor del patch cargado |
+
+Un hueco vacío del pack enseña primero un patch de ejemplo hasta que guardas encima. **No están en Alpha 0.13S** (escriben en la tarjeta).
+"""), ("Pack patches and starters", "Sample mode: hold an engine pad, or pad 8", f"""
+Each pack has **64 synth and granular patches** in its patch bank on the card {A13_EN}.
+
+| Gesture | What it does |
+|---|---|
+| **Pad 8 held** (with the selector open or closed) | the pack's 64 patches on rows 1, 2 and 4; **▲ / ▼** = the page |
+| In the list: **a tap** | loads the patch on the track (sets its engine) |
+| **Clear + patch, twice** | saves the track's sound in that slot |
+| **Duplicate + A, then B** | swaps A and B; **Duplicate + A, another pack, Duplicate + B** = copies A to B |
+| **Engine pad held** (20 VA, 23 granular, 24 FM) | its **starters**: 8 VA, 8 granular or the 24 FM instruments; a tap loads |
+| **Clear + track button** (track views) | the track goes back to the last patch or starter it loaded |
+| **Clear + knob** (OSC 1 / OSC 2, Granular, FM) | that knob goes back to the loaded patch's value |
+
+An empty slot of the pack first shows an example patch until you save over it. **Not in Alpha 0.13S** (they write to the card).
+"""))
+
+view("mutate", "3", ("Pattern Mutate", "Patterns o Mixer: Shift + Duplicate", f"""
+Diseño de **[mefisme](https://github.com/mefisme)** (Rhythm Plus, MIT), con código propio {A13}. Cada pista elegida toca una lista de patrones al azar, hecha de su cadena, en lugar de la cadena.
+
+| Gesto | Qué hace |
+|---|---|
+| **Shift + Duplicate** (toque, Patterns o Mixer) | semilla nueva: las pistas elegidas tocan su lista desde su siguiente fin de patrón |
+| **Shift + Duplicate mantenido** (Patterns) | la página de ajustes (naranja rojizo; elegido = fuerte) |
+| En la página: **columna 1 / 2** | longitud de la lista 1-4 / 5-8 |
+| **columna 3** | tipo de longitud: como la cadena / exacta / al azar hasta la longitud |
+| **columnas 4-5** | cuánto cambia: todo, 7, 6, 5 / 4, 3, 2, 1 huecos |
+| **columna 6** | repeticiones sí / no; **columna 7**: conservar el primer hueco |
+| **Botones de pista** | las pistas que muta |
+| **Clear + Duplicate** (cualquier vista) | fin de todas las listas; **un pad de patrón** termina la de su pista |
+
+Una pista que muta acaba su cadena en el último hueco de su lista (para que la escena siguiente entre a tiempo).
+"""), ("Pattern Mutate", "Patterns or Mixer: Shift + Duplicate", f"""
+Designed by **[mefisme](https://github.com/mefisme)** (Rhythm Plus, MIT), with our own code {A13_EN}. Each chosen track plays a random list of patterns made from its chain, instead of the chain.
+
+| Gesture | What it does |
+|---|---|
+| **Shift + Duplicate** (a tap, Patterns or Mixer) | a new seed: the chosen tracks play their list from their next pattern end |
+| **Shift + Duplicate held** (Patterns) | the settings page (red-orange; chosen = bright) |
+| On the page: **column 1 / 2** | the list's length 1-4 / 5-8 |
+| **column 3** | length type: as the chain / exact / random up to the length |
+| **columns 4-5** | how much changes: all, 7, 6, 5 / 4, 3, 2, 1 slots |
+| **column 6** | repeats yes / no; **column 7**: keep the first slot |
+| **Track buttons** | the tracks it mutates |
+| **Clear + Duplicate** (any view) | ends every list; **a pattern pad** ends its track's |
+
+A mutating track ends its chain on its list's last slot (so the next scene comes in on time).
+"""))
+
+view("gridfx", "5", ("Grid FX: secuenciador de efectos y looper", "Shift + Mixer (la vista Grid FX); Sample mode, selector, pad 21", f"""
+**Secuenciador de efectos** {A13}: una pista hace sonar los Grid FX en lugar de samples.
+
+| Gesto | Qué hace |
+|---|---|
+| **Sample mode, selector (pad 8), pad 21** | la pista elegida es una **pista de efectos** (azul; otra vez = no) |
+| En su vista: **pads 17-32** | los 16 huecos del Grid FX, cada uno tenue en el color de su efecto; en fuerte el que suena |
+| **Un paso** | enciende el hueco de su sample (flip) mientras dura su nota |
+| **Mantener un paso** (filas 1-2) | enciende su efecto hasta soltarlo |
+| **Octave ▼ + paso / Octave ▲ + paso** | ese paso: un efecto al azar / repetir el último |
+| **K1-K8** de la pista de efectos | cuánto de cada pista pasa por el Grid FX (todo al empezar); se automatizan |
+| **Vista Grid FX: hueco mantenido + Shift + K1** | el tipo del hueco, también los nuevos **delay throw** (melocotón) y **reverb throw** (crema) |
+
+**Looper / sampler en vivo** {A13}, en la vista Grid FX (Shift + Mixer):
+
+| Pad | Toque | Mantener | Shift + pad |
+|---|---|---|---|
+| **9** (graba la entrada de línea) | N compases | mientras se mantiene | armado: empieza en el compás siguiente; parado, al arrancar |
+| **10** (remuestrea la mezcla tras el Grid FX, sin los loops) | N compases | mientras se mantiene | igual |
+| **11-14** (los 4 loops) | una vez desde el principio | en bucle hasta soltar | bucle a tempo sí / no |
+
+- Graba en el loop del último pad 11-14 tocado: **overdub** si ese pad está mantenido o su loop suena en bucle; si no, sustituye.
+- **Shift + K8** = N: ½, 1, 2 o 4 compases (un cuarto de vuelta por paso; K8 en amarillo, naranja, rojo anaranjado o salmón). **Clear + pad 11-14** = vaciar.
+- LEDs: 9 / 10 rojo tenue, rojo fuerte grabando, ámbar armado; 11-14 oscuro vacío, ámbar tenue con audio, medio el elegido, fuerte sonando.
+- Hasta ≈ 6,7 s por loop, estéreo. Los loops no se guardan.
+"""), ("Grid FX: the FX sequencer and the looper", "Shift + Mixer (the Grid FX view); Sample mode, selector, pad 21", f"""
+**FX sequencer** {A13_EN}: a track plays the Grid FX instead of samples.
+
+| Gesture | What it does |
+|---|---|
+| **Sample mode, selector (pad 8), pad 21** | the chosen track is an **FX track** (blue; again = off) |
+| In its view: **pads 17-32** | the 16 Grid FX slots, each dim in its effect's colour; bright = the one playing |
+| **A step** | turns on its sample's slot (flip) for its note's length |
+| **Hold a step** (rows 1-2) | turns its effect on until you let go |
+| **Octave ▼ + step / Octave ▲ + step** | that step: a random effect / repeat the last one |
+| The FX track's **K1-K8** | how much of each track goes through the Grid FX (all at first); automatable |
+| **Grid FX view: slot held + Shift + K1** | the slot's type, also the new **delay throw** (peach) and **reverb throw** (cream) |
+
+**Looper / live sampler** {A13_EN}, in the Grid FX view (Shift + Mixer):
+
+| Pad | Tap | Hold | Shift + pad |
+|---|---|---|---|
+| **9** (records the line input) | N bars | while held | armed: starts at the next bar; stopped, when it starts |
+| **10** (resamples the mix after the Grid FX, without the loops) | N bars | while held | the same |
+| **11-14** (the 4 loops) | once from the start | loops until let go | loop at the tempo on / off |
+
+- Records into the loop of the last pad 11-14 touched: **overdub** if that pad is held or its loop is looping; otherwise it replaces.
+- **Shift + K8** = N: ½, 1, 2 or 4 bars (a quarter turn per step; K8 yellow, orange, red-orange or salmon). **Clear + pad 11-14** = empty.
+- LEDs: 9 / 10 dim red, bright red recording, amber armed; 11-14 dark empty, dim amber with audio, medium the chosen one, bright playing.
+- Up to ≈ 6.7 s per loop, stereo. Loops aren't saved.
+"""))
+
+more("menu", f"""
+{A13}: con el FM, la **fila 3** del menú = los operadores 1-8. El menú fijo ya no se cierra al elegir una página ni con Shift, Clear o Duplicate.
+""", f"""
+{A13_EN}: with the FM, the menu's **row 3** = operators 1-8. The sticky menu no longer closes when you pick a page, nor with Shift, Clear or Duplicate.
+""")
+more("sinte", f"""
+{A13}: **OSC 2 sigue a OSC 1** como relación armónica (K5 de OSC 2: 0,25 … 31; su fino ±50 cents), como en CIRCUIT-HACKS. Arreglado: K6 (FM) no hacía nada y RING ponía también el FM. **Sobremuestreo 2×** (Sample mode, selector, pad 4 en una pista VA): menos aliasing en agudos con FM y sync, si el DSP tiene sitio. Choke (pad 29) en un sinte cambia de lado el modo de voz; reverse invierte la Envolvente.
+""", f"""
+{A13_EN}: **OSC 2 follows OSC 1** as a harmonic ratio (OSC 2's K5: 0.25 … 31; its fine ±50 cents), as in CIRCUIT-HACKS. Fixed: K6 (FM) did nothing and RING also set the FM. **2× oversampling** (Sample mode, selector, pad 4 on a VA track): less aliasing in the high notes with FM and sync, when the DSP has room. Choke (pad 29) on a synth switches the voice mode's side; reverse flips the Envelope.
+""")
+more("matriz", f"""
+{A13}: **todos los parámetros** (salvo los operadores del FM) son destinos, en el orden de las vistas de la pista y solo los que tiene su motor: los extras de OSC 1, la Envolvente, el tipo de waveshaper, la capa Shift de Stock+, nivel, panorama y envíos.
+""", f"""
+{A13_EN}: **every parameter** (but the FM's operators) is a destination, in the order of the track's views and only those its engine has: OSC 1's extras, the Envelope, the waveshaper type, Stock+'s Shift layer, level, pan and sends.
+""")
+more("setup", f"""
+{A13}: modo GM, los knobs muestran su nota con el brillo, y una nota nueva suena en la pista.
+""", f"""
+{A13_EN}: GM mode, the knobs show their note as brightness, and a new note plays on the track.
+""")
+more("mixer", f"""
+La vista Grid FX (Shift + Mixer): ver [Grid FX](#gridfx) {A13}. Los huecos fijados con el pad 16 se ven en fuerte, como en el original.
+""", f"""
+The Grid FX view (Shift + Mixer): see [Grid FX](#gridfx) {A13_EN}. Slots latched with pad 16 show bright, as in the original.
+""")
+
+
 # ---------------------------------------------------------------------------------------------------- the glossary: one entry per function
 # (name es, name en, what es, what en, chapter, since)
 GLOSSARY = [
+    ("Patches del pack", "Pack patches", "64 patches de sinte y granular por pack; Sample mode, pad 8 mantenido", "64 synth and granular patches per pack; Sample mode, pad 8 held", "patches", "0.13"),
+    ("Starters", "Starters", "sonidos de partida por motor; Sample mode, pad de motor mantenido", "starting sounds per engine; Sample mode, engine pad held", "patches", "0.13"),
+    ("Pattern Mutate", "Pattern Mutate", "listas de patrones al azar por pista (diseño de mefisme); Shift + Duplicate", "random pattern lists per track (mefisme's design); Shift + Duplicate", "mutate", "0.13"),
+    ("Secuenciador de efectos", "FX sequencer", "una pista toca los Grid FX; Sample mode, selector, pad 21", "a track plays the Grid FX; Sample mode, selector, pad 21", "gridfx", "0.13"),
+    ("Envíos al Grid FX", "Grid FX sends", "cuánto de cada pista pasa por el Grid FX; K1-K8 de la pista de efectos", "how much of each track goes through the Grid FX; the FX track's K1-K8", "gridfx", "0.13"),
+    ("Delay / reverb throw", "Delay / reverb throw", "tipos nuevos de Grid FX; hueco mantenido + Shift + K1", "new Grid FX types; slot held + Shift + K1", "gridfx", "0.13"),
+    ("Looper", "Looper", "4 loops grabados de la entrada o la mezcla; vista Grid FX, pads 9-14", "4 loops recorded from the input or the mix; Grid FX view, pads 9-14", "gridfx", "0.13"),
+    ("Sobremuestreo 2×", "2× oversampling", "el VA con menos aliasing; Sample mode, selector, pad 4", "the VA with less aliasing; Sample mode, selector, pad 4", "sinte", "0.13"),
     ("Selector de motores", "Engine selector", "sample, entrada, VA, granular o FM en la fila 3; Sample mode, pad 8", "sample, input, VA, granular or FM on row 3; Sample mode, pad 8", "samplemode", "0.12"),
     ("Modos de voz", "Voice modes", "retrigger, legato, glide, unísonos y poly; Sample mode, pad 16 mantenido", "retrigger, legato, glide, unisons and poly; Sample mode, pad 16 held", "voces", "0.12"),
     ("Polifonía", "Polyphony", "hasta 4 voces de sinte (VA o FM); Sample mode, un toque al pad 16", "up to 4 synth voices (VA or FM); Sample mode, a tap on pad 16", "voces", "0.12"),
@@ -1236,13 +1394,13 @@ GLOSSARY = [
 UI = dict(es=dict(title=f"Circuit Remix {VERSION} — manual", how="Cómo se llega:", toc="Índice", glossary="Glosario de funciones",
                   gl_cols=("Función", "Qué es / gesto", "Capítulo", "Desde"), other='[English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)',
                   other_html='<p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>',
-                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.11 es experimental:** lo nuevo (la matriz de modulación, los carriles, las rampas, los modificadores del arpegio, los módulos) y casi todo desde Alpha 0.04 se ha comprobado sobre todo en emulación. Para tocar en serio, Alpha 0.03. **Haz una copia de tu tarjeta SD.**",
+                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.13 es experimental:** el secuenciador de efectos y el looper se han probado en el aparato; casi todo lo demás desde Alpha 0.04, sobre todo en emulación. **Haz una copia de tu tarjeta SD.**",
                   intro="Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.", md="MANUAL.md", html="index.html", lang="es",
                   footer="Circuit Remix — MIT. Sin código de Novation."),
           en=dict(title=f"Circuit Remix {VERSION} — manual", how="How to get there:", toc="Contents", glossary="Glossary of functions",
                   gl_cols=("Function", "What it is / gesture", "Chapter", "Since"), other='[Español](MANUAL.md) · [illustrated version](manual/en.html)',
                   other_html='<p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>',
-                  cover="Manual by views", warn="> ⚠️ **Alpha 0.11 is experimental:** what's new (the modulation matrix, the lanes, the ramps, the arpeggio modifiers, the modules) and most things since Alpha 0.04 have mostly been checked in emulation. For serious playing, Alpha 0.03. **Back up your SD card.**",
+                  cover="Manual by views", warn="> ⚠️ **Alpha 0.13 is experimental:** the FX sequencer and the looper have been tried on the device; most other things since Alpha 0.04 mostly in emulation. **Back up your SD card.**",
                   intro="Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.", md="MANUAL_EN.md", html="en.html", lang="en",
                   footer="Circuit Remix — MIT. No Novation code."))
 

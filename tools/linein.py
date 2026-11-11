@@ -149,6 +149,8 @@ def items2(spl):
 
 def items_fx(spl, tabs, excl=None):
     """(fx, with two) items2 with a source per slot and the filter on a gated slot; tabs = synth0's table addresses (F2, Q2)"""
+    import synth0 as S0_
+    TS = "x" if S0_.xtab() else "p"                                       # (RD49, synth0 OPT xtab) F2 / Q2 in core 0's X
     L = []
 
     def e(*s):
@@ -207,18 +209,18 @@ def items_fx(spl, tabs, excl=None):
       ("label", "lf_same"),
       "clr a", "move x0,a1", "asl #5,a,a", f"add #>${PAR:x},a", "move a1,r3", "nop",
       f"move y:(r3+${LP_I:x}),a", "and #>$7f,a", "move a1,a", f"move #>${LP_OPEN:x},x1", "clr b", "cmp x1,a", ("jcc", "ge", "lf_lo"),
-      "move #>$1,b", f"add #>${tabs['F2']:x},a", "move a1,r4", "nop", "move p:(r4),x1", f"move x1,y:(r2+${F_TFL:x})",
+      "move #>$1,b", f"add #>${tabs['F2']:x},a", "move a1,r4", "nop", f"move {TS}:(r4),x1", f"move x1,y:(r2+${F_TFL:x})",
       f"move y:(r2+${F_LON:x}),a", "tst a", ("jcc", "ne", "lf_lo"),
       f"move x1,y:(r2+${F_FL:x})", "clr a", f"move a,y:(r2+${F_LL:x})", f"move a,y:(r2+${F_LL + 1:x})",
       ("label", "lf_lo"), f"move b,y:(r2+${F_LON:x})",
       f"move y:(r3+${HP_I:x}),a", "and #>$7f,a", "move a1,a", "clr b", "tst a", ("jcc", "eq", "lf_ho"),
-      "move #>$1,b", f"add #>${tabs['F2']:x},a", "move a1,r4", "nop", "move p:(r4),x1", f"move x1,y:(r2+${F_TFH:x})",
+      "move #>$1,b", f"add #>${tabs['F2']:x},a", "move a1,r4", "nop", f"move {TS}:(r4),x1", f"move x1,y:(r2+${F_TFH:x})",
       f"move y:(r2+${F_HON:x}),a", "tst a", ("jcc", "ne", "lf_ho"),
       f"move x1,y:(r2+${F_FH:x})", "clr a", f"move a,y:(r2+${F_HL:x})", f"move a,y:(r2+${F_HL + 1:x})",
       ("label", "lf_ho"), f"move b,y:(r2+${F_HON:x})")
     for fn, tf in ((F_FL, F_TFL), (F_FH, F_TFH)):                                  # f += (target - f) / 8
         e(f"move y:(r2+${tf:x}),a", f"move y:(r2+${fn:x}),b", "sub b,a", "asr #3,a,a", "add b,a", f"move a,y:(r2+${fn:x})")
-    e(f"move y:(r3+${RES_I:x}),a", "and #>$7f,a", "move a1,a", f"add #>${tabs['Q2']:x},a", "move a1,r4", "nop", "move p:(r4),x1",
+    e(f"move y:(r3+${RES_I:x}),a", "and #>$7f,a", "move a1,a", f"add #>${tabs['Q2']:x},a", "move a1,r4", "nop", f"move {TS}:(r4),x1",
       f"move x1,y:(r2+${F_QL:x})", "rts")
     # ---- lf_smp (y1 = a sample, r2 = the slot's filter): gated (Y:FY + 7), through its low-pass / high-pass -> y1; keeps r0, r1
     e(("label", "lf_smp"), f"move y:>${GSW:x},a", "tst a", ("jcc", "eq", "ls_x"), "move y1,x1",
