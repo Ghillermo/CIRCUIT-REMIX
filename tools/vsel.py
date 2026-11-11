@@ -42,6 +42,8 @@ import synthpage as SY  # noqa: E402
 VSR, VSR_LEN = 0x2004EE20, 64
 MAG = 0x4C455356                                       # "VSEL"
 O_MAG, O_VP, O_MAP, O_TICK, O_PREV, O_ENG, O_RR = 0, 4, 12, 28, 32, 33, 41
+O_LOP, O_MAP2 = 42, 44                                 # (RH81) the FM's operator pad 2 goes back to; the old pad menu pads 17-24 play (8)
+NOPS, OP0 = 8, 16                                      # (RH81) the FM's operators on the menu's row 3 (pads 17-24)
 EXT0, NEXT = 72, 5                                     # ESR + 72: tune 1, fine 1, env -> FM, env -> ring, env -> mix (XOR 64), 5 a track
 VP_NONE, VP_FILT, VP_MOD, VP_OSC2, VP_OSC1 = 0, 1, 2, 3, 4
 PAGE_HOLD = SY.PAGE_HOLD
@@ -58,6 +60,13 @@ EXT_SEMI = (1, 0, 0, 0, 0)                             # tune 1 in semitones (as
 LEVELS, SETTER, GETTER = 0x20012098, 0x08038A08, 0x08046410
 GSET_OBJ, ID_LEVEL0 = 0x20011998, 0x91                 # (found in emulation: ids 0x91 + t write the Mixer's levels)
 
+
+
+def pclr():
+    """(RH90, OPT pclr; the user, 2026-11-10: «clear+track should restore to chosen preset, knob+clear should restore knobs» -> «Preset,
+    else as now», «Only the sound's pages»): Clear + a knob of this page = the value of the preset the track loaded last (rpatch's stub)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("pclr"))
 
 def model_menu_old(new, eng, shift=False):
     """the old menu pad a new one plays (None: dark), and the page it sets (the tests')"""
@@ -78,6 +87,8 @@ def ext_word(e, v):
 
 
 def arm_code(base, L, prev):
+    import rhbuild
+    R81 = rhbuild.OPT.get("rh81")
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -108,7 +119,12 @@ def arm_code(base, L, prev):
     put("bip", bytes(SY.BIP_VA))                                          # synthpage's knob indices: bipolar
     while len(data) % 4:
         data.append(0)
-    E(raw, bytes(data))
+    import tabpack as TBP_L
+    if TBP_L.lowtab():                                                    # (lowtab) the tables in the ITCM's low room
+        lo = TBP_L.region("vsel_t", [(bytes(data), 1)], low=True)
+        T = {k: lo + (v - base) for k, v in T.items()}
+    else:
+        E(raw, bytes(data))
 
     # ---- c_vsram() -> r0 = our RAM (from zero once); clobbers r1-r3
     a.label("c_vsram")
@@ -222,7 +238,7 @@ def arm_code(base, L, prev):
 
     # ---- c_vspad (the controller's pad press, ours first: r0 = ctrl, r1 = pad, r2 = velocity)
     a.label("c_vspad")
-    E(cmp_imm, 1, 16)
+    E(cmp_imm, 1, OP0 + NOPS if R81 else 16)
     bc("pd_p", "hs")
     E(push_list, [0, 1, 2, 4, 5, 6, 7], lr=True)
     E(mov_reg, 5, 1)                                                      # r5 = the new pad
@@ -284,8 +300,18 @@ def arm_code(base, L, prev):
         E(movs_imm, 2, vp)
         E(b, "pm_go")
         a.label(f"pm_n{new}")
+    if R81:                                                               # (RH81) pads 17-24 with FM: an operator on the Synth page
+        E(cmp_imm, 5, OP0)
+        E(b_cond, "pm_go", "lo")
+        E(cmp_imm, 6, ES.E_FM)
+        E(b_cond, "pm_go", "ne")
+        E(movs_imm, 1, OLD_SYNTH)
+        E(movs_imm, 2, VP_NONE)
     a.label("pm_go")
-    E(adds_reg, 0, 7, 5)
+    if R81:
+        E(bl, "vs_mi")
+    else:
+        E(adds_reg, 0, 7, 5)
     E(cmp_imm, 1, 0xFF)
     E(b_cond, "pd_dk", "ne")
     E(movs_imm, 1, 0)                                                     # dark: swallowed (its release too: map 0xFF + 1 = 0 below)
@@ -311,16 +337,41 @@ def arm_code(base, L, prev):
     E(str_imm, 0, 7, O_TICK)
     E(cmp_imm, 5, 2)                                                      # FM: pad 2 = its first operator, pad 3 = its pitch envelope
     E(b_cond, "pd_f2", "eq")
+    if R81:                                                               # (RH81: pad 2 = the operator before, pads 17-24 = one)
+        E(cmp_imm, 5, OP0)
+        E(b_cond, "pd_f2", "hs")
     E(cmp_imm, 5, 1)
     E(b_cond, "pd_old", "ne")
     a.label("pd_f2")
     E(cmp_imm, 6, ES.E_FM)
     E(b_cond, "pd_old", "ne")
     E(bl, L["c_f8ram"])
-    E(movs_imm, 1, 0)
-    E(cmp_imm, 5, 2)
-    E(b_cond, "pd_f3", "ne")
-    E(movs_imm, 1, 8)
+    if R81:
+        E(ldrb_imm, 1, 0, L["F8_SEL"])
+        E(cmp_imm, 5, 2)
+        E(b_cond, "pd_f1", "ne")
+        E(cmp_imm, 1, 8)                                                  # pad 3: the operator kept
+        E(b_cond, "pd_f8", "hs")
+        E(strb_w, 1, 7, O_LOP)
+        a.label("pd_f8")
+        E(movs_imm, 1, 8)
+        E(b, "pd_f3")
+        a.label("pd_f1")
+        E(cmp_imm, 5, 1)
+        E(b_cond, "pd_fo", "ne")
+        E(cmp_imm, 1, 8)                                                  # pad 2: the operator chosen (after the pitch envelope, the one before)
+        E(b_cond, "pd_f3", "lo")
+        E(ldrb_w, 1, 7, O_LOP)
+        E(b, "pd_f3")
+        a.label("pd_fo")
+        E(mov_reg, 1, 5)
+        E(subs_imm8, 1, OP0)
+        E(strb_w, 1, 7, O_LOP)
+    else:
+        E(movs_imm, 1, 0)
+        E(cmp_imm, 5, 2)
+        E(b_cond, "pd_f3", "ne")
+        E(movs_imm, 1, 8)
     a.label("pd_f3")
     E(strb_imm, 1, 0, L["F8_SEL"])
     a.label("pd_old")
@@ -336,14 +387,27 @@ def arm_code(base, L, prev):
     E(b_w, prev["pad"])
 
     # ---- c_vsrel (the controller's pad release, ours first: r0 = ctrl, r1 = pad): the old pad let go; our page held past PAGE_HOLD = back
+    if R81:                                                               # vs_mi (r5 = the pad, r7 = our RAM) -> r0 = r7 + its map's index
+        a.label("vs_mi")
+        E(mov_reg, 0, 5)
+        E(cmp_imm, 0, OP0)
+        E(b_cond, "mi_x", "lo")
+        E(adds_imm8, 0, O_MAP2 - O_MAP - OP0)
+        a.label("mi_x")
+        E(adds_reg, 0, 0, 7)
+        E(raw, h(0x4770))
     a.label("c_vsrel")
-    E(cmp_imm, 1, 16)
+    E(cmp_imm, 1, OP0 + NOPS if R81 else 16)
     bc("rl_p", "hs")
     E(push_list, [0, 1, 2, 4, 5, 6, 7], lr=True)
     E(mov_reg, 5, 1)
     E(bl, "c_vsram")
     E(mov_reg, 7, 0)
-    E(adds_reg, 6, 7, 5)
+    if R81:
+        E(bl, "vs_mi")
+        E(mov_reg, 6, 0)
+    else:
+        E(adds_reg, 6, 7, 5)
     E(ldrb_imm, 1, 6, O_MAP)
     E(cmp_imm, 1, 0)
     bc("rl_q", "eq")                                                      # not pressed through us
@@ -557,8 +621,21 @@ def arm_code(base, L, prev):
     E(mov_reg, 5, 0)                                                      # r5 = its address
     E(bl, L["c_spheld"])
     E(lsls_imm, 0, 0, 31 - SP.BIT_CLEAR)
-    E(movs_imm, 0, 64)
-    E(b_cond, "ko_w", "mi")
+    if pclr():                                                            # (RH90) Clear: the preset's, else the centre (the movs before
+        E(b_cond, "ko_c", "pl")                                           # the bmi cleared N: Clear never reached the centre)
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, "c_vscd")
+        E(b, "ko_w")
+        a.label("c_vscd")                                                 # c_vscd(r0 = track, r1 = the value's address) -> rpatch's b.w
+        E(b_w, "vscd_d")
+        a.label("vscd_d")
+        E(movs_imm, 0, 64)
+        E(raw, h(0x4770))
+        a.label("ko_c")
+    else:
+        E(movs_imm, 0, 64)
+        E(b_cond, "ko_w", "mi")
     E(ldrb_imm, 0, 5, 0)
     E(movs_imm, 1, 64)
     E(raw, h(0x4048))                                                     # eors r0, r1
@@ -698,6 +775,16 @@ def arm_code(base, L, prev):
     a.label("lm_2w")
     E(strh_imm, 1, 5, 2 * 1)
     E(strh_imm, 2, 5, 2 * 2)
+    if R81:                                                               # (RH81) FM: its operators on pads 17-24
+        E(cmp_imm, 6, ES.E_FM)
+        E(b_cond, "lm_9", "ne")
+        E(mov_reg, 0, 4)
+        E(bl, L["c_syslot"])
+        E(cmp_imm, 0, SY.NSL)
+        E(b_cond, "lm_9", "hs")
+        E(mov_reg, 1, 5)
+        E(adds_imm8, 1, 2 * OP0)
+        E(bl, L["c_f8opled"])
     a.label("lm_9")
     old(OLD_STOCK, 8)
     E(cmp_imm, 7, VP_FILT)                                                # (our stock-page pages: pad 9 dim)
@@ -934,6 +1021,8 @@ def install(img, report, base_addr):
              c_sypage=lab("synthpage", "c_sypage"), c_syslot=lab("synthpage", "c_syslot"), c_syb=lab("synthpage", "c_syb"),
              c_syv=lab("synthpage", "c_syv"), c_sypend=lab("synthpage", "c_sypend"), c_evget=lab("envpage", "c_evget"),
              c_eseng=lab("esel", "c_eseng"), c_esram=lab("esel", "c_esram"), c_f8ram=lab("fm8page", "c_f8ram"), F8_SEL=F8.O_SEL)
+    if rhbuild.OPT.get("rh81"):
+        L["c_f8opled"] = lab("fm8page", "c_f8opled")
     prev = dict(pad=rhbuild.bw_target(img, GP.PP_ENTRY), rel=rhbuild.bw_target(img, GP.PR_ENTRY), knob=u(SY.SLOT_KNOB) & ~1,
                 ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)

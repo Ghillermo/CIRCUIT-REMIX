@@ -119,6 +119,13 @@ NSL = G.NSLOT
 assert BLK_LEN >= 6 + 2 * NK and 0 < O_ST - O_TH < 256 and 0 < O_ST - O_KB < 256 and 0 < O_ST - O_W < 256
 
 
+
+def pclr():
+    """(RH90, OPT pclr; the user, 2026-11-10: «clear+track should restore to chosen preset, knob+clear should restore knobs» -> «Preset,
+    else as now», «Only the sound's pages»): Clear + a knob of this page = the value of the preset the track loaded last (rpatch's stub)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("pclr"))
+
 def model_engine(v, k):
     """the engine's value of knob k at the 14-bit value v (as the ARM computes it)"""
     return (((v >> 7) * MUL[k]) >> 7) - OFFS[k]
@@ -1378,6 +1385,10 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     E(cmp_imm, 1, 8)
     if menu2:                                                             # (menu2) any other button: the sticky menu closes
         E(b_cond, "bn_t", "lo")
+        if rhbuild.OPT.get("modkeep"):                                    # (RH85) but the modifiers used with its pads: Clear, Duplicate,
+            for bid in BTN_MODS:                                          # Shift (Shift + pad 1, the pages' Shift layers)
+                E(cmp_imm, 1, bid)
+                bc("bn_p", "eq")
         E(bl, "c_gpmshut")
         E(b, "bn_p")
         a.label("bn_t")
@@ -1517,11 +1528,25 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     E(bl, L["c_spheld"])
     E(lsls_imm, 0, 0, 31 - SP.BIT_CLEAR)
     E(b_cond, "gn_t", "pl")
-    imm32(0, t_def)                                                       # Clear + the knob: its default
-    E(lsls_imm, 1, 5, 1)
-    E(adds_reg, 0, 0, 1)
-    E(ldrh_imm, 6, 0, 0)
-    E(b, "gn_w")
+    if pclr():                                                            # (RH90) Clear + the knob: the preset's, else the default
+        E(mov_reg, 0, 5)
+        E(bl, "c_gpcd")
+        E(mov_reg, 6, 0)
+        E(b, "gn_w")
+        a.label("c_gpcd")                                                 # c_gpcd(r0 = the value's index) -> the default; rpatch's b.w
+        E(b_w, "gpcd_d")
+        a.label("gpcd_d")
+        imm32(1, t_def)
+        E(lsls_imm, 0, 0, 1)
+        E(adds_reg, 0, 0, 1)
+        E(ldrh_imm, 0, 0, 0)
+        E(raw, h(0x4770))
+    else:
+        imm32(0, t_def)                                                   # Clear + the knob: its default
+        E(lsls_imm, 1, 5, 1)
+        E(adds_reg, 0, 0, 1)
+        E(ldrh_imm, 6, 0, 0)
+        E(b, "gn_w")
     a.label("gn_t")
     E(mov_reg, 0, 5)
     E(bl, "c_gpval")
@@ -1882,6 +1907,9 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
     a.label("gl_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
     return a.assemble()
+
+
+BTN_MODS = (0x17, 0x18, 0x1B)                                          # (RH85, OPT modkeep) Clear, Duplicate, Shift: the sticky menu stays
 
 
 def install(img, report, base_addr, note=False, v2=False, stereo=False, multi=False, ui=False, menu2=False, env=False, noblink=False):

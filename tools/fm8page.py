@@ -72,6 +72,13 @@ G = V.GLB
 KB_LEFT = 0x8000                                                    # kbright.BIPLEFT (leftlight, RH78)
 
 
+
+def pclr():
+    """(RH90, OPT pclr; the user, 2026-11-10: «clear+track should restore to chosen preset, knob+clear should restore knobs» -> «Preset,
+    else as now», «Only the sound's pages»): Clear + a knob of this page = the value of the preset the track loaded last (rpatch's stub)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("pclr"))
+
 def kd():
     """the knobs' descriptors (param, max, clicks, kind) and defaults: [operator, pitch envelope] x 16 (8 plain, 8 with Shift)"""
     op = [(0, 35, 3, K_CMB), (V.O_FINE, 99, 1, K_OP), (V.O_OL, 99, 1, K_OP), (V.O_KVS, 7, 4, K_OP)] + [(V.O_R + i, 99, 1, K_OP) for i in range(4)]
@@ -106,8 +113,28 @@ def alg_pad(page, pad):
     return 40 + i if i < 8 else None
 
 
+ITAB, ITAB_END = 0x400, 0x2000                        # (OPT itab) the ITCM below dspz's window (0x2000-0x3FFF); 0x0-0x3FF left alone
+IT_MAGIC = b"IT1\0"
+
+
+def itab():
+    """(RH86, OPT itab) the tables in the ITCM: packed in the flash (dspz's LZSS), unpacked at each core 0 upload (the boot's first DSP work,
+    before any FM page or word): ~2.5 KB of flash"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("itab"))
+
+
+def itab_blob(data: bytes) -> bytes:
+    """'IT1\0', the destination, the size, the LZSS stream (tests/rhemu.py unpacks it the same way when it maps the image)"""
+    import dspz
+    st = dspz._pack(data)
+    assert dspz.unpack_stream(st, len(data)) == data
+    return IT_MAGIC + struct.pack("<II", ITAB, len(data)) + st
+
+
 def arm_code(base, L, prev):
     import rhbuild
+    DEMOS = rhbuild.OPT.get("demos")                                      # (RH83: rpatch's demo patches)
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -128,14 +155,15 @@ def arm_code(base, L, prev):
     def sdiv(rd, rn, rm): return h(0xFB90 | rn) + h(0xF0F0 | rd << 8 | rm)
     def rsbs(rd, rm): return h(0x4240 | rm << 3 | rd)
 
-    # ---- the tables
+    # ---- the tables (OPT itab, RH86: packed here, unpacked into the ITCM at ITAB by c_itunp at each core 0 upload)
+    ITB = itab()
     data = bytearray()
     T = {}
 
     def put(name, bs):
         while len(data) % 4:
             data.append(0)
-        T[name] = base + len(data)
+        T[name] = (ITAB if ITB else base) + len(data)
         data.extend(bs)
     descs, defs = kd()
     put("slb", struct.pack("<128I", *V.SLB))
@@ -152,7 +180,80 @@ def arm_code(base, L, prev):
     put("zero", bytes((C.F_E, C.F_OFS, C.F_OUT, C.F_PH, C.F_R, C.F_AMP, C.F_AS, C.F_O2)))
     while len(data) % 4:
         data.append(0)
-    E(raw, bytes(data))
+    import tabpack as TBP_
+    if ITB and TBP_.v2():                                                 # (RH91, tabpack2) the tables in tabpack's stream, before the upload
+        assert ITAB + len(data) <= ITAB_END
+        TBP_.region("fm8page", [(bytes(data), 1)], at=ITAB, early=True)
+    elif not ITB:
+        E(raw, bytes(data))
+    else:
+        assert ITAB + len(data) <= ITAB_END
+        blob = itab_blob(bytes(data))
+        a.label("t_itab")
+        E(raw, blob + bytes(-len(blob) % 4))
+
+        # ---- c_itunp(): the tables into the ITCM (dspz's LZSS, the output its own window); clobbers r0-r3
+        a.label("c_itunp")
+        E(push_list, [4, 5, 6], lr=True)
+        imm32(0, base + 12)                                               # the stream (the blob is the module's first bytes)
+        imm32(1, ITAB)
+        imm32(2, ITAB + len(data))
+        E(movs_imm, 3, 1)
+        a.label("iu_lp")
+        E(cmp_reg, 1, 2)
+        E(b_cond, "iu_x", "hs")
+        E(cmp_imm, 3, 1)
+        E(b_cond, "iu_f", "ne")
+        E(ldrb_imm, 3, 0, 0)
+        E(adds_imm8, 0, 1)
+        E(movs_imm, 4, 1)
+        E(lsls_imm, 4, 4, 8)
+        E(orrs_reg, 3, 4)
+        a.label("iu_f")
+        E(lsrs_imm, 3, 3, 1)
+        E(b_cond, "iu_m", "cc")
+        E(ldrb_imm, 4, 0, 0)
+        E(adds_imm8, 0, 1)
+        E(strb_imm, 4, 1, 0)
+        E(adds_imm8, 1, 1)
+        E(b, "iu_lp")
+        a.label("iu_m")                                                   # a match: (offset - 1) bits 0-12, length - 3 bits 13-15
+        E(ldrb_imm, 4, 0, 0)
+        E(ldrb_imm, 5, 0, 1)
+        E(adds_imm8, 0, 2)
+        E(lsls_imm, 5, 5, 8)
+        E(orrs_reg, 4, 5)
+        E(lsrs_imm, 5, 4, 13)
+        E(lsls_imm, 4, 4, 19)
+        E(lsrs_imm, 4, 4, 19)
+        E(adds_imm8, 4, 1)
+        E(cmp_imm, 5, 7)
+        E(b_cond, "iu_n", "ne")
+        E(ldrb_imm, 5, 0, 0)
+        E(adds_imm8, 0, 1)
+        E(adds_imm8, 5, 7)
+        a.label("iu_n")
+        E(adds_imm8, 5, 3)
+        E(subs_reg, 4, 1, 4)
+        a.label("iu_c")
+        E(ldrb_imm, 6, 4, 0)
+        E(adds_imm8, 4, 1)
+        E(strb_imm, 6, 1, 0)
+        E(adds_imm8, 1, 1)
+        E(subs_imm8, 5, 1)
+        E(b_cond, "iu_c", "ne")
+        E(b, "iu_lp")
+        a.label("iu_x")
+        E(pop_list, [4, 5, 6], pc=True)
+
+        # ---- c_f8up (the bl of core 0's upload, ahead of core0's c_d0up): the tables, then the upload as before
+        a.label("c_f8up")
+        E(push_list, [0, 1, 2], lr=True)
+        E(bl, "c_itunp")
+        E(ldr_sp, 0, 0)
+        E(ldr_sp, 1, 4)
+        E(bl, prev["d0up"])
+        E(pop_list, [1, 2, 3], pc=True)
     ISZ = I.ISZ
 
     # ---- c_f8ram() -> r0 = our RAM (zeroed when its magic is missing); clobbers r1-r3
@@ -174,6 +275,14 @@ def arm_code(base, L, prev):
 
     # ---- c_f8rd(r0 = slot, r1 = i) -> r0 = its parameter byte; clobbers r1-r3
     a.label("c_f8rd")
+    if pclr():                                                            # (RH90) a preset's copy instead (rpatch's, while it asks)
+        imm32(2, 0x33f0)
+        E(ldr_imm, 2, 2, 0)
+        E(cmp_imm, 2, 0)
+        E(b_cond, "rd_n", "eq")
+        E(ldrb_reg, 0, 2, 1)
+        E(raw, h(0x4770))
+        a.label("rd_n")
     E(push_list, [4], lr=True)
     E(lsls_imm, 0, 0, 8)
     E(adds_reg, 1, 1, 0)
@@ -273,6 +382,7 @@ def arm_code(base, L, prev):
     E(pop_list, [4, 5, 6, 7], pc=True)
 
     # ---- c_f8load(r0 = slot, r1 = instrument 0-23): its 216 parameters (fm8inst.inst_full byte for byte); clobbers r0-r3
+    # (rpatch demos: c_f8load(r0 = an address, r1 = the instrument) = its 216 parameter bytes into that buffer; clobbers r0-r3)
     a.label("c_f8load")
     E(push_list, [4, 5, 6, 7], lr=True)
     E(mov_reg, 4, 0)
@@ -335,13 +445,26 @@ def arm_code(base, L, prev):
         E(b, "ld_w")
         a.label(f"ld_m{fld}")
     a.label("ld_w")
+    if DEMOS:                                                             # (rpatch demos) r4 an address: the parameter into that buffer
+        E(cmp_imm, 4, 8)
+        E(b_cond, "ld_wr", "lo")
+        E(strb_reg, 2, 4, 6)
+        E(b, "ld_nx")
+        a.label("ld_wr")
     E(mov_reg, 0, 4)
     E(mov_reg, 1, 6)
     E(bl, "c_f8wr")
+    if DEMOS:
+        a.label("ld_nx")
     E(adds_imm8, 6, 1)
     E(cmp_imm, 6, V.PLEN)
     bc("ld_l", "lo")
     E(pop_list, [6])
+    if DEMOS:
+        E(cmp_imm, 4, 8)
+        E(b_cond, "ld_sl", "lo")
+        E(pop_list, [4, 5, 6, 7], pc=True)
+        a.label("ld_sl")
     E(bl, "c_f8ram")
     E(adds_reg, 0, 0, 4)
     E(strb_imm, 6, 0, O_INST)
@@ -799,6 +922,51 @@ def arm_code(base, L, prev):
     E(movs_imm, 0, NSL)
     E(pop_list, [4], pc=True)
 
+    if rhbuild.OPT.get("rh81"):
+        # ---- c_f8opled(r0 = slot, r1 = the LED of the first operator's pad): the 8 operators as on the page (RH81: the track menu's row 3)
+        a.label("c_f8opled")
+        E(push_list, [4, 5, 6, 7], lr=True)
+        E(mov_reg, 5, 1)
+        E(bl, "c_f8src")
+        E(movs_imm, 1, G + V.G_ALG)
+        E(bl, "c_f8rd")
+        E(mov_reg, 4, 0)
+        E(cmp_imm, 4, V.NALG)
+        E(b_cond, "ol_0", "lo")
+        E(movs_imm, 4, 0)
+        a.label("ol_0")
+        E(lsls_imm, 4, 4, 4)
+        imm32(0, T["alg"])
+        E(adds_reg, 4, 4, 0)                                              # r4 = its entry
+        E(bl, "c_f8ram")
+        E(ldrb_imm, 6, 0, O_SEL)
+        E(movs_imm, 7, 0)
+        a.label("ol_op")
+        E(movs_imm, 2, 0)
+        E(ldrb_imm, 0, 4, 0)
+        E(cmp_reg, 7, 0)
+        E(b_cond, "ol_ow", "hs")
+        E(movs_imm, 2, DIM_MOD)
+        E(movs_imm, 3, COL_MOD)
+        E(ldrb_imm, 0, 4, 1)
+        E(lsrs_reg, 0, 7)
+        E(lsls_imm, 0, 0, 31)
+        E(b_cond, "ol_oc", "eq")
+        E(movs_imm, 2, DIM_CAR)
+        E(movs_imm, 3, COL_CAR)
+        a.label("ol_oc")
+        E(cmp_reg, 7, 6)
+        E(b_cond, "ol_ow", "ne")
+        E(mov_reg, 2, 3)
+        a.label("ol_ow")
+        E(lsls_imm, 0, 7, 1)
+        E(adds_reg, 0, 0, 5)
+        E(strh_imm, 2, 0, 0)
+        E(adds_imm8, 7, 1)
+        E(cmp_imm, 7, 8)
+        E(b_cond, "ol_op", "lo")
+        E(pop_list, [4, 5, 6, 7], pc=True)
+
     # ---- c_f8edit() -> r0 = the slot the knobs edit (the FM page's, or the Synth page's of a track with FM), NSL when none; clobbers r1-r3
     a.label("c_f8edit")
     E(push_list, [4], lr=True)
@@ -1027,13 +1195,30 @@ def arm_code(base, L, prev):
     E(bl, L["c_spheld"])
     E(lsls_imm, 0, 0, 31 - SP.BIT_CLEAR)
     E(b_cond, "kn_c", "pl")
-    E(mov_reg, 0, 6)                                                      # Clear + the knob: its default
-    imm32(1, T["kd"])
-    E(subs_reg, 0, 0, 1)
-    E(lsrs_imm, 0, 0, 2)
-    imm32(1, T["kdef"])
-    E(ldrb_reg, 2, 1, 0)
-    E(b, "kn_w")
+    if pclr():                                                            # (RH90) Clear + the knob: the preset's, else the default
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 6)
+        E(bl, "c_f8cd")
+        E(mov_reg, 2, 0)
+        E(b, "kn_w")
+        a.label("c_f8cd")                                                 # c_f8cd(r0 = slot, r1 = the descriptor) -> the default; rpatch's b.w
+        E(b_w, "f8cd_d")
+        a.label("f8cd_d")
+        E(mov_reg, 0, 1)
+        imm32(1, T["kd"])
+        E(subs_reg, 0, 0, 1)
+        E(lsrs_imm, 0, 0, 2)
+        imm32(1, T["kdef"])
+        E(ldrb_reg, 0, 1, 0)
+        E(raw, h(0x4770))
+    else:
+        E(mov_reg, 0, 6)                                                  # Clear + the knob: its default
+        imm32(1, T["kd"])
+        E(subs_reg, 0, 0, 1)
+        E(lsrs_imm, 0, 0, 2)
+        imm32(1, T["kdef"])
+        E(ldrb_reg, 2, 1, 0)
+        E(b, "kn_w")
     a.label("kn_c")
     E(bl, "c_f8ram")                                                      # the clicks
     E(ldr_sp, 1, 4)
@@ -1659,6 +1844,10 @@ def install(img, report, base_addr):
     prev = dict(pad=rhbuild.bw_target(img, GP.PP_ENTRY), rel=rhbuild.bw_target(img, GP.PR_ENTRY), knob=u(SY.SLOT_KNOB) & ~1,
                 btn=rhbuild.bw_target(img, CI.BTN_ENTRY), ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)
+    if itab():
+        import core0
+        prev["d0up"] = rhbuild.bl_target(img, core0.UPLOAD_BL0)
+        assert prev["d0up"] == int(report["core0"]["labels"]["c_d0up"], 16)
     code_, labels = arm_code(base_addr, L, prev)
     img += bytes([0xFF]) * (base_addr - BASE - len(img)) + code_
     while len(img) % 4:
@@ -1669,6 +1858,10 @@ def install(img, report, base_addr):
     rhbuild.patch(img, CI.BTN_ENTRY, f"b.w #{prev['btn']:#x}", b_w(CI.BTN_ENTRY, labels["c_f8btn"]))
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_f8led"]))
+    import tabpack as TBP_
+    if itab() and not TBP_.v2():
+        import core0
+        rhbuild.patch(img, core0.UPLOAD_BL0, f"bl #{prev['d0up']:#x}", bl(core0.UPLOAD_BL0, labels["c_f8up"]))
     report["fm8page"] = dict(prev={k: hex(v) for k, v in prev.items()}, labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")},
                              tables={k: hex(v) for k, v in labels.items() if k.startswith("t_")})
     return labels, code_

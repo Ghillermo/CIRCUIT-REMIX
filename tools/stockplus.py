@@ -276,33 +276,39 @@ def arm_code(base, L, prev, v2=False, k6swap=False, wait=False, k8sync=False, fi
         E(b, target)
         a.label(n)
 
-    t_dec = base
-    E(raw, b"".join(w.to_bytes(4, "little") for w in decay_table()))
-    t_rate = base + 4 * 129
-    E(raw, b"".join(w.to_bytes(4, "little") for w in rate_table()))
-    t_def = base + 8 * 129
-    E(raw, b"".join(v.to_bytes(2, "little") for v in DEF))
-    VAL, PUT = ("c_spval_a", "c_spput_a") if v2 else ("c_spval", "c_spput")
+    import tabpack as TBP
+    W4 = lambda ws: b"".join(w.to_bytes(4, "little") for w in ws)         # noqa: E731
+    H2 = lambda vs: b"".join(v.to_bytes(2, "little") for v in vs)         # noqa: E731
+    parts = [(W4(decay_table()), 4), (W4(rate_table()), 4), (H2(DEF), 1)]   # (the tables, as laid out; OPT tabpack, RH87: in the ITCM)
     if v2:
-        t_ring = base + 8 * 129 + 2 * NPAR
-        E(raw, b"".join(w.to_bytes(4, "little") for w in ring_table()))
-        t_spd = t_ring + 4 * 129
-        E(raw, b"".join(w.to_bytes(4, "little") for w in speed_table()))
-        t_scan = t_spd + 4 * 129
-        E(raw, b"".join(w.to_bytes(4, "little") for w in scan_table()))
-        t_defu = t_scan + 4 * 129
-        E(raw, b"".join(v.to_bytes(2, "little") for v in (DEFU8 if k8sync else DEFU)))
-        t_def2 = t_defu + 2 * NK
-        E(raw, b"".join(v.to_bytes(2, "little") for v in DEF2))
+        parts += [(W4(ring_table()), 4), (W4(speed_table()), 4), (W4(scan_table()), 4), (H2(DEFU8 if k8sync else DEFU), 1), (H2(DEF2), 1)]
         if k6swap:
-            t_cols = t_def2 + 2 * len(DEF2)
-            E(raw, b"".join(v.to_bytes(2, "little") for v in (UI_TYPES if ui else COL_TYPES)))
+            parts.append((H2(UI_TYPES if ui else COL_TYPES), 1))
         if k8sync:
             assert k6swap
-            t_divs = (t_cols + 2 * len(COL_TYPES) + 3) & ~3
-            E(raw, bytes(t_divs - t_cols - 2 * len(COL_TYPES)))
+            n_ = sum(len(x) for x, _ in parts)
             rv = (lambda t: t[::-1]) if ui else (lambda t: t)              # (ui: the synced half the other way round)
-            E(raw, b"".join(x.to_bytes(4, "little") for x in rv(DIVS) + rv(KQ) + rv(PHQ)))
+            parts += [(bytes(-n_ % 4), 1), (W4(rv(DIVS) + rv(KQ) + rv(PHQ)), 1)]
+    if TBP.on():
+        tb0 = TBP.region("stockplus", parts)
+    else:
+        tb0 = base
+        for x, _ in parts:
+            E(raw, x)
+    t_dec = tb0
+    t_rate = tb0 + 4 * 129
+    t_def = tb0 + 8 * 129
+    VAL, PUT = ("c_spval_a", "c_spput_a") if v2 else ("c_spval", "c_spput")
+    if v2:
+        t_ring = tb0 + 8 * 129 + 2 * NPAR
+        t_spd = t_ring + 4 * 129
+        t_scan = t_spd + 4 * 129
+        t_defu = t_scan + 4 * 129
+        t_def2 = t_defu + 2 * NK
+        if k6swap:
+            t_cols = t_def2 + 2 * len(DEF2)
+        if k8sync:
+            t_divs = (t_cols + 2 * len(COL_TYPES) + 3) & ~3
             t_kq, t_phq = t_divs + 4 * len(DIVS), t_divs + 8 * len(DIVS)
 
     # ---- c_spst() -> r0 = our state (rhstate), 0 without our RAM; clobbers r1-r3
@@ -1463,8 +1469,10 @@ def install(img, report, base_addr, shift=0, v2=False, k6swap=False, wait=False,
     rhbuild.patch_word(img, SLOT_KNOB, prev["knob"] | 1, labels["c_spknob"] | 1)
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_spled"]))
-    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(base_addr), v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync,
-                               **({"fitflag": True, "t_spd": hex(base_addr + 8 * 129 + 2 * NPAR + 4 * 129)} if fitflag else {}),
+    import tabpack as TBP
+    tb0 = TBP.where("stockplus") if TBP.on() else base_addr          # (RH87, tabpack: its tables in the ITCM)
+    report["stockplus"] = dict(prev={k: hex(v) for k, v in prev.items()}, tables=hex(tb0), v2=v2, k6swap=k6swap, wait=wait, k8sync=k8sync,
+                               **({"fitflag": True, "t_spd": hex(tb0 + 8 * 129 + 2 * NPAR + 4 * 129)} if fitflag else {}),
                                **({"k3sync": True} if k3sync else {}), **({"ui": True} if ui else {}),
                                labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")})
     if noblink:

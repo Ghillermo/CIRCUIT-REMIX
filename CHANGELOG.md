@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## Alpha 0.13 (2026-11-11) — secuenciador de efectos, looper, Pattern Mutate, patches del pack (experimental)
+
+> ⚠️ **Experimental: necesita pulirse.** El secuenciador de efectos, los envíos al Grid FX y el looper se han probado en el aparato; el resto de lo nuevo, sobre todo en emulación (el código del aparato ejecutado sobre un volcado de su memoria, y los DSP en un emulador). Puede haber fallos, ruidos o cuelgues. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.
+
+**Español.** **Alpha 0.13** (marca `A0.13`) y **Alpha 0.13S** (marca `A0.13S`: sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto en la tarjeta ni los patches del pack). Parten de Alpha 0.12. Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **Secuenciador de efectos** (Sample mode, selector, pad 21): una pista toca los 16 huecos del Grid FX en lugar de samples; cada paso enciende el efecto de su sample mientras dura su nota; mantener un paso lo enciende hasta soltarlo; Octave ▼ / ▲ + paso = un efecto al azar / repetir el último. Sus **K1-K8** deciden cuánto de cada pista pasa por el Grid FX. Dos tipos nuevos de Grid FX: **delay throw** y **reverb throw**.
+- **Looper / sampler en vivo** en la vista Grid FX (Shift + Mixer): el pad 9 graba la entrada de línea y el pad 10 remuestrea la mezcla, mientras se mantienen o N compases (½, 1, 2 o 4: Shift + K8), con armado al compás siguiente; los pads 11-14 tocan los 4 loops una vez, en bucle mientras se mantienen o a tempo (Shift), con overdub.
+- **Pattern Mutate** (Shift + Duplicate en Patterns o Mixer), diseño de **[mefisme](https://github.com/mefisme)** (Rhythm Plus, MIT): cada pista elegida toca una lista de patrones al azar hecha de su cadena, con su página de ajustes.
+- **Patches del pack** (Sample mode, pad 8 mantenido): 64 patches de VA, FM y granular por pack, guardar, cargar, intercambiar y copiar entre packs; **starters** por motor (pad de motor mantenido); Clear + pista / Clear + knob vuelven al patch cargado.
+- **El VA:** OSC 2 como relación armónica de OSC 1 (como CIRCUIT-HACKS), **sobremuestreo 2×** por pista (Sample mode, pad 4) y arreglado el FM / RING de OSC 2.
+- **Matriz de modulación:** todos los parámetros (salvo los operadores FM) como destinos.
+- Los operadores FM en el menú de pista; el menú fijo no se cierra al elegir una página; colores de los motores de CIRCUIT-HACKS; los knobs del modo GM enseñan su nota; la vista Grid FX vuelve a enseñar en fuerte los huecos fijados con el pad 16.
+- Más memoria libre: los programas del DSP van empaquetados y algunas tablas en la memoria rápida del procesador.
+- Para el sinte, sus tablas viven ahora en la memoria de datos del DSP (el arranque del DSP las respeta).
+
+**English.** **Alpha 0.13** (marker `A0.13`) and **Alpha 0.13S** (marker `A0.13S`: without the project copy, the pack delete, the sample copy, the project's sound on the card or the pack's patches). They build on Alpha 0.12. Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** The FX sequencer, the Grid FX sends and the looper have been tried on the device; the rest of what's new mostly in emulation (the device's code run on a dump of its memory, and the DSPs in an emulator). There may be bugs, noises or hangs. **Back up your SD card.** If it does not start: **Sample Rec + Samples + Note** at power-on and install Alpha 0.10 or the official firmware.
+
+What's new:
+- **FX sequencer** (Sample mode, selector, pad 21): a track plays the 16 Grid FX slots instead of samples; each step turns its sample's effect on for its note's length; holding a step turns it on until you let go; Octave ▼ / ▲ + step = a random effect / repeat the last one. Its **K1-K8** set how much of each track goes through the Grid FX. Two new Grid FX types: **delay throw** and **reverb throw**.
+- **Looper / live sampler** in the Grid FX view (Shift + Mixer): pad 9 records the line input and pad 10 resamples the mix, while held or N bars (½, 1, 2 or 4: Shift + K8), armed to the next bar; pads 11-14 play the 4 loops once, looping while held or at the tempo (Shift), with overdub.
+- **Pattern Mutate** (Shift + Duplicate in Patterns or Mixer), designed by **[mefisme](https://github.com/mefisme)** (Rhythm Plus, MIT): each chosen track plays a random list of patterns made from its chain, with its settings page.
+- **Pack patches** (Sample mode, pad 8 held): 64 VA, FM and granular patches per pack, save, load, swap and copy between packs; **starters** per engine (engine pad held); Clear + track / Clear + knob go back to the loaded patch.
+- **The VA:** OSC 2 as a harmonic ratio of OSC 1 (as CIRCUIT-HACKS), per-track **2× oversampling** (Sample mode, pad 4) and OSC 2's FM / RING fixed.
+- **Modulation matrix:** every parameter (but the FM's operators) as a destination.
+- The FM's operators in the track menu; the sticky menu stays open when you pick a page; CIRCUIT-HACKS' engine colours; the GM mode's knobs show their note; the Grid FX view shows the slots latched with pad 16 bright again.
+- More free memory: the DSP programs are packed and some tables live in the processor's fast memory.
+- The synth's tables now live in the DSP's data memory (the DSP's start-up keeps them).
+
 ## Alpha 0.12 (2026-11-07) — FM de 8 operadores, VA, motores en Sample mode, modos de voz (experimental)
 
 > ⚠️ **Experimental: necesita pulirse. Sin probar en el aparato:** todo lo nuevo se ha comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria, y los DSP en un emulador). Puede haber fallos, ruidos o cuelgues. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.

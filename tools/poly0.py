@@ -19,6 +19,13 @@ OPT polycap (RH73; RD39 on the device: STRESS B with 4 FM voices overloaded core
   polycap=2 (RH74; RH73 on the device at rest: H median 24, never 120 — single blocks get few idle passes even when the average is ~640):
   BUD = a running average, H16 = H16 - H16 / 16 + the block's passes (16 x the mean over ≈ 16 blocks, ≈ 11 ms), never below 0.
   Measured on the device (RD39): stopped ≈ 640 passes a block, ≈ 94 instructions a pass; an FM voice ≈ 6 400 instructions ≈ 68 passes.
+  polycap=3 (RH85; RD45 on the device, 2026-11-09: four VA voices at 2x broke the sound and the cap let them in): two faults of v2 mended.
+  * BUD3: a block whose idle passes exceed MAXP (≈ 4.5 idle periods) counts as 0: when core 0 is late the stock's output ring (P:$1F5, one
+    block of slack) stalls ≈ 10 ms and the main loop counts those ≈ 10 000 polls as idle, so v2's H rose while core 0 was overloaded;
+  * pqa / pqc charge the voice's cost, the ARM's per slot (esel OPT va2x: X:$525C + $40 s, read from the track's slot r6): FM by its
+    operators (20 + 19 N), two oscillators C1X, two at 2x C2X (dsptool: 110-220 / 190-430 passes), else C1 (= v2's COST, also while
+    never written); a resting voice is taken only with H >= its cost + MARGIN (v2: THRESH 120 for every voice).  pqa / pqc at P:LOW_AT (the stock's unused vectors $10-$3D: no
+    interrupt of core 0 is enabled there, IPRC 0, ESAI only TLIE, SHI HRIE0), so piece B ends before va0's va_osi (OSI2_AT).
 """
 from __future__ import annotations
 
@@ -35,16 +42,40 @@ SETB_N = 8                                                                    # 
 PC, H16, ALW = 0x5230, 0x5231, 0x5232                                         # X (polycap; free in RD39's dumps: X:$5230-$5FFF)
 COST, THRESH = 80, 120                                                        # passes (one voice; a new one only with THRESH left)
 P_MAIN, OLD_MAIN = 0x126, (0x0BF0A8, 0x0001AE)                                # jscs $1AE (as tools/resmap.py)
+C1, C1X, C2X, MARGIN, MAXP = 80, 176, 320, 40, 0xC00                          # (polycap 3) passes; MAXP: idle passes a block at most
+PCS = 0x5233                                                                  # (polycap 3) X: the class's cost x 16 (pqa -> pqc)
+COST_OFF = 4                                                                  # (polycap 3) X:$525C + $40 s = slot s's cost x 16 (the ARM's)
+LOW_AT, LOW_END = 0x10, 0x3E                                                  # (polycap 3) P: pqa / pqc (the stock's nops; $3E = audio)
 
 
 def cap():                                                                      # 1 = RH73 (the block's minimum), 2 = RH74 (an average)
-    import rhbuild
+    import rhbuild                                                              # 3 = RH85 (OPT polycap3: RH74's chain sets polycap = 2)
+    if rhbuild.OPT.get("polycap3"):
+        return 3
     return int(rhbuild.OPT.get("polycap") or 0)
 
 
 def _s():
     import synth0
     return synth0
+
+
+def _rh81():
+    import rhbuild
+    return bool(rhbuild.OPT.get("rh81"))
+
+
+def _prt(ys):
+    """(RH81) a poly voice that skips a note-on (another voice took it): with the track's F_PRT (vmode0) and sounding, its attack again (the
+    choke's chord retrigger)"""
+    import vmode0 as VM
+    S = _s()
+    return [f"move x:>${VM.VMK:x},a", f"move #>${VM.VKEY:x},x0", "cmp x0,a", ("bcc", "ne", "pk_x"),
+            "move y0,a", "and #$7,a", f"add #>${VM.VMF:x},a", "move a1,r1", "nop", "move x:(r1),a",
+            f"btst #${VM.F_PRT.bit_length() - 1:x},a1", ("bcc", "cc", "pk_x"),
+            f"move {ys('r6', S.S_STG)},a", f"cmp #${S.IDLE:x},a", ("bcc", "eq", "pk_x"),
+            "clr a", f"move a,{ys('r6', S.S_STG)}",
+            ("label", "pk_x")]
 
 
 def items(lab):
@@ -64,7 +95,7 @@ def items(lab):
           ("label", "pq_go"), "move r6,a", f"sub #>${S.Y0:x},a", "asr #6,a,a", f"add #>${FTR:x},a", "move a1,r1", "move #>$1,x0",
           "move x0,x:(r1)",
           ("label", "pq_n"), f"move {ys('r6', S.C_KEY)},a", ("jmp", lab["q_slot2"]),
-          ("label", "pq_sk"), "rts"]
+          ("label", "pq_sk"), *(_prt(ys) if _rh81() else []), "rts"]
     # pq_sel (b = the track + 1; keeps x1, y0, y1): QTGT = a resting slot of the track, else the one whose note is the oldest; the track's
     # ages + 1, the chosen one's 0 (r3: a resting one chosen, r4: the oldest age seen)
     c = cap()
@@ -95,7 +126,11 @@ def items(lab):
     L += [("label", "setb"), "move r6,b", f"sub #>${S.Y0:x},b", "asr b", f"add #>${PRIV:x},b", f"move b1,{ys('r6', S.S_BUF)}", "rts"]
     # ================================================================ MIXG (the last envelope block's jsr ge_slot)
     L += [("label", "mixg")]
-    if cap() == 2:                                                             # BUD v2: H16 = max(0, H16 - H16 / 16 + passes); passes = 0
+    if cap() == 3:                                                             # BUD3: v2, but a block of more than MAXP passes adds 0
+        L += [f"move x:>${H16:x},b", "asr #4,b,a", "sub a,b", f"move x:>${PC:x},a", f"cmp #>${MAXP:x},a", ("bcc", "gt", "bd_s"), "add a,b",
+              ("label", "bd_s"), "clr a", f"move a,x:>${PC:x}", "tst b", ("bcc", "ge", "bd_p"), "clr b", ("label", "bd_p"),
+              f"move b1,x:>${H16:x}"]
+    elif cap() == 2:                                                             # BUD v2: H16 = max(0, H16 - H16 / 16 + passes); passes = 0
         L += [f"move x:>${H16:x},b", "asr #4,b,a", "sub a,b", f"move x:>${PC:x},a", "add a,b", "clr a", f"move a,x:>${PC:x}",
               "tst b", ("jcc", "ge", "bd_p"), "clr b", ("label", "bd_p"), f"move b1,x:>${H16:x}"]
     elif cap():                                                                # BUD: H16 = max(0, min(H16 + 1, 16 x passes)); passes = 0
@@ -116,13 +151,35 @@ def items(lab):
           ("label", "mx_n"), "move (r1)+n1", "move (r2)+n2", ("label", "mx_l"), "rts"]
     if cap():                                                                  # IDL (P:$126's jsr): the stock's call, then X:PC + 1
         L += [("label", "idl"), ("jscc", "cs", OLD_MAIN[1]), f"move x:>${PC:x},a", "add #$1,a", f"move a1,x:>${PC:x}", "rts"]
+    if cap() == 3:
+        L += [("label", "low")] + low_items()
+    elif cap():
         # pqa (pq_sel's start; b = the track + 1: kept): ALW = H >= THRESH
         L += [("label", "pqa"), f"move x:>${H16:x},a", f"move #>${16 * THRESH:x},x0", "cmp x0,a", "move #>$1,a", ("jcc", "ge", "pq_dn"),
               "clr a", ("label", "pq_dn"), f"move a1,x:>${ALW:x}", "rts"]
         # pqc (pq_sel's end, QTGT chosen): the chosen voice resting = a new one: H - COST
         L += [("label", "pqc"), f"move x:>${QTGT:x},r1", "nop", f"move {ys('r1', S.S_STG)},a", f"move #>${S.IDLE:x},x0", "cmp x0,a",
               ("jcc", "ne", "pqc_x"), f"move x:>${H16:x},a", f"sub #>${16 * COST:x},a", f"move a1,x:>${H16:x}", ("label", "pqc_x"), "rts"]
+    if _rh81():                                                                # (RH81) one-word branches: room for _prt
+        k = next(i for i, x in enumerate(L) if x == ("label", "setb"))
+        L = [("bcc", x[1], x[2]) if isinstance(x, tuple) and x[0] == "jcc" and i < k else x for i, x in enumerate(L)]
     return L
+
+
+def low_items():
+    """(polycap 3) pqa (pq_sel's start; r6 = a slot of the track, b = the track + 1: kept, as x1 / y0 / y1): PCS = the slot's cost x 16
+    from the ARM (esel OPT va2x, c_oscls: FM 20 + 19 N, two oscillators C1X, at 2x C2X, else C1) at x:(r6 + COSTD), C1 while 0 (never
+    written), ALW = max(0, H16 - PCS - 16 MARGIN); pqc (the target chosen in QTGT): a resting one (a new voice) = H16 - PCS"""
+    import va0 as V
+    S = _s()
+    ys = lambda r, o: f"y:({r}+${o:x})"                                                # noqa: E731
+    costd = V.OS2G + COST_OFF - S.Y0
+    assert costd == 0x385C
+    return [("label", "pqa"), f"move x:(r6+${costd:x}),x0", "move x0,a", "tst a", ("bcc", "ne", "pa_c"), f"move #>${16 * C1:x},x0",
+            ("label", "pa_c"), f"move x0,x:>${PCS:x}", f"move x:>${H16:x},a", "sub x0,a", f"sub #>${16 * MARGIN:x},a", ("bcc", "gt", "pa_d"),
+            "clr a", ("label", "pa_d"), f"move a1,x:>${ALW:x}", "rts",
+            ("label", "pqc"), f"move x:>${QTGT:x},r1", f"move x:>${PCS:x},x0", f"move {ys('r1', S.S_STG)},a", f"cmp #${S.IDLE:x},a",
+            ("bcc", "ne", "pqc_x"), f"move x:>${H16:x},a", "sub x0,a", f"move a1,x:>${H16:x}", ("label", "pqc_x"), "rts"]
 
 
 def pieces(lab):
@@ -130,6 +187,20 @@ def pieces(lab):
     import sp0 as SP
     its = items(lab)
     k = next(i for i, x in enumerate(its) if x == ("label", "setb"))
+    if cap() == 3:                                                             # pqa / pqc low, B = SETB, MIXG, IDL
+        j = next(i for i, x in enumerate(its) if x == ("label", "low"))
+        wl, ll = C0.asm_at(SP.short_items(its[j + 1:]), LOW_AT)
+        assert LOW_AT + len(wl) <= LOW_END, f"poly0's low piece ends at {LOW_AT + len(wl):#x}"
+        wb, lb = C0.asm_at(SP.short_items(its[k:j]), B_AT)
+        import va0 as V
+        assert B_AT + len(wb) <= V.OSI2_AT, f"poly0's piece B ends at {B_AT + len(wb):#x} (va0's va_osi at {V.OSI2_AT:#x})"
+        its = items(dict(lab, pqa=ll["pqa"], pqc=ll["pqc"]))
+        k = next(i for i, x in enumerate(its) if x == ("label", "setb"))
+        a_at = lab["poly"]["pqw"]
+        wa, la = C0.asm_at(SP.short_items(its[:k]), a_at)
+        assert a_at + len(wa) <= 0x2600, f"poly0's piece A ends at {a_at + len(wa):#x}"
+        assert lb["setb"] == B_AT and lb["mixg"] == B_AT + SETB_N, (hex(lb["mixg"]), SETB_N)
+        return [(a_at, wa), (B_AT, wb), (LOW_AT, wl)]
     wb, lb = C0.asm_at(SP.short_items(its[k:]), B_AT)                         # B first: A calls pqa / pqc in it (polycap)
     if cap():
         its = items(dict(lab, pqa=lb["pqa"], pqc=lb["pqc"]))
@@ -151,6 +222,9 @@ def segs(lab):
         import sp0 as SP
         its = items(lab)
         k = next(i for i, x in enumerate(its) if x == ("label", "setb"))
-        _, lb = C0.asm_at(SP.short_items(its[k:]), B_AT)
+        j = next((i for i, x in enumerate(its) if x == ("label", "low")), len(its))
+        _, lb = C0.asm_at(SP.short_items(its[k:j]), B_AT)
         out.append((P_MAIN, [0x0BF080, lb["idl"]]))
+        if cap() == 3:                                                          # the low piece over the stock's nops only
+            assert not any(ws[LOW_AT:LOW_END]), "core 0's P:$10-$3D are no longer nops"
     return out

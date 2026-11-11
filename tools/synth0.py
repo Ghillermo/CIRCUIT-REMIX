@@ -117,6 +117,14 @@ def att_blocks(n):
     return 23 * 1.7 ** ((n - 65) / 8)
 
 
+XA, XB, XFLAG = 0x4C81, 0x5000, 0x800000                # (RD49, OPT xtab) free X of core 0 (RD37: $4C81-$4F84; fm0's old $5000-$51FF)
+
+
+def xtab():
+    import rhbuild
+    return bool(rhbuild.OPT.get("xtab"))
+
+
 def tables():
     import granchain as GCH
     t = GCH.tables()                                   # F2 (the stock's cutoff curve, 2x), Q2
@@ -128,6 +136,7 @@ def tables():
 def items(tab_at, entry, env2=False, sp=False, sl=False, poly=None, va=False, vm=None):
     """va (RD41): tools/va0.py's oscillators at s_play in place of the passes, the waves and (with env2) the old envelope; vm (RH80,
     tools/vmode0.py): the note-on's snap and attack in VMN, the note-off's stamp VMO, MIXG through VMX"""
+    TS = "x" if xtab() else "p"                                       # (RD49, OPT xtab) INCT / ENVT / F2 / Q2 in X
     L = []
     if sp:
         import sp0 as SP0
@@ -296,18 +305,18 @@ def items(tab_at, entry, env2=False, sp=False, sl=False, poly=None, va=False, vm
       "asr #16,b,b", "move b1,b", "add b,a", *hook("slp"), "tst a", ("jcc", "ge", "f_lo"), "clr a", ("label", "f_lo"),
       "move #>$7f,x0", "cmp x0,a", ("jcc", "lt", "f_on"),
       "clr b", f"move b,{ys(S_LON)}", ("jmp", "f_hp"),
-      ("label", "f_on"), f"add #>${tab_at['F2']:x},a", "move a1,r4", "nop", "move p:(r4),x0", f"move x0,{ys(S_TFL)}",
+      ("label", "f_on"), f"add #>${tab_at['F2']:x},a", "move a1,r4", "nop", f"move {TS}:(r4),x0", f"move x0,{ys(S_TFL)}",
       f"move {ys(S_LON)},a", "tst a", ("jcc", "ne", "f_lon"), f"move x0,{ys(S_FL)}", "clr a", f"move a,{ys(S_LL)}", f"move a,{ys(S_LB)}",
       ("label", "f_lon"), "move #>$1,a", f"move a,{ys(S_LON)}",
       ("label", "f_hp"), f"move y:(r5+${HP_I:x}),a", "and #>$7f,a", "move a1,a", *hook("shp"), "tst a", ("jcc", "ne", "f_hon0"),
       "clr b", f"move b,{ys(S_HON)}", ("jmp", "f_sm"),
-      ("label", "f_hon0"), f"add #>${tab_at['F2']:x},a", "move a1,r4", "nop", "move p:(r4),x0", f"move x0,{ys(S_TFH)}",
+      ("label", "f_hon0"), f"add #>${tab_at['F2']:x},a", "move a1,r4", "nop", f"move {TS}:(r4),x0", f"move x0,{ys(S_TFH)}",
       f"move {ys(S_HON)},a", "tst a", ("jcc", "ne", "f_hon"), f"move x0,{ys(S_FH)}", "clr a", f"move a,{ys(S_HL)}", f"move a,{ys(S_HB)}",
       ("label", "f_hon"), "move #>$1,a", f"move a,{ys(S_HON)}",
       ("label", "f_sm"))
     for fn, tf in ((S_FL, S_TFL), (S_FH, S_TFH)):                                  # f += (target - f) / 8
         e(f"move {ys(tf)},a", f"move {ys(fn)},b", "sub b,a", "asr #3,a,a", "add b,a", f"move a,{ys(fn)}")
-    e(f"move y:(r5+${RES_I:x}),a", "and #>$7f,a", "move a1,a", f"add #>${tab_at['Q2']:x},a", "move a1,r4", "nop", "move p:(r4),y0",
+    e(f"move y:(r5+${RES_I:x}),a", "and #>$7f,a", "move a1,a", f"add #>${tab_at['Q2']:x},a", "move a1,r4", "nop", f"move {TS}:(r4),y0",
       f"move y0,{y(G_T2)}",
       f"move {ys(S_BUF)},r0", f"lua (r6+${S_LL:x}),r4", f"lua (r6+${S_HL:x}),r5",
       *([("jsr", "f_run"), *hook("s24"), "tst a", ("jcc", "eq", "s_r"),                 # (sp) 24 dB: again, the second states
@@ -338,7 +347,7 @@ def items(tab_at, entry, env2=False, sp=False, sl=False, poly=None, va=False, vm
     e(("label", "s_inc"), f"move #>${P_MIN & 0xFFFFFF:x},x0", "cmp x0,a", "tlt x0,a", f"move #>${P_MAX:x},x0", "cmp x0,a", "tgt x0,a",
       "asr #16,a,b", f"add #>${tab_at['INCT'] - K_LO:x},b", "move b1,r3",
       "and #>$ffff,a", "move a1,a", "asl #7,a,a", "move a,x0",
-      "move p:(r3)+,x1", "move p:(r3),b", "sub x1,b", "move b,y0", "mpy y0,x0,b", "add x1,b", "move b,y:(r4)+",
+      f"move {TS}:(r3)+,x1", f"move {TS}:(r3),b", "sub x1,b", "move b,y0", "mpy y0,x0,b", "add x1,b", "move b,y:(r4)+",
       "tfr b,a", "move #>$0,r3", "nop", "rep #$17", "norm r3,a",
       "move a,x0", "move #>$200000,a", "andi #$fe,ccr", "rep #$18", "div x0,a", "move a0,y:(r4)+",
       "move r3,a", "neg a", "add #>$2,a", "move a1,y:(r4)+", "rts")
@@ -373,7 +382,7 @@ def items(tab_at, entry, env2=False, sp=False, sl=False, poly=None, va=False, vm
     # ================================================================ s_env: the envelope's block (r5 = the track's parameters)
     mark_e = len(L)
     e(("label", "s_env"), f"move y:(r5+${P_ENV:x}),a", "and #>$7f,a", "move a1,a", "move a1,y1", f"add #>${tab_at['ENVT']:x},a", "move a1,r3",
-      "nop", "move p:(r3),x0", f"move {ys(S_STG)},b", "tst b", ("jcc", "ne", "e_d"),
+      "nop", f"move {TS}:(r3),x0", f"move {ys(S_STG)},b", "tst b", ("jcc", "ne", "e_d"),
       "move y1,a", "move #>$40,y0", "cmp y0,a", ("jcc", "gt", "e_slow"), f"move #>${ONE:x},a", ("jmp", "e_top"),
       ("label", "e_slow"), f"move {ys(S_ENV)},a", "add x0,a", f"move #>${ONE:x},y0", "cmp y0,a", ("jcc", "lt", "e_st"),
       f"move #>${ONE:x},a",
@@ -531,12 +540,17 @@ def code(entry, env2=False, sp=False, sl=False):
     for k in names:
         tab_at[k] = at
         at += sizes[k]
+    if xtab():                                                        # (RD49) the four in X: F2 + Q2 at XA, INCT + ENVT at XB
+        tab_at.update(F2=XA, Q2=XA + sizes["F2"], INCT=XB, ENVT=XB + sizes["INCT"])
     import rhbuild
     va = rhbuild.OPT.get("va") or False                                 # (RD41) tools/va0.py; RH58's morph / unison go
     if va:
         sl = False
     short = rhbuild.OPT.get("s0short") or rhbuild.OPT.get("poly")
     fix = (lambda its: __import__("sp0").short_items(its)) if short else (lambda its: its)      # (RH72: one-word moves)
+    if rhbuild.OPT.get("rh81"):                                       # (RH81) and one-word branches where they reach
+        fix0 = fix
+        fix = lambda its: C0.shorten(fix0(its), AT)                   # noqa: E731
     poly = None
     if rhbuild.OPT.get("poly"):                                      # (RH72) tools/poly0.py: PQW after this code, SETB / MIXG at its B_AT
         import poly0
@@ -560,7 +574,8 @@ def code(entry, env2=False, sp=False, sl=False):
         labels["vm"] = vm
     assert AT + len(w) <= MAIN_END, hex(AT + len(w))              # (stsplit at $2600)
     tw = [0] * 8 if va else [labels[n] for n in ("w_saw", "w_pul", "w_tri", "w_sin", "w_sawn", "w_puln", "w_tri", "w_sin")]
-    tw += tb["INCT"] + tb["ENVT"] + tb["F2"] + tb["Q2"]
+    if not xtab():
+        tw += tb["INCT"] + tb["ENVT"] + tb["F2"] + tb["Q2"]
     assert TAB + len(tw) <= 0x2E00, hex(TAB + len(tw))             # (linein at $2E00)
     return w, labels, tw, tab_at
 
@@ -579,6 +594,12 @@ def segs(entry, env2=False, sp=False, sl=False):
     w, labels, tw, tab_at = code(entry, env2, sp, sl)
     import rhbuild
     out = [(AT, w), (TAB, tw)] + (sl_segs(labels, tab_at, sp) if sl and not rhbuild.OPT.get("va") else [])
+    if xtab():                                                       # (RD49) the X segments (bit 23: core0's loader writes X)
+        tb = tables()
+        out += [(XFLAG | XA, tb["F2"] + tb["Q2"]), (XFLAG | XB, tb["INCT"] + tb["ENVT"])]
+    if rhbuild.OPT.get("drybus"):                                    # (RD49) the FX sequencer's dry bus in the tables' old place
+        import drybus
+        out += drybus.segs()
     if rhbuild.OPT.get("va"):                                        # (RD41) tools/va0.py's va_ctl in sl's place
         out += va_segs(labels)
     if "poly" in labels:                                             # (RH72) tools/poly0.py's two pieces
@@ -587,7 +608,8 @@ def segs(entry, env2=False, sp=False, sl=False):
     if "vm" in labels:                                               # (RH80) tools/vmode0.py's pieces
         import poly0
         import vmode0
-        vp, vl = vmode0.pieces(labels["vm"]["vmn"], labels["poly"]["mixg"])
+        import va0
+        vp, vl = vmode0.pieces(labels["vm"]["vmn"], labels["poly"]["mixg"], **({"n_end": va0.DX_AT} if va0.os2() else {}))
         assert (vl["vmn"], vl["vmo"], vl["vmx"]) == (labels["vm"]["vmn"], labels["vm"]["vmo"], labels["vm"]["vmx"])
         out += vp
     return out

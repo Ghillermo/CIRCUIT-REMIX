@@ -31,7 +31,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, add_sp_imm, adds_imm8, adds_reg, b, b_cond, b_w, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldrb_imm, ldrb_reg,  # noqa: E402
                    lsls_imm, lsls_reg, lsrs_imm, mov_reg, movs_imm, movt, movw, orrs_reg, pop_list, push_list, raw, str_imm, strb_imm,
-                   strb_reg, sub_sp_imm, subs_reg, bics_reg, ldr_sp, ldrb_w)
+                   strb_reg, sub_sp_imm, subs_reg, bics_reg, ldr_sp, ldrb_w, subs_imm8, lsrs_reg, strb_w)
 import countin as CI  # noqa: E402
 import cthresh as TH  # noqa: E402
 import mfsess as MF  # noqa: E402
@@ -79,6 +79,9 @@ def arm_code(base, L, prev):
     import rhbuild
     VMODE = rhbuild.OPT.get("vmode")
     VSEL = rhbuild.OPT.get("vsel")
+    R81 = rhbuild.OPT.get("rh81")
+    X2 = rhbuild.OPT.get("va2x")                                          # (RH85) the track's 2x (esel O_OS2): VA_AT + 8, bit 0
+    from esel import O_PRT, O_OS2
     if VMODE:
         from esel import ESR, O_MODE, O_DET
     else:
@@ -294,6 +297,24 @@ def arm_code(base, L, prev):
         E(strb_imm, 2, 5, VA_AT)
         E(ldrb_imm, 2, 1, O_DET)
         E(strb_imm, 2, 5, VA_AT + 1)
+    if R81:                                                               # (RH81) its track's poly retrigger bit (esel O_PRT)
+        imm32(1, ESR)
+        E(ldrb_w, 2, 1, O_PRT)
+        E(subs_imm8, 0, 1)
+        E(lsrs_reg, 2, 0)
+        E(adds_imm8, 0, 1)
+        E(movs_imm, 1, 1)
+        E(raw, h(0x400A))                                                 # ands r2, r1
+        E(strb_imm, 2, 5, VA_AT + 7)
+    if X2:                                                                # (RH85) its track's 2x bit
+        imm32(1, ESR)
+        E(ldrb_w, 2, 1, O_OS2)
+        E(subs_imm8, 0, 1)
+        E(lsrs_reg, 2, 0)
+        E(adds_imm8, 0, 1)
+        E(movs_imm, 1, 1)
+        E(raw, h(0x400A))                                                 # ands r2, r1
+        E(strb_imm, 2, 5, VA_AT + 8)
     if VSEL:                                                              # (RH80) its track's OSC 1 tune / fine, envelope -> FM / ring / mix
         E(movs_imm, 1, 5)
         E(raw, h(0x4341))                                                 # muls r1, r0 (5 (t + 1))
@@ -389,6 +410,10 @@ def arm_code(base, L, prev):
         E(movs_imm, 2, 0)
         for o in (O_MODE, O_MODE + 4, O_DET, O_DET + 4) + (tuple(range(EXT0, EXT0 + 40, 4)) if VSEL else ()):
             E(str_imm, 2, 1, o)
+        if R81:
+            E(strb_w, 2, 1, O_PRT)
+        if X2:
+            E(strb_w, 2, 1, O_OS2)
     E(movs_imm, 4, 0)
     a.label("ap_sl")
     E(cmp_imm, 7, 0)
@@ -416,6 +441,32 @@ def arm_code(base, L, prev):
         E(strb_imm, 2, 1, O_MODE)
         E(ldrb_imm, 2, 5, VA_AT + 1)
         E(strb_imm, 2, 1, O_DET)
+    if R81:                                                               # (RH81) the poly retrigger bit
+        E(ldrb_imm, 2, 5, VA_AT + 7)
+        E(cmp_imm, 2, 0)
+        E(b_cond, "ap_pr", "eq")
+        imm32(1, ESR)
+        E(ldrb_w, 2, 1, O_PRT)
+        E(subs_imm8, 6, 1)
+        E(movs_imm, 3, 1)
+        E(lsls_reg, 3, 6)
+        E(adds_imm8, 6, 1)
+        E(orrs_reg, 2, 3)
+        E(strb_w, 2, 1, O_PRT)
+        a.label("ap_pr")
+    if X2:                                                                # (RH85) the 2x bit
+        E(ldrb_imm, 2, 5, VA_AT + 8)
+        E(lsls_imm, 2, 2, 31)
+        E(b_cond, "ap_os", "eq")
+        imm32(1, ESR)
+        E(ldrb_w, 2, 1, O_OS2)
+        E(subs_imm8, 6, 1)
+        E(movs_imm, 3, 1)
+        E(lsls_reg, 3, 6)
+        E(adds_imm8, 6, 1)
+        E(orrs_reg, 2, 3)
+        E(strb_w, 2, 1, O_OS2)
+        a.label("ap_os")
     if VSEL:
         E(movs_imm, 1, 5)
         E(raw, h(0x4371))                                                 # muls r1, r6 (5 (t + 1))
@@ -567,7 +618,7 @@ def install(img, report, base_addr):
     import synthpage as SY
     BASE = rhbuild.BASE
     lab = lambda m, k: int(report[m]["labels"][k], 16)                         # noqa: E731
-    assert "fm8page" in report and "mfsess" in report
+    assert "fm8page" in report and ("mfsess" in report or rhbuild.OPT.get("nomfsess"))
     L = dict(c_rst=lab("rhstate", "c_rst"), c_ciok=lab("countin", "c_ciok"), c_syb=lab("synthpage", "c_syb"),
              c_fmon=lab("fmpage", "c_fmon"), c_fmset=lab("fmpage", "c_fmset"),
              **{k: lab("fm8page", k) for k in ("c_f8rd", "c_f8wr", "c_f8src", "c_f8ram")},

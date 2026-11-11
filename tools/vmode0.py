@@ -26,6 +26,7 @@ import core0 as C0  # noqa: E402
 VMF, UG, OFF, VBLK, VMK = 0x5240, 0x5248, 0x5250, 0x5254, 0x5255     # X (free: RD37 / RD39's dumps, X:$5233..$53FF unused)
 VKEY = 0x7D0E5A
 F_LEG, F_GLD, F_ALW, F_SNAP = 1, 2, 4, 8
+F_PRT = 16                                                              # (RH81) poly: a note-on retriggers the track's sounding voices (poly0 _prt)
 END = 0x25EE                                                            # (fm8c0's amp1)
 # the 8 modes (Hacks' order) -> (flags, unison, poly)
 MODES = ((F_SNAP, 0, 0), (F_SNAP | F_LEG, 0, 0), (F_LEG | F_GLD, 0, 0),

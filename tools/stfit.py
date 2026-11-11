@@ -571,7 +571,12 @@ def install(img, report, base_addr):
     assert report["stockplus"].get("v2") and report["stockplus"].get("fitflag"), "stfit needs stockplus v2 with fitflag"
     assert "c_rram" in report["rhstate"]["labels"], "stfit needs rhstate ram2 (RH41)"
     t_spd = int(report["stockplus"]["t_spd"], 16)
-    assert [u(t_spd + 4 * i) for i in range(129)] == SP.speed_table(), "stockplus's speed table not where its report says"
+    import tabpack as TBP
+    if TBP.on():                                                          # (RH87: in the ITCM, rebuilt after each core 0 upload)
+        cont = TBP.contents()
+        assert [int.from_bytes(bytes(cont[t_spd + 4 * i + k] for k in range(4)), "little") for i in range(129)] == SP.speed_table()
+    else:
+        assert [u(t_spd + 4 * i) for i in range(129)] == SP.speed_table(), "stockplus's speed table not where its report says"
     L = dict(c_rst=lab("rhstate", "c_rst"), c_rram=lab("rhstate", "c_rram"), c_ciok=lab("countin", "c_ciok"),
              **{k: lab("stockplus", k) for k in ("c_spval", "c_spval_a", "c_spput", "c_spdirty", "c_spint")})
     prev = dict(pad=u(GP.SMP_VT) & ~1, ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))

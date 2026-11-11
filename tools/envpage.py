@@ -25,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, adds_imm3, adds_imm8, adds_reg, b, b_cond, b_w, bics_reg, bl, cmp_imm, cmp_reg, eors_reg, h, ldr_imm, ldr_sp,  # noqa: E402
                    ldrb_imm, ldrb_reg, ldrb_w, ldrh_reg, lsls_imm, lsls_reg, lsrs_imm, lsrs_reg, mov_reg, movs_imm, movt, movw, muls, orrs_reg,
-                   pop_list, push_list, raw, str_imm, strb_imm, strb_reg, strh_imm, strh_w_imm, subs_imm8, subs_reg, tst_reg)
+                   pop_list, push_list, raw, str_imm, strb_imm, strb_reg, strh_imm, strh_w_imm, subs_imm8, subs_reg, tst_reg, strb_w)
 import countin as CI  # noqa: E402
 import cthresh as TH  # noqa: E402
 import granpage as GP  # noqa: E402
@@ -109,8 +109,12 @@ def model_block(sslope=(64,) * 4, gvals=(DEF_G,) * 4):
 
 
 def arm_code(base, L, prev, noblink=False):
+    import modmx as _MXM
+    MX = _MXM.mx64()                                                      # (RH87) the matrix's envelope destinations
     import rhbuild
-    LL = rhbuild.OPT.get("leftlight")                                    # (RH78) bipolar knobs: the lighter shade left
+    LL = rhbuild.OPT.get("leftlight")
+    R81 = rhbuild.OPT.get("rh81")
+    import esel as ES                                    # (RH78) bipolar knobs: the lighter shade left
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -136,14 +140,22 @@ def arm_code(base, L, prev, noblink=False):
     t_soff = t_map + NW
     E(raw, bytes(SW_OFF) + bytes(GW_OFF))
     t_goff = t_soff + NWS
-    pad = (-(t_goff + NWG - base)) % 4
-    E(raw, bytes(pad))
-    t_atk = t_goff + NWG + pad
-    E(raw, b"".join(x.to_bytes(4, "little") for x in atki))
-    t_len = t_atk + 512
-    E(raw, b"".join(x.to_bytes(4, "little") for x in leni))
-    t_lnb = t_len + 512
-    E(raw, b"".join(x.to_bytes(2, "little") for x in lenb))
+    import tabpack as TBP
+    if TBP.v2():                                                          # (RH91, tabpack2) the curves in the ITCM (the words to core 0 only,
+        t_atk = TBP.region("envpage_a", [(b"".join(x.to_bytes(4, "little") for x in atki), 4)])  # once cthresh is READY: after the upload)
+        t_len = TBP.region("envpage_l", [(b"".join(x.to_bytes(4, "little") for x in leni), 4)])
+        t_lnb = TBP.region("envpage_b", [(b"".join(x.to_bytes(2, "little") for x in lenb), 5)])
+        pad = (-(t_goff + NWG - base)) % 2
+        E(raw, bytes(pad))
+    else:
+        pad = (-(t_goff + NWG - base)) % 4
+        E(raw, bytes(pad))
+        t_atk = t_goff + NWG + pad
+        E(raw, b"".join(x.to_bytes(4, "little") for x in atki))
+        t_len = t_atk + 512
+        E(raw, b"".join(x.to_bytes(4, "little") for x in leni))
+        t_lnb = t_len + 512
+        E(raw, b"".join(x.to_bytes(2, "little") for x in lenb))
 
     # ---- c_evsum(r0 = block): its check byte; clobbers r1-r3
     a.label("c_evsum")
@@ -377,6 +389,23 @@ def arm_code(base, L, prev, noblink=False):
     bc("ew_sm", "eq")
     E(cmp_imm, 5, 4)
     bc("ew_ssl", "eq")
+    if R81:                                                               # (RH81) a reversed slot: the times swapped (ATK by the length,
+        E(bl, "ew_rv")                                                    # DEC by the start)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "ew_c", "eq")
+        E(cmp_imm, 5, 0)
+        E(b_cond, "ew_rv1", "ne")
+        imm32(0, t_len)
+        E(lsls_imm, 1, 7, 2)
+        E(raw, h(0x5840))                                                 # ldr r0, [r0, r1]
+        E(b, "ew_out")
+        a.label("ew_rv1")
+        E(cmp_imm, 5, 1)
+        E(b_cond, "ew_c", "ne")
+        imm32(0, t_atk)
+        E(lsls_imm, 1, 6, 2)
+        E(raw, h(0x5840))                                                 # ldr r0, [r0, r1]
+        E(b, "ew_out")
     E(b, "ew_c")
     a.label("ew_sm")
     E(bl, L["c_syb"])
@@ -393,6 +422,22 @@ def arm_code(base, L, prev, noblink=False):
     bc("ew_z", "eq")
     E(adds_reg, 0, 0, 4)
     E(ldrb_imm, 0, 0, B_SSLP)
+    if MX:                                                                # (RH87, modmx mx64) the matrix's offset: destination 38
+        E(movs_imm, 1, 2)
+        E(mov_reg, 2, 4)
+        E(bl, "c_evmx")
+    if R81:                                                               # (RH81) reversed: the slope mirrored (128 - v, at most 127)
+        E(push_list, [0])
+        E(bl, "ew_rv")
+        E(mov_reg, 1, 0)
+        E(pop_list, [0])
+        E(cmp_imm, 1, 0)
+        E(b_cond, "ew_slope", "eq")
+        E(movs_imm, 1, 128)
+        E(subs_reg, 0, 1, 0)
+        E(cmp_imm, 0, 127)
+        E(b_cond, "ew_slope", "ls")
+        E(movs_imm, 0, 127)
     E(b, "ew_slope")
     # a granular slot: its four in our block, the track its block's, on = in use with its gate knob on
     a.label("ew_g")
@@ -411,6 +456,15 @@ def arm_code(base, L, prev, noblink=False):
     E(adds_reg, 0, 0, 1)
     E(ldrb_imm, 6, 0, B_G)                                                # r6 = start
     E(ldrb_imm, 7, 0, B_G + 1)                                            # r7 = length
+    if MX:                                                                # (RH87, modmx mx64) + the matrix's offsets: 37 / 40
+        E(push_list, [0])
+        for reg, which in ((6, 0), (7, 1)):
+            E(mov_reg, 0, reg)
+            E(movs_imm, 1, which)
+            E(adds_imm3, 2, 4, NSL)
+            E(bl, "c_evmx")
+            E(mov_reg, reg, 0)
+        E(pop_list, [0])
     E(cmp_imm, 5, 6)
     bc("ew_gsl", "eq")
     E(cmp_imm, 5, 1)
@@ -429,9 +483,17 @@ def arm_code(base, L, prev, noblink=False):
     E(b, "ew_c")
     a.label("ew_gsl")
     E(ldrb_imm, 0, 0, B_G + 2)
+    if MX:
+        E(movs_imm, 1, 2)
+        E(adds_imm3, 2, 4, NSL)
+        E(bl, "c_evmx")
     E(b, "ew_slope")
     a.label("ew_gef")
     E(ldrb_imm, 0, 0, B_G + 3)
+    if MX:
+        E(movs_imm, 1, 3)
+        E(adds_imm3, 2, 4, NSL)
+        E(bl, "c_evmx")
     E(b, "ew_slope")
     a.label("ew_gm")
     E(bl, "ew_trk")
@@ -492,6 +554,14 @@ def arm_code(base, L, prev, noblink=False):
     a.label("ew_out")
     E(pop_list, [1])
     E(pop_list, [4, 5, 6, 7], pc=True)
+    if R81:                                                               # ew_rv (r4 = the synth slot) -> r0 = 1 if reversed; clobbers r1
+        a.label("ew_rv")
+        imm32(0, ES.ESR)
+        E(ldrb_w, 0, 0, ES.O_RVS)
+        E(lsrs_reg, 0, 4)
+        E(movs_imm, 1, 1)
+        E(raw, h(0x4008))                                                 # ands r0, r1
+        E(raw, h(0x4770))
     # ew_trk (r4 = the granular slot) -> r0 = its track + 1 (0 = free); ew_on -> r0 = the track + 1 when on (its gate knob on), else 0
     a.label("ew_trk")
     E(push_list, [4], lr=True)
@@ -546,6 +616,17 @@ def arm_code(base, L, prev, noblink=False):
     E(movs_imm, 0, 0xFF)
     E(strb_imm, 0, 4, R_PEND)
     a.label("ev_pd")
+    if R81:                                                               # (RH81) the slots whose reverse changed: pending
+        imm32(1, ES.ESR)
+        E(ldrb_w, 0, 1, ES.O_RVS)
+        E(ldrb_w, 2, 1, ES.O_RVS + 1)
+        E(eors_reg, 2, 0)
+        E(b_cond, "ev_nr", "eq")
+        E(strb_w, 0, 1, ES.O_RVS + 1)
+        E(ldrb_imm, 0, 4, R_PEND)
+        E(orrs_reg, 0, 2)
+        E(strb_imm, 0, 4, R_PEND)
+        a.label("ev_nr")
     E(ldrb_imm, 5, 4, R_PEND)
     E(cmp_imm, 5, 0)
     E(b_cond, "ev_rd", "eq")
@@ -754,6 +835,10 @@ def arm_code(base, L, prev, noblink=False):
         E(strh_w_imm, 0, 1, 2 * LED_TRK1)
     a.label("ll_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
+    if MX:                                                                # (RH87) c_evmx: modmx's b.w c_mxev (the value as it is before)
+        a.label("c_evmx")
+        E(mov_reg, 0, 0)
+        E(raw, h(0x4770))
     return a.assemble()
 
 
