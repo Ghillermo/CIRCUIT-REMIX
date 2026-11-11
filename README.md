@@ -11,6 +11,7 @@ No_Grand_9136: https://Reddit.com/user/No_Grand_9136
 Theodor
 
 Jens
+
 Code Contributions:
 
 Mefisme (https://github.com/mefisme) Creator of the Pattern Mutate feature, LED clock and several fixes. Testing and design. Check out their custom firmware for Rhythm: https://github.com/mefisme/rhythm-plus
