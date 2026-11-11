@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.13", "A0.13S", "A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.14", "A0.14S", "A0.13", "A0.13S", "A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -200,7 +200,11 @@ def main(versions):
     print("tools/rm_uploader.html", len(page), "bytes")
 
 
-DESC = {"A0.13": ("⚠️ experimental, necesita pulirse — Alpha 0.13 — la versión completa: Alpha 0.12 más el secuenciador de efectos con envíos por pista, el looper / sampler en vivo, Pattern Mutate (diseño de mefisme), los patches del pack y los starters, el sobremuestreo 2× y la relación armónica del VA, todos los parámetros en la matriz; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
+DESC = {"A0.14": ("⚠️ experimental, necesita pulirse — Alpha 0.14 — la versión completa: Alpha 0.13 más el knob de tipo del Grid FX (hueco mantenido + K2, el del original, con Auto-Filter y Digitiser) que sigue a delay throw y reverb throw, sin Shift + K1; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
+                  "⚠️ experimental, needs refinement — Alpha 0.14 — full build: Alpha 0.13 plus the Grid FX type knob (slot held + K2, the original's, with Auto-Filter and Digitiser) going on to delay throw and reverb throw, without Shift + K1; the project copy, sample copy, pack delete, project's sound and patches write to the card"),
+        "A0.14S": ("⚠️ experimental, necesita pulirse — Alpha 0.14S — versión más segura: Alpha 0.14 sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto ni los patches del pack; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "⚠️ experimental, needs refinement — Alpha 0.14S — safer build: Alpha 0.14 without the project copy, pack delete, sample copy, the project's sound or the pack's patches; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
+        "A0.13": ("⚠️ experimental, necesita pulirse — Alpha 0.13 — la versión completa: Alpha 0.12 más el secuenciador de efectos con envíos por pista, el looper / sampler en vivo, Pattern Mutate (diseño de mefisme), los patches del pack y los starters, el sobremuestreo 2× y la relación armónica del VA, todos los parámetros en la matriz; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
                   "⚠️ experimental, needs refinement — Alpha 0.13 — full build: Alpha 0.12 plus the FX sequencer with per-track sends, the looper / live sampler, Pattern Mutate (mefisme's design), the pack's patches and starters, the VA's 2× oversampling and harmonic ratio, every parameter in the matrix; the project copy, sample copy, pack delete, project's sound and patches write to the card"),
         "A0.13S": ("⚠️ experimental, necesita pulirse — Alpha 0.13S — versión más segura: Alpha 0.13 sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto ni los patches del pack; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "⚠️ experimental, needs refinement — Alpha 0.13S — safer build: Alpha 0.13 without the project copy, pack delete, sample copy, the project's sound or the pack's patches; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),

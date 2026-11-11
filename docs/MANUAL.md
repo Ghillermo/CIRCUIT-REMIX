@@ -1,4 +1,4 @@
-# Circuit Remix Alpha 0.13 — manual
+# Circuit Remix Alpha 0.14 — manual
 
 [English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)
 
@@ -76,7 +76,7 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.13)* es nuevo o cambia en esta versión; *(Alpha 0.11)* = 0.10 + los módulos de Arrhythmia (solo en 0.11).
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.14)* o *(Alpha 0.13)* es nuevo o cambia en estas versiones; *(Alpha 0.11)* = 0.10 + los módulos de Arrhythmia (solo en 0.11).
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 
 <a id="colores"></a>
@@ -616,7 +616,7 @@ Cada pack tiene **64 patches** de sinte y granular en su banco de patches de la 
 | **Clear + botón de pista** (vistas de pista) | la pista vuelve al último patch o starter que cargó |
 | **Clear + knob** (OSC 1 / OSC 2, Granular, FM) | ese knob vuelve al valor del patch cargado |
 
-Un hueco vacío del pack enseña primero un patch de ejemplo hasta que guardas encima. **No están en Alpha 0.13S** (escriben en la tarjeta).
+Un hueco vacío del pack enseña primero un patch de ejemplo hasta que guardas encima. **No están en Alpha 0.13S ni 0.14S** (escriben en la tarjeta).
 
 ## 5. Mezcla y efectos
 
@@ -671,7 +671,7 @@ Con Shift, el brillo de cada knob muestra su valor. Reverb, delay y sidechain se
 | **Mantener un paso** (filas 1-2) | enciende su efecto hasta soltarlo |
 | **Octave ▼ + paso / Octave ▲ + paso** | ese paso: un efecto al azar / repetir el último |
 | **K1-K8** de la pista de efectos | cuánto de cada pista pasa por el Grid FX (todo al empezar); se automatizan |
-| **Vista Grid FX: hueco mantenido + Shift + K1** | el tipo del hueco, también los nuevos **delay throw** (melocotón) y **reverb throw** (crema) |
+| **Vista Grid FX: hueco mantenido + K2** *(Alpha 0.14)* | el tipo mientras se mantiene, como en el original: Beat Repeat … **Auto-Filter**, **Digitiser** … Vinyl y, tras Vinyl, los nuevos **delay throw** (melocotón: el delay de todas las pistas a tope) y **reverb throw** (crema); al soltar, el hueco vuelve a su tipo guardado. Ya no hay Shift + K1 |
 
 **Looper / sampler en vivo** *(Alpha 0.13)*, en la vista Grid FX (Shift + Mixer):
 
@@ -776,7 +776,7 @@ Los knobs nuevos mueven parámetros del original con su MIDI de siempre (guía d
 | **Curva de velocity** | Advanced Setup, K1 | [6.2 Setup y Advanced Setup](#setup) | Alpha 0.10 |
 | **De-click de redisparos** | sin clic al volver a disparar un sample; Sample mode, pad 19 | [4.1 Sample mode](#samplemode) | Alpha 0.12 |
 | **De-clicker de loops** | crossfade en el punto de loop; pad 19 de Sample mode, pad 23 de Sample Rec | [4.1 Sample mode](#samplemode) | Alpha 0.04 |
-| **Delay / reverb throw** | tipos nuevos de Grid FX; hueco mantenido + Shift + K1 | [5.3 Grid FX: secuenciador de efectos y looper](#gridfx) | Alpha 0.13 |
+| **Delay / reverb throw** | tipos nuevos de Grid FX; hueco mantenido + K2 (desde 0.14) | [5.3 Grid FX: secuenciador de efectos y looper](#gridfx) | Alpha 0.13 |
 | **Destello de las pistas** | con Shift, el botón de cada pista en blanco al sonar | [2.1 El botón de pista](#pista) | Alpha 0.10 |
 | **Dinámicas por paso** | velocity y retraso al azar dentro del paso; fila 3 de la probabilidad | [3.2 Pattern Settings y probabilidad](#patternsettings) | Alpha 0.0 |
 | **Distorsión en granular y sinte** | el knob de distorsión del original también en ellos | [2.2 El menú de pista](#menu) | Alpha 0.07 |

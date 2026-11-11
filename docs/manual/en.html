@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.13 — manual</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Circuit Remix Alpha 0.14 — manual</title><style>
 :root { --bg:#f6f4ef; --fg:#1d1d1f; --muted:#5b5f66; --card:#ffffff; --accent:#ff6a13; --line:#e1ddd3; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; } }
 :root[data-theme="dark"] { --bg:#121315; --fg:#ececec; --muted:#a3a8ae; --card:#1c1d20; --line:#2c2e33; }
@@ -23,7 +23,7 @@ footer { color:var(--muted); text-align:center; font-size:13px; padding:24px; }
 p.lang { text-align:right; margin:0 0 8px; } p.lang a, section.feat a { color:var(--accent); font-weight:bold; }
 p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; }
 </style></head><body>
-<header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.13</p><div class="bar"></div></header><main>
+<header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.14</p><div class="bar"></div></header><main>
 <p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>
 <p class="warn">⚠️ <strong>Alpha 0.13 is experimental:</strong> the FX sequencer and the looper have been tried on the device; most other things since Alpha 0.04 mostly in emulation. <strong>Back up your SD card.</strong></p>
 <p>Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.</p>
@@ -84,7 +84,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>K1-K8</strong> = the 8 knobs. <strong>▲ / ▼</strong> = the arrow buttons.</li>
 <li><strong>Hold</strong> a button = press it and keep it down; <strong>A + B</strong> = B with A held.</li>
 <li><strong>★</strong> = exclusive to Circuit Remix (not in CIRCUIT-HACKS).</li>
-<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.13)</em>: new or changed in this release; <em>(Alpha 0.11)</em> = 0.10 + Arrhythmia&#x27;s modules (0.11 only).</li>
+<li><strong>(since Alpha 0.0x)</strong> = the release that brought the function. Marked <em>(Alpha 0.14)</em> or <em>(Alpha 0.13)</em>: new or changed in these releases; <em>(Alpha 0.11)</em> = 0.10 + Arrhythmia&#x27;s modules (0.11 only).</li>
 <li>At the end, the <strong><a href="#glosario">glossary</a></strong>: one entry per function, with its view and its gesture.</li>
 </ul>
 </section>
@@ -1599,7 +1599,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Clear + track button</strong> (track views)</td><td>the track goes back to the last patch or starter it loaded</td></tr>
 <tr><td><strong>Clear + knob</strong> (OSC 1 / OSC 2, Granular, FM)</td><td>that knob goes back to the loaded patch&#x27;s value</td></tr>
 </tbody></table>
-<p>An empty slot of the pack first shows an example patch until you save over it. <strong>Not in Alpha 0.13S</strong> (they write to the card).</p>
+<p>An empty slot of the pack first shows an example patch until you save over it. <strong>Not in Alpha 0.13S or 0.14S</strong> (they write to the card).</p>
 </section>
 <h2 class="group">5. Mix and effects</h2>
 <section class="feat" id="mixer"><h3><span class="code">5.1</span>Mixer</h3>
@@ -1639,7 +1639,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Hold a step</strong> (rows 1-2)</td><td>turns its effect on until you let go</td></tr>
 <tr><td><strong>Octave ▼ + step / Octave ▲ + step</strong></td><td>that step: a random effect / repeat the last one</td></tr>
 <tr><td>The FX track&#x27;s <strong>K1-K8</strong></td><td>how much of each track goes through the Grid FX (all at first); automatable</td></tr>
-<tr><td><strong>Grid FX view: slot held + Shift + K1</strong></td><td>the slot&#x27;s type, also the new <strong>delay throw</strong> (peach) and <strong>reverb throw</strong> (cream)</td></tr>
+<tr><td><strong>Grid FX view: slot held + K2</strong> <em>(Alpha 0.14)</em></td><td>the type while held, as in the original: Beat Repeat … <strong>Auto-Filter</strong>, <strong>Digitiser</strong> … Vinyl and, past Vinyl, the new <strong>delay throw</strong> (peach: every track&#x27;s delay full) and <strong>reverb throw</strong> (cream); let go, the slot is back to its saved type. No more Shift + K1</td></tr>
 </tbody></table>
 <p><strong>Looper / live sampler</strong> <em>(Alpha 0.13)</em>, in the Grid FX view (Shift + Mixer):</p>
 <table><thead><tr><th>Pad</th><th>Tap</th><th>Hold</th><th>Shift + pad</th></tr></thead><tbody>
@@ -1719,7 +1719,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Copy track parameters</strong></td><td>Duplicate + track A, track B</td><td><a href="#pista">2.1 The track button</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Count-in</strong></td><td>a bar before recording; Shift + Clear; since 0.08 on the music&#x27;s clock, also as a slave</td><td><a href="#transporte">1.1 Transport, metronome and quantize</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Cue mode</strong></td><td>mix on the left, cue on the right; Mixer, pan, Shift + knob</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.04</td></tr>
-<tr><td><strong>Delay / reverb throw</strong></td><td>new Grid FX types; slot held + Shift + K1</td><td><a href="#gridfx">5.3 Grid FX: the FX sequencer and the looper</a></td><td>Alpha 0.13</td></tr>
+<tr><td><strong>Delay / reverb throw</strong></td><td>new Grid FX types; slot held + K2 (since 0.14)</td><td><a href="#gridfx">5.3 Grid FX: the FX sequencer and the looper</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Delete a pack</strong></td><td>Clear + pack twice in Packs</td><td><a href="#projects">6.1 Projects and Packs</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Distortion on granular and synth</strong></td><td>the original&#x27;s distortion knob on them too</td><td><a href="#menu">2.2 The track menu</a></td><td>Alpha 0.07</td></tr>
 <tr><td><strong>Engine selector</strong></td><td>sample, input, VA, granular or FM on row 3; Sample mode, pad 8</td><td><a href="#samplemode">4.1 Sample mode</a></td><td>Alpha 0.12</td></tr>
