@@ -24,6 +24,8 @@ If you want your name or website in this list, add it on your message when you s
 
 **⬇️ Descarga la app (instalador del firmware, tarjeta y módulos): [rm_app.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** · [todas las versiones](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
+**⬇️ App Hacks + Remix** (un Circuit Tracks y un Circuit Rhythm en la misma página): [hr_app.zip](https://ghillermo.github.io/CIRCUIT-HACKS-RC/hr_app.zip) · [cómo](#app-hacks--remix)
+
 Nota legal: el firmware proporcionado por Novation es propietario, no está permitido instalarlo en cualquier dispositivo que no sea Circuit Rhythm. Este instalador lo comprueba y no permite instalar en ningún otro dispositivo.
 
 Trabajo humano: Hay una persona detrás de todo este trabajo. Este proyecto tiene una gran dedicación y esfuerzo en mantenimiento, depuración y conocimientos de desarrollo y de uso del dispositivo. Este proyecto escucha a la Comunidad y se comparte en formato copyleft de forma altruista, gratuita y abierta. Por favor, respeta este trabajo y el de los desarrolldores oficiales y no oficiales.
@@ -92,6 +94,10 @@ Para ordenar packs, samples y patrones desde el ordenador, con la microSD o con 
 8. **Módulos (prueba de concepto)…** sube, comprueba, arranca y para un módulo de [Arrhythmia](https://github.com/llcoolkm/arrhythmia) en un Circuit Rhythm con **Alpha 0.11 o 0.11S: solo esas dos versiones tienen el anfitrión de módulos** (no Alpha 0.10 / 0.10S, ni las anteriores, ni el firmware oficial; la app avisa si el aparato no contesta) (ver el [manual](docs/MANUAL.md#modulos)). Los módulos son de Arrhythmia (llcoolkm, MIT) y no están en este repositorio: descárgalos de [sus releases](https://github.com/llcoolkm/arrhythmia/releases).
 
 **Antes de escribir:** la app guarda lo que sustituye en una carpeta tuya del ordenador, nunca en la tarjeta: el aparato busca los ficheros por su prefijo `NN_` y una copia dentro de un pack puede ocupar el lugar del original. Por USB, cada escritura borra primero el fichero antiguo. **Esta versión aún no se ha probado en un Circuit Rhythm real:** se ha comprobado en emulación, contra el código del firmware 5706 y de Alpha 0.09 (la de Circuit Tracks sí se ha usado en un aparato). Haz antes un snapshot o una copia de la tarjeta.
+
+### App Hacks + Remix
+
+Si tienes también un Circuit Tracks con [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUIT-HACKS-RC): **[descarga la app Hacks + Remix](https://ghillermo.github.io/CIRCUIT-HACKS-RC/hr_app.zip)** (`hr_app.zip`), descomprímela y abre `hr_app.html` en Chrome o Edge. Pasa samples, patrones (del Tracks al Rhythm, la nota más grave de cada paso) y parches (FM de 8 operadores, VA, granular) entre las tarjetas de los dos aparatos, carpetas del ordenador y snapshots, y lleva dentro las dos apps enteras: la vista **Remix** es `rm_app.html` (con el instalador) y la vista **Hacks** la app de la tarjeta del Tracks. Se publica con CIRCUIT-HACKS ([guía](https://ghillermo.github.io/CIRCUIT-HACKS-RC/beta/guia.html#app-sd)); para instalar la última alfa de Circuit Remix, usa `rm_app.zip` de este repositorio.
 
 ### Con Python (`tools/patch_official.py`)
 
@@ -175,6 +181,8 @@ Circuit Rhythm, Components y Novation son marcas de Focusrite Audio Engineering 
 
 **⬇️ Download the app (firmware installer, card and modules): [rm_app.zip](https://github.com/Ghillermo/CIRCUIT-REMIX/raw/main/tools/rm_app.zip)** · [all versions](https://github.com/Ghillermo/CIRCUIT-REMIX/releases)
 
+**⬇️ Hacks + Remix app** (a Circuit Tracks and a Circuit Rhythm on the same page): [hr_app.zip](https://ghillermo.github.io/CIRCUIT-HACKS-RC/hr_app.zip) · [how](#hacks--remix-app)
+
 Legal note: the firmware provided by Novation is proprietary; installing it on any device other than a Circuit Rhythm is not allowed. This installer checks it and does not allow installing it on any other device.
 
 Firmware patches for the **Novation Circuit Rhythm** (reference firmware 2.0.1, build 5706).
@@ -230,6 +238,10 @@ To organise packs, samples and patterns from the computer, with the microSD card
 8. **Modules (proof of concept)…** uploads, checks, starts and stops an [Arrhythmia](https://github.com/llcoolkm/arrhythmia) module on a Circuit Rhythm running **Alpha 0.11 or 0.11S: only those two versions have the module host** (not Alpha 0.10 / 0.10S, the earlier ones or the official firmware; the app says so when the device does not answer) (see the [manual](docs/MANUAL_EN.md#modulos)). The modules are Arrhythmia's (llcoolkm, MIT) and are not in this repository: download them from [its releases](https://github.com/llcoolkm/arrhythmia/releases).
 
 **Before writing:** the app keeps what it replaces in a folder of yours on the computer, never on the card: the device finds files by their `NN_` prefix and a copy inside a pack can take the original's place. Over USB, each write deletes the old file first. **This version has not been tried on a real Circuit Rhythm yet:** it was checked in emulation, against the code of firmware 5706 and of Alpha 0.09 (the Circuit Tracks version has been used on a device). Take a snapshot or a copy of the card first.
+
+### Hacks + Remix app
+
+If you also have a Circuit Tracks with [CIRCUIT-HACKS](https://github.com/Ghillermo/CIRCUIT-HACKS-RC): **[download the Hacks + Remix app](https://ghillermo.github.io/CIRCUIT-HACKS-RC/hr_app.zip)** (`hr_app.zip`), unzip it and open `hr_app.html` in Chrome or Edge. It moves samples, patterns (Tracks to Rhythm, each step's lowest note) and patches (8-operator FM, VA, granular) between both devices' cards, folders on the computer and snapshots, and carries both apps whole: the **Remix** view is `rm_app.html` (with the installer) and the **Hacks** view the Tracks' card app. It is published with CIRCUIT-HACKS ([guide](https://ghillermo.github.io/CIRCUIT-HACKS-RC/beta/guide.html#app-sd)); to install the latest Circuit Remix alpha, use this repository's `rm_app.zip`.
 
 ### With Python (`tools/patch_official.py`)
 
