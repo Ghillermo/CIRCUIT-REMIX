@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## Alpha 0.14 (2026-11-11) — el knob de tipo del Grid FX con los lanzamientos (experimental)
+
+> ⚠️ **Experimental: necesita pulirse.** Lo nuevo se ha comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria), aún no en el aparato. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.
+
+**Español.** **Alpha 0.14** (marca `A0.14`) y **Alpha 0.14S** (marca `A0.14S`: sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto en la tarjeta ni los patches del pack). Parten de Alpha 0.13. Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades:
+- **El knob de tipo del Grid FX** (vista Grid FX, Shift + Mixer: hueco mantenido + **K2**, el del original) cambia el efecto mientras se mantiene el hueco entre Beat Repeat, Reverser, Gater, **Auto-Filter**, **Digitiser**, Phaser y Vinyl (Auto-Filter y Digitiser ya estaban: el pack de fábrica no los pone en ningún pad), y **ahora sigue tras Vinyl a delay throw y reverb throw**. Al soltar, el hueco vuelve a su tipo guardado, como en el original.
+- **Sin Shift + K1** (el tipo guardado del hueco en Alpha 0.13): el knob de tipo es solo K2.
+- **Arreglo:** un hueco de lanzamiento que la vista Grid FX ya conocía como tal no hacía nada al pulsarlo.
+
+**English.** **Alpha 0.14** (marker `A0.14`) and **Alpha 0.14S** (marker `A0.14S`: without the project copy, the pack delete, the sample copy, the project's sound on the card or the pack's patches). They build on Alpha 0.13. Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** What's new has been checked in emulation (the device's code run on a dump of its memory), not yet on the device. **Back up your SD card.** If it does not start: **Sample Rec + Samples + Note** at power-on and install Alpha 0.10 or the official firmware.
+
+What's new:
+- **The Grid FX type knob** (Grid FX view, Shift + Mixer: slot held + **K2**, the original's) changes the effect while the slot is held through Beat Repeat, Reverser, Gater, **Auto-Filter**, **Digitiser**, Phaser and Vinyl (Auto-Filter and Digitiser were already there: the factory pack puts them on no pad), and **now goes on past Vinyl to delay throw and reverb throw**. Let go, the slot is back to its saved type, as in the original.
+- **No Shift + K1** (the slot's saved type in Alpha 0.13): the type knob is K2 only.
+- **Fix:** a throw slot the Grid FX view already knew as one did nothing when pressed.
+
 ## Alpha 0.13 (2026-11-11) — secuenciador de efectos, looper, Pattern Mutate, patches del pack (experimental)
 
 > ⚠️ **Experimental: necesita pulirse.** El secuenciador de efectos, los envíos al Grid FX y el looper se han probado en el aparato; el resto de lo nuevo, sobre todo en emulación (el código del aparato ejecutado sobre un volcado de su memoria, y los DSP en un emulador). Puede haber fallos, ruidos o cuelgues. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.

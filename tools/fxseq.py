@@ -41,8 +41,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thumb import (Asm, adds_imm8, adds_reg, ands_reg, b, b_cond, b_w, bics_reg, bl, cmp_imm, cmp_reg, h, ldr_imm, ldr_sp, ldrb_imm,  # noqa: E402
-                   ldrb_reg, ldrb_w, lsls_imm, lsls_reg, lsrs_imm, lsrs_reg, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list,
-                   push_list, raw, str_imm, strb_imm, strb_reg, strb_w, strh_reg, subs_imm8, subs_reg, tst_reg)
+                   ldrb_reg, ldrb_w, ldrh_imm, lsls_imm, lsls_reg, lsrs_imm, lsrs_reg, mov_reg, movs_imm, movt, movw, muls, orrs_reg, pop_list,
+                   push_list, raw, str_imm, strb_imm, strb_reg, strb_w, strh_imm, strh_reg, subs_imm8, subs_reg, tst_reg)
 import countin as CI  # noqa: E402
 import granpage as GP  # noqa: E402
 import rhstate  # noqa: E402
@@ -90,6 +90,16 @@ ROUTER = 0x20043740                                      # the parameter router:
 SENDS = False                                            # (RD49, OPT sends) see c_fxsnd
 HOLD = False                                             # (RD50, OPT fxhold; the user: «when a step in the two top rows is held, it should
 O_HLD = 84                                               #  activate and show its effect») + 84 the held step pad + 1, + 85 its track
+K2TYPE = False                                           # (RH93, OPT k2type; the user: «Add auto-filter/digitizer to the list of the stock FX
+                                                         #  Mode knob» -> they were there; «Yes» to the throws too; «no shift+k1») see c_fxkl
+KL_CALL, KL_FN, LIST_CMP = 0x0805ED80, 0x0805EBF6, 0x0805ECA6    # the Grid FX knob layout's lookup (knob, type) -> parameter; K2's list loop bound
+DEF_CALL, DEF_FN = 0x080396C6, 0x0803948C                # the live type setter's call to the macros' defaults
+ST_AT, ST_HEAD = 0x080396C2, "strb r2, [r6]|mov r1, r6"  # the live type setter's store (r6 = the slot's row, r2 = the new type)
+LIS_W, LIS0 = 0x08063A4C, 0x080393FC                     # the manager's vtable[0]: a store changed (the held type's: the old type off)
+VP_AT, VR_AT, V_HEAD = 0x0805AB78, 0x0805AC46, "push {r4, r5, r6, lr}|mov r4, r0"   # the Grid FX view's slot press / release
+HP_AT, HR_AT, H_HEAD, H_TAIL = 0x0805A70C, 0x0805A766, "push {r3, r4, r5, lr}|mov r4, r0", 0x0805A7BA  # its pad handlers
+V_TYPE, VP_ON, V_TAIL, V_SET, V_PTR, V_NTF = 0x0805F52C, 0x0805AC24, 0x0805AA4E, 0x08047038, 0x0803FD26, 0x0803FBEC  # (both skip types > 6)
+P_TYPE = 0x16                                            # the type knob's parameter (K2 in every stock type's layout)
 BRIGHT = False                                           # (RD50, OPT fxbright; the user: «every step must show the selected fx brighter,
                                                          #  just like the keyboard») the FX track's view: dim slots, the one on bright
 
@@ -98,8 +108,9 @@ def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 <<
 
 
 def arm_code(base, L, prev, off_head):
-    global SENDS, BRIGHT, HOLD
+    global SENDS, BRIGHT, HOLD, K2TYPE
     import rhbuild
+    K2TYPE = bool(rhbuild.OPT.get("k2type"))
     SENDS = bool(rhbuild.OPT.get("sends"))
     BRIGHT = bool(rhbuild.OPT.get("fxbright"))
     HOLD = bool(rhbuild.OPT.get("fxhold"))
@@ -1058,7 +1069,10 @@ def arm_code(base, L, prev, off_head):
     E(pop_list, [4], pc=True)
 
     # ---- c_fxknob (the Mixer's knob slot: r0 = view, r1 = knob, r2 = delta): Grid FX, a slot held + Shift + K1 = its type
+    #      (k2type: none; the stock's K2 lists every type, ours too)
     a.label("c_fxknob")
+    if K2TYPE:
+        E(b_w, prev["knob"])
     E(cmp_imm, 1, 0)
     bc("kn_p0", "ne")
     E(push_list, [0, 1, 2, 4, 5], lr=True)
@@ -1304,6 +1318,200 @@ def arm_code(base, L, prev, off_head):
     E(b_cond, "ld_gl", "lo")
     a.label("ld_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
+
+    if K2TYPE:
+        # ---- c_fxkl (the Grid FX knob layout's lookup: r0 = the view, r1 = the knob): the stock's; K2 on a slot of ours (7 / 8) = the type
+        #      knob too (the stock has no row for them, so K2 went dead there); clobbers r0-r3
+        a.label("c_fxkl")
+        E(push_list, [4, 5], lr=True)
+        E(mov_reg, 4, 0)
+        E(mov_reg, 5, 1)
+        E(bl, KL_FN)
+        E(cmp_imm, 0, 0xFF)
+        E(b_cond, "kl_x", "ne")
+        E(cmp_imm, 5, 1)
+        E(b_cond, "kl_x", "ne")
+        E(ldr_imm, 0, 4, 0xC)
+        E(movs_imm, 1, 0)
+        E(bl, PARAM_GET)
+        E(ldrb_imm, 1, 0, 0)
+        E(movs_imm, 0, 0xFF)
+        E(cmp_imm, 1, T_DEL)
+        E(b_cond, "kl_x", "lo")
+        E(cmp_imm, 1, T_MAX)
+        E(b_cond, "kl_x", "hi")
+        E(movs_imm, 0, P_TYPE)
+        a.label("kl_x")
+        E(pop_list, [4, 5], pc=True)
+
+        # ---- c_fxhp / c_fxhr (the Grid FX view's pad press / release, r0 = the view, r1 = the slot; the stock skips a type above 6 and
+        #      writes a per-type byte): ours = the pressed bit (+ 0x38), then the view's slot press / release (c_fxvp / c_fxvr) and the
+        #      stock's tail (the LED); momentary (the latch is the stock types'); the rest to the stock
+        a.label("c_fxhp")
+        E(movs_imm, 3, 1)
+        E(b, "hp_c")
+        a.label("c_fxhr")
+        E(movs_imm, 3, 0)
+        a.label("hp_c")
+        E(push_list, [3, 4, 5], lr=True)
+        E(mov_reg, 4, 0)
+        E(mov_reg, 5, 1)
+        E(bl, V_TYPE)
+        E(ldr_sp, 3, 0)
+        E(cmp_imm, 0, T_DEL)
+        E(b_cond, "hp_s", "lo")
+        E(cmp_imm, 0, T_MAX)
+        E(b_cond, "hp_s", "hi")
+        E(ldrh_imm, 1, 4, 0x38)
+        E(movs_imm, 0, 1)
+        E(lsls_reg, 0, 5)
+        E(cmp_imm, 3, 0)
+        E(b_cond, "hp_r", "eq")
+        E(tst_reg, 1, 0)
+        E(b_cond, "hp_x", "ne")
+        E(orrs_reg, 1, 0)
+        E(strh_imm, 1, 4, 0x38)
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, VP_AT)
+        E(b_w, H_TAIL)
+        a.label("hp_r")
+        E(tst_reg, 1, 0)
+        E(b_cond, "hp_x", "eq")
+        E(bics_reg, 1, 0)
+        E(strh_imm, 1, 4, 0x38)
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, VR_AT)
+        E(b_w, H_TAIL)
+        a.label("hp_x")
+        E(pop_list, [3, 4, 5], pc=True)
+        a.label("hp_s")
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(cmp_imm, 3, 0)
+        E(b_cond, "hp_sr", "eq")
+        E(b_w, HP_AT + 4)
+        a.label("hp_sr")
+        E(b_w, HR_AT + 4)
+
+        # ---- c_fxvp / c_fxvr (the Grid FX view's slot press / release, r0 = the view, r1 = the slot; their own type copy: the stock skips a
+        #      type above 6, and its per-type arrays have room for 7): ours = the slot on / off through the router (the manager's press /
+        #      release: c_fxgp / c_fxgr) and its pressed flag, as the stock's tail does; the rest to the stock
+        a.label("c_fxvp")
+        E(movs_imm, 3, 1)
+        E(b, "vp_c")
+        a.label("c_fxvr")
+        E(movs_imm, 3, 0)
+        a.label("vp_c")
+        E(push_list, [4, 5, 6], lr=True)
+        E(mov_reg, 4, 0)
+        E(mov_reg, 5, 1)
+        E(mov_reg, 6, 3)
+        E(bl, V_TYPE)
+        E(cmp_imm, 0, T_DEL)
+        E(b_cond, "vp_s", "lo")
+        E(cmp_imm, 0, T_MAX)
+        E(b_cond, "vp_s", "hi")
+        E(cmp_imm, 6, 0)
+        E(b_cond, "vp_r", "eq")
+        E(b_w, VP_ON)                                                     # the stock's: slot on (router), its pressed flag, the tail
+        a.label("vp_r")
+        E(ldr_imm, 0, 4, 0x28)
+        E(mov_reg, 1, 5)
+        E(movs_imm, 2, 0)
+        E(movs_imm, 3, 0)
+        E(bl, V_SET)
+        E(ldr_imm, 0, 4, 0x24)
+        E(mov_reg, 1, 5)
+        E(bl, V_PTR)
+        E(movs_imm, 1, 0)
+        E(strb_imm, 1, 0, 0)
+        E(ldr_imm, 0, 4, 0x24)
+        E(bl, V_NTF)
+        E(b_w, V_TAIL)
+        a.label("vp_s")
+        E(mov_reg, 1, 5)
+        E(mov_reg, 0, 4)
+        E(cmp_imm, 6, 0)
+        E(b_cond, "vp_sr", "eq")
+        E(b_w, VP_AT + 4)
+        a.label("vp_sr")
+        E(b_w, VR_AT + 4)
+
+        # ---- c_fxst (the live type setter's store, in place of its two instructions: r0 = the manager, r2 = the new type, r6 = the row):
+        #      the store; a slot leaving one of our types = that throw off (the stock reports the old type off only for its own types);
+        #      r1 = the row; keeps r0
+        a.label("c_fxst")
+        E(ldrb_imm, 3, 6, 0)
+        E(strb_imm, 2, 6, 0)
+        E(cmp_reg, 3, 2)
+        E(b_cond, "st_x", "eq")
+        E(cmp_imm, 3, T_DEL)
+        E(b_cond, "st_x", "lo")
+        E(cmp_imm, 3, T_MAX)
+        E(b_cond, "st_x", "hi")
+        E(push_list, [0], lr=True)
+        E(mov_reg, 0, 3)
+        E(movs_imm, 1, 0)
+        E(mov_reg, 2, 6)
+        E(bl, "c_fxthr")
+        E(raw, popw([0], lr=True))
+        a.label("st_x")
+        E(mov_reg, 1, 6)
+        E(raw, h(0x4770))
+
+        # ---- c_fxdef (the live type setter's defaults: r0 = the manager, r1 = the slot's row): the stock's (macros to 0 above type 6);
+        #      ours get theirs (100, 0), and the held slot's throw goes on; clobbers r0-r3
+        a.label("c_fxdef")
+        E(push_list, [4], lr=True)
+        E(mov_reg, 4, 1)
+        E(bl, DEF_FN)
+        E(ldrb_imm, 0, 4, 0)
+        E(cmp_imm, 0, T_DEL)
+        E(b_cond, "df_x", "lo")
+        E(cmp_imm, 0, T_MAX)
+        E(b_cond, "df_x", "hi")
+        E(movs_imm, 0, NEW_MAC[0])
+        E(strb_imm, 0, 4, 1)
+        E(movs_imm, 0, NEW_MAC[1])
+        E(strb_imm, 0, 4, 2)
+        imm32(0, HELD)                                                    # the held slot: its throw on (the stock presses again only its
+        E(ldrb_imm, 0, 0, 0)                                              #  own types; the old type goes off through c_fxlis)
+        E(lsls_imm, 2, 0, 3)
+        E(subs_reg, 2, 2, 0)
+        imm32(3, TBL)
+        E(adds_reg, 2, 2, 3)
+        E(cmp_reg, 2, 4)
+        E(b_cond, "df_x", "ne")
+        E(ldrb_imm, 0, 4, 0)
+        E(movs_imm, 1, 1)
+        E(mov_reg, 2, 4)
+        E(bl, "c_fxthr")
+        a.label("df_x")
+        E(pop_list, [4], pc=True)
+
+        # ---- c_fxlis (the manager's vtable[0]: r0 = the manager, r1 = the store, r2 = its old value, r3): the held type's store leaving one
+        #      of ours = the throw off (the stock would write id 0); everything else to the stock
+        a.label("c_fxlis")
+        E(cmp_imm, 2, T_DEL)
+        E(b_cond, "li_s", "lo")
+        E(cmp_imm, 2, T_MAX)
+        E(b_cond, "li_s", "hi")
+        E(push_list, [4], lr=True)
+        E(ldr_imm, 4, 0, 0x44)
+        E(cmp_reg, 1, 4)
+        E(b_cond, "li_p", "ne")
+        E(mov_reg, 0, 2)
+        E(movs_imm, 1, 0)
+        E(bl, "c_fxthr")
+        E(movs_imm, 0, 0)
+        E(pop_list, [4], pc=True)
+        a.label("li_p")
+        E(raw, popw([4], lr=True))
+        a.label("li_s")
+        E(b_w, LIS0)
+
     return a.assemble()
 
 
@@ -1344,6 +1552,17 @@ def install(img, report, base_addr):
     for c in CI.LED_CALLS:
         rhbuild.patch(img, c, f"bl #{prev['ledtask']:#x}", bl(c, labels["c_fxled"]))
     rhbuild.patch_word(img, SLOT4, prev["s4"] | 1, labels["c_fxs4"] | 1)
+    if K2TYPE:
+        assert u(LIS_W) == LIS0 | 1
+        rhbuild.patch(img, LIST_CMP, "cmp r0, #7", h(0x2800 | (T_MAX + 1)))
+        rhbuild.patch(img, KL_CALL, f"bl #{KL_FN:#x}", bl(KL_CALL, labels["c_fxkl"]))
+        rhbuild.patch(img, ST_AT, ST_HEAD, bl(ST_AT, labels["c_fxst"]))
+        rhbuild.patch(img, HP_AT, H_HEAD, b_w(HP_AT, labels["c_fxhp"]))
+        rhbuild.patch(img, HR_AT, H_HEAD, b_w(HR_AT, labels["c_fxhr"]))
+        rhbuild.patch(img, VP_AT, V_HEAD, b_w(VP_AT, labels["c_fxvp"]))
+        rhbuild.patch(img, VR_AT, V_HEAD, b_w(VR_AT, labels["c_fxvr"]))
+        rhbuild.patch(img, DEF_CALL, f"bl #{DEF_FN:#x}", bl(DEF_CALL, labels["c_fxdef"]))
+        rhbuild.patch_word(img, LIS_W, LIS0 | 1, labels["c_fxlis"] | 1)
     for c in UNLOCK_SITES:
         rhbuild.patch(img, c, f"bl #{UNLOCK:#x}", bl(c, labels["c_fxunl"]))
     report["fxseq"] = dict(prev={k: hex(v) for k, v in prev.items()}, ram=hex(FXR),
