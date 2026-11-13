@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "Alpha 0.14"
+VERSION = "Alpha 0.15"
 OUT = ROOT / "public" / "docs" if (ROOT / "public").is_dir() else ROOT / "docs"     # (the development tree / the public one)
 
 # ---------------------------------------------------------------------------------------------------- colours (the LEDs' RGB, docs/INTERFAZ.md)
@@ -93,6 +93,8 @@ def view(vid, part, es, en, figs=()):
     V.append(dict(id=vid, part=part, es=es, en=en, figs=list(figs)))
 
 
+A15 = "*(Alpha 0.15)*"
+A15_EN = "*(Alpha 0.15)*"
 A14 = "*(Alpha 0.14)*"
 A14_EN = "*(Alpha 0.14)*"
 A13 = "*(Alpha 0.13)*"
@@ -122,7 +124,7 @@ Cada capítulo es una vista del aparato: cómo se llega, qué hacen sus pads, kn
 - **K1-K8** = los 8 knobs. **▲ / ▼** = los botones de flecha.
 - **Mantener** un botón = pulsarlo y no soltarlo; **A + B** = B con A mantenido.
 - **★** = exclusiva de Circuit Remix (no está en CIRCUIT-HACKS).
-- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.14)* o *(Alpha 0.13)* es nuevo o cambia en estas versiones; *(Alpha 0.11)* = 0.10 + los módulos de Arrhythmia (solo en 0.11).
+- **(desde Alpha 0.0x)** = la versión que trajo la función. Lo marcado *(Alpha 0.15)*, *(Alpha 0.14)* o *(Alpha 0.13)* es nuevo o cambia en estas versiones; *(Alpha 0.11)* = 0.10 + los módulos de Arrhythmia (solo en 0.11).
 - Al final, el **[glosario](#glosario)**: una entrada por función, con su vista y su gesto.
 """), ("How to read this manual", "—", """
 Each chapter is a view of the device: how you get there, and what its pads, knobs and buttons do with Circuit Remix. Everything else works as in Novation's original firmware (see its manual); the new gestures are combinations that did nothing in the original or repeated the plain gesture.
@@ -131,7 +133,7 @@ Each chapter is a view of the device: how you get there, and what its pads, knob
 - **K1-K8** = the 8 knobs. **▲ / ▼** = the arrow buttons.
 - **Hold** a button = press it and keep it down; **A + B** = B with A held.
 - **★** = exclusive to Circuit Remix (not in CIRCUIT-HACKS).
-- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.14)* or *(Alpha 0.13)*: new or changed in these releases; *(Alpha 0.11)* = 0.10 + Arrhythmia's modules (0.11 only).
+- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.15)*, *(Alpha 0.14)* or *(Alpha 0.13)*: new or changed in these releases; *(Alpha 0.11)* = 0.10 + Arrhythmia's modules (0.11 only).
 - At the end, the **[glossary](#glosario)**: one entry per function, with its view and its gesture.
 """))
 
@@ -1171,7 +1173,7 @@ Cada pack tiene **64 patches** de sinte y granular en su banco de patches de la 
 | **Clear + botón de pista** (vistas de pista) | la pista vuelve al último patch o starter que cargó |
 | **Clear + knob** (OSC 1 / OSC 2, Granular, FM) | ese knob vuelve al valor del patch cargado |
 
-Un hueco vacío del pack enseña primero un patch de ejemplo hasta que guardas encima. **No están en Alpha 0.13S ni 0.14S** (escriben en la tarjeta).
+Un hueco vacío del pack enseña primero un patch de ejemplo hasta que guardas encima. **No están en Alpha 0.13S, 0.14S ni 0.15S** (escriben en la tarjeta).
 """), ("Pack patches and starters", "Sample mode: hold an engine pad, or pad 8", f"""
 Each pack has **64 synth and granular patches** in its patch bank on the card {A13_EN}.
 
@@ -1185,7 +1187,7 @@ Each pack has **64 synth and granular patches** in its patch bank on the card {A
 | **Clear + track button** (track views) | the track goes back to the last patch or starter it loaded |
 | **Clear + knob** (OSC 1 / OSC 2, Granular, FM) | that knob goes back to the loaded patch's value |
 
-An empty slot of the pack first shows an example patch until you save over it. **Not in Alpha 0.13S or 0.14S** (they write to the card).
+An empty slot of the pack first shows an example patch until you save over it. **Not in Alpha 0.13S, 0.14S or 0.15S** (they write to the card).
 """))
 
 view("mutate", "3", ("Pattern Mutate", "Patterns o Mixer: Shift + Duplicate", f"""
@@ -1231,7 +1233,9 @@ view("gridfx", "5", ("Grid FX: secuenciador de efectos y looper", "Shift + Mixer
 | **Mantener un paso** (filas 1-2) | enciende su efecto hasta soltarlo |
 | **Octave ▼ + paso / Octave ▲ + paso** | ese paso: un efecto al azar / repetir el último |
 | **K1-K8** de la pista de efectos | cuánto de cada pista pasa por el Grid FX (todo al empezar); se automatizan |
-| **Vista Grid FX: hueco mantenido + K2** {A14} | el tipo mientras se mantiene, como en el original: Beat Repeat … **Auto-Filter**, **Digitiser** … Vinyl y, tras Vinyl, los nuevos **delay throw** (melocotón: el delay de todas las pistas a tope) y **reverb throw** (crema); al soltar, el hueco vuelve a su tipo guardado. Ya no hay Shift + K1 |
+| **Vista Grid FX: hueco mantenido + K2** {A14} | el tipo mientras se mantiene, como en el original: Beat Repeat, Reverser, Gater, **Auto-Filter**, Phaser, Vinyl, **Digitiser** {A15} y los nuevos **delay throw** (melocotón: el delay de todas las pistas) y **reverb throw** (crema); al soltar, el hueco vuelve a su tipo guardado. Ya no hay Shift + K1 |
+| **Hueco de lanzamiento mantenido: K1 / K3** {A15} | K1 = el nivel de los envíos (100 al elegirlo), K3 = la realimentación del delay / el decay de la reverb; encendidos en su color, el brillo = el valor |
+| **Pad 15 (modo de asignar del original) + hueco mantenido + K2 / K1 / K3** {A15} | lo guarda en el hueco: un lanzamiento guardado lanza con su nivel cada vez que se pulsa |
 
 **Looper / sampler en vivo** {A13}, en la vista Grid FX (Shift + Mixer):
 
@@ -1256,7 +1260,9 @@ view("gridfx", "5", ("Grid FX: secuenciador de efectos y looper", "Shift + Mixer
 | **Hold a step** (rows 1-2) | turns its effect on until you let go |
 | **Octave ▼ + step / Octave ▲ + step** | that step: a random effect / repeat the last one |
 | The FX track's **K1-K8** | how much of each track goes through the Grid FX (all at first); automatable |
-| **Grid FX view: slot held + K2** {A14_EN} | the type while held, as in the original: Beat Repeat … **Auto-Filter**, **Digitiser** … Vinyl and, past Vinyl, the new **delay throw** (peach: every track's delay full) and **reverb throw** (cream); let go, the slot is back to its saved type. No more Shift + K1 |
+| **Grid FX view: slot held + K2** {A14_EN} | the type while held, as in the original: Beat Repeat, Reverser, Gater, **Auto-Filter**, Phaser, Vinyl, **Digitiser** {A15_EN} and the new **delay throw** (peach: every track's delay) and **reverb throw** (cream); let go, the slot is back to its saved type. No more Shift + K1 |
+| **Throw slot held: K1 / K3** {A15_EN} | K1 = the sends' level (100 when picked), K3 = the delay's feedback / the reverb's decay; lit in its colour, brightness = value |
+| **Pad 15 (the original's assign mode) + slot held + K2 / K1 / K3** {A15_EN} | saves it on the slot: a saved throw fires with its level every time it is pressed |
 
 **Looper / live sampler** {A13_EN}, in the Grid FX view (Shift + Mixer):
 
@@ -1307,7 +1313,7 @@ GLOSSARY = [
     ("Pattern Mutate", "Pattern Mutate", "listas de patrones al azar por pista (diseño de mefisme); Shift + Duplicate", "random pattern lists per track (mefisme's design); Shift + Duplicate", "mutate", "0.13"),
     ("Secuenciador de efectos", "FX sequencer", "una pista toca los Grid FX; Sample mode, selector, pad 21", "a track plays the Grid FX; Sample mode, selector, pad 21", "gridfx", "0.13"),
     ("Envíos al Grid FX", "Grid FX sends", "cuánto de cada pista pasa por el Grid FX; K1-K8 de la pista de efectos", "how much of each track goes through the Grid FX; the FX track's K1-K8", "gridfx", "0.13"),
-    ("Delay / reverb throw", "Delay / reverb throw", "tipos nuevos de Grid FX; hueco mantenido + K2 (desde 0.14)", "new Grid FX types; slot held + K2 (since 0.14)", "gridfx", "0.13"),
+    ("Delay / reverb throw", "Delay / reverb throw", "tipos nuevos de Grid FX; hueco mantenido + K2 (desde 0.14), K1 / K3 (desde 0.15)", "new Grid FX types; slot held + K2 (since 0.14), K1 / K3 (since 0.15)", "gridfx", "0.13"),
     ("Looper", "Looper", "4 loops grabados de la entrada o la mezcla; vista Grid FX, pads 9-14", "4 loops recorded from the input or the mix; Grid FX view, pads 9-14", "gridfx", "0.13"),
     ("Sobremuestreo 2×", "2× oversampling", "el VA con menos aliasing; Sample mode, selector, pad 4", "the VA with less aliasing; Sample mode, selector, pad 4", "sinte", "0.13"),
     ("Selector de motores", "Engine selector", "sample, entrada, VA, granular o FM en la fila 3; Sample mode, pad 8", "sample, input, VA, granular or FM on row 3; Sample mode, pad 8", "samplemode", "0.12"),

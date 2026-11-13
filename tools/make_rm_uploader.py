@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.14", "A0.14S", "A0.13", "A0.13S", "A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.15", "A0.15S", "A0.14", "A0.14S", "A0.13", "A0.13S", "A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -200,7 +200,11 @@ def main(versions):
     print("tools/rm_uploader.html", len(page), "bytes")
 
 
-DESC = {"A0.14": ("⚠️ experimental, necesita pulirse — Alpha 0.14 — la versión completa: Alpha 0.13 más el knob de tipo del Grid FX (hueco mantenido + K2, el del original, con Auto-Filter y Digitiser) que sigue a delay throw y reverb throw, sin Shift + K1; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
+DESC = {"A0.15": ("⚠️ experimental, necesita pulirse — Alpha 0.15 — la versión completa: Alpha 0.14 más los lanzamientos del Grid FX como los tipos del original: guardados en un pad con el pad 15 conservan su nivel, K1 / K3 los ajustan con el hueco mantenido, y Digitiser va tras Vinyl en K2; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
+                  "⚠️ experimental, needs refinement — Alpha 0.15 — the full build: Alpha 0.14 plus the Grid FX throws as the original's types: saved on a pad with pad 15 they keep their level, K1 / K3 set them on a held slot, and Digitiser comes after Vinyl on K2; the project and sample copy, the pack delete, the project's sound and the patches write to the card"),
+        "A0.15S": ("⚠️ experimental, necesita pulirse — Alpha 0.15S — versión más segura: Alpha 0.15 sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto ni los patches del pack; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "⚠️ experimental, needs refinement — Alpha 0.15S — safer build: Alpha 0.15 without the project copy, the pack delete, the sample copy, the project's sound or the pack's patches; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
+        "A0.14": ("⚠️ experimental, necesita pulirse — Alpha 0.14 — la versión completa: Alpha 0.13 más el knob de tipo del Grid FX (hueco mantenido + K2, el del original, con Auto-Filter y Digitiser) que sigue a delay throw y reverb throw, sin Shift + K1; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
                   "⚠️ experimental, needs refinement — Alpha 0.14 — full build: Alpha 0.13 plus the Grid FX type knob (slot held + K2, the original's, with Auto-Filter and Digitiser) going on to delay throw and reverb throw, without Shift + K1; the project copy, sample copy, pack delete, project's sound and patches write to the card"),
         "A0.14S": ("⚠️ experimental, necesita pulirse — Alpha 0.14S — versión más segura: Alpha 0.14 sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto ni los patches del pack; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "⚠️ experimental, needs refinement — Alpha 0.14S — safer build: Alpha 0.14 without the project copy, pack delete, sample copy, the project's sound or the pack's patches; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),

@@ -1,4 +1,4 @@
-# Circuit Remix Alpha 0.14 — manual
+# Circuit Remix Alpha 0.15 — manual
 
 [Español](MANUAL.md) · [illustrated version](manual/en.html)
 
@@ -76,7 +76,7 @@ Each chapter is a view of the device: how you get there, and what its pads, knob
 - **K1-K8** = the 8 knobs. **▲ / ▼** = the arrow buttons.
 - **Hold** a button = press it and keep it down; **A + B** = B with A held.
 - **★** = exclusive to Circuit Remix (not in CIRCUIT-HACKS).
-- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.14)* or *(Alpha 0.13)*: new or changed in these releases; *(Alpha 0.11)* = 0.10 + Arrhythmia's modules (0.11 only).
+- **(since Alpha 0.0x)** = the release that brought the function. Marked *(Alpha 0.15)*, *(Alpha 0.14)* or *(Alpha 0.13)*: new or changed in these releases; *(Alpha 0.11)* = 0.10 + Arrhythmia's modules (0.11 only).
 - At the end, the **[glossary](#glosario)**: one entry per function, with its view and its gesture.
 
 <a id="colores"></a>
@@ -616,7 +616,7 @@ Each pack has **64 synth and granular patches** in its patch bank on the card *(
 | **Clear + track button** (track views) | the track goes back to the last patch or starter it loaded |
 | **Clear + knob** (OSC 1 / OSC 2, Granular, FM) | that knob goes back to the loaded patch's value |
 
-An empty slot of the pack first shows an example patch until you save over it. **Not in Alpha 0.13S or 0.14S** (they write to the card).
+An empty slot of the pack first shows an example patch until you save over it. **Not in Alpha 0.13S, 0.14S or 0.15S** (they write to the card).
 
 ## 5. Mix and effects
 
@@ -671,7 +671,9 @@ With Shift, each knob's brightness shows its value. Reverb, delay and sidechain 
 | **Hold a step** (rows 1-2) | turns its effect on until you let go |
 | **Octave ▼ + step / Octave ▲ + step** | that step: a random effect / repeat the last one |
 | The FX track's **K1-K8** | how much of each track goes through the Grid FX (all at first); automatable |
-| **Grid FX view: slot held + K2** *(Alpha 0.14)* | the type while held, as in the original: Beat Repeat … **Auto-Filter**, **Digitiser** … Vinyl and, past Vinyl, the new **delay throw** (peach: every track's delay full) and **reverb throw** (cream); let go, the slot is back to its saved type. No more Shift + K1 |
+| **Grid FX view: slot held + K2** *(Alpha 0.14)* | the type while held, as in the original: Beat Repeat, Reverser, Gater, **Auto-Filter**, Phaser, Vinyl, **Digitiser** *(Alpha 0.15)* and the new **delay throw** (peach: every track's delay) and **reverb throw** (cream); let go, the slot is back to its saved type. No more Shift + K1 |
+| **Throw slot held: K1 / K3** *(Alpha 0.15)* | K1 = the sends' level (100 when picked), K3 = the delay's feedback / the reverb's decay; lit in its colour, brightness = value |
+| **Pad 15 (the original's assign mode) + slot held + K2 / K1 / K3** *(Alpha 0.15)* | saves it on the slot: a saved throw fires with its level every time it is pressed |
 
 **Looper / live sampler** *(Alpha 0.13)*, in the Grid FX view (Shift + Mixer):
 
@@ -773,7 +775,7 @@ The new knobs move the original's parameters with their usual MIDI (Circuit Rhyt
 | **Copy track parameters** | Duplicate + track A, track B | [2.1 The track button](#pista) | Alpha 0.0 |
 | **Count-in** | a bar before recording; Shift + Clear; since 0.08 on the music's clock, also as a slave | [1.1 Transport, metronome and quantize](#transporte) | Alpha 0.0 |
 | **Cue mode** | mix on the left, cue on the right; Mixer, pan, Shift + knob | [5.1 Mixer](#mixer) | Alpha 0.04 |
-| **Delay / reverb throw** | new Grid FX types; slot held + K2 (since 0.14) | [5.3 Grid FX: the FX sequencer and the looper](#gridfx) | Alpha 0.13 |
+| **Delay / reverb throw** | new Grid FX types; slot held + K2 (since 0.14), K1 / K3 (since 0.15) | [5.3 Grid FX: the FX sequencer and the looper](#gridfx) | Alpha 0.13 |
 | **Delete a pack** | Clear + pack twice in Packs | [6.1 Projects and Packs](#projects) | Alpha 0.01 |
 | **Distortion on granular and synth** | the original's distortion knob on them too | [2.2 The track menu](#menu) | Alpha 0.07 |
 | **Engine selector** | sample, input, VA, granular or FM on row 3; Sample mode, pad 8 | [4.1 Sample mode](#samplemode) | Alpha 0.12 |
