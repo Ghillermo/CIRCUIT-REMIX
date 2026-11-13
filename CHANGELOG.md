@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## Alpha 0.15 (2026-11-13) — los lanzamientos del Grid FX como los tipos del original (experimental)
+
+> ⚠️ **Experimental: necesita pulirse.** Lo nuevo se ha comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria), aún no en el aparato. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.
+
+**Español.** **Alpha 0.15** (marca `A0.15`) y **Alpha 0.15S** (marca `A0.15S`: sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto en la tarjeta ni los patches del pack). Parten de Alpha 0.14. Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+Novedades (vista Grid FX, Shift + Mixer):
+- **Lanzamientos guardados en un pad:** con el **pad 15** (el modo de asignar del original), un hueco cambiado a delay throw o reverb throw con K2 se guarda **con su nivel**. En Alpha 0.14 se guardaba a 0 y no hacía nada al pulsarlo.
+- **K1 / K3 en un lanzamiento mantenido:** K1 = el nivel de los envíos, K3 = la realimentación del delay / el decay de la reverb, al momento mientras suena; encendidos en su color (melocotón / crema), el brillo = el valor. Con el pad 15, se guardan en el hueco.
+- **Orden de K2:** Beat Repeat, Reverser, Gater, Auto-Filter, Phaser, Vinyl, **Digitiser**, delay throw, reverb throw (Digitiser, del original, va ahora tras Vinyl).
+
+**English.** **Alpha 0.15** (marker `A0.15`) and **Alpha 0.15S** (marker `A0.15S`: without the project copy, the pack delete, the sample copy, the project's sound on the card or the pack's patches). They build on Alpha 0.14. Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** What's new has been checked in emulation (the device's code run on a dump of its memory), not yet on the device. **Back up your SD card.** If it does not start: **Sample Rec + Samples + Note** at power-on and install Alpha 0.10 or the official firmware.
+
+What's new (Grid FX view, Shift + Mixer):
+- **Throws saved on a pad:** with **pad 15** (the original's assign mode), a slot turned into delay throw or reverb throw with K2 is saved **with its level**. In Alpha 0.14 it was saved at 0 and did nothing when pressed.
+- **K1 / K3 on a held throw:** K1 = the sends' level, K3 = the delay's feedback / the reverb's decay, live while it plays; lit in its colour (peach / cream), brightness = value. With pad 15 they are saved on the slot.
+- **K2's order:** Beat Repeat, Reverser, Gater, Auto-Filter, Phaser, Vinyl, **Digitiser**, delay throw, reverb throw (Digitiser, the original's, now comes after Vinyl).
+
 ## Alpha 0.14 (2026-11-11) — el knob de tipo del Grid FX con los lanzamientos (experimental)
 
 > ⚠️ **Experimental: necesita pulirse.** Lo nuevo se ha comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria), aún no en el aparato. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.

@@ -100,6 +100,13 @@ VP_AT, VR_AT, V_HEAD = 0x0805AB78, 0x0805AC46, "push {r4, r5, r6, lr}|mov r4, r0
 HP_AT, HR_AT, H_HEAD, H_TAIL = 0x0805A70C, 0x0805A766, "push {r3, r4, r5, lr}|mov r4, r0", 0x0805A7BA  # its pad handlers
 V_TYPE, VP_ON, V_TAIL, V_SET, V_PTR, V_NTF = 0x0805F52C, 0x0805AC24, 0x0805AA4E, 0x08047038, 0x0803FD26, 0x0803FBEC  # (both skip types > 6)
 P_TYPE = 0x16                                            # the type knob's parameter (K2 in every stock type's layout)
+THRK = False                                             # (RH94, OPT thrknob; the user on RH93: the throws' knobs did nothing, a throw saved
+                                                         #  on a pad did nothing, Digitiser «después de los de stock» -> «After Vinyl»)
+                                                         #  see c_fxsrc, c_fxord, c_fxknob
+ED, ED_ASN = 0x200438BC, 0x20                            # the Grid FX editor (MGR + 0x10): [+ 0x20] p0 = 1 in the stock's assign mode (pad 15),
+                                                         #  where K2 / the macro knobs write the source as well (0x08049F88 / 0x0804A0FE)
+SRC_W, SRC0 = 0x08063AA4, 0x080396FE                     # the manager's source type setter (its vtable): the store, then the defaults (0 above 6)
+ORD_AT, ORD_RET, ORD_HEAD = 0x0805EC76, 0x0805ECAA, "ldr r0, [r6, #0xc]|movs r1, #0"   # K2's list loop: the types in order, the masked ones skipped
 BRIGHT = False                                           # (RD50, OPT fxbright; the user: «every step must show the selected fx brighter,
                                                          #  just like the keyboard») the FX track's view: dim slots, the one on bright
 
@@ -108,9 +115,10 @@ def popw(regs, lr=False): return h(0xE8BD) + h(sum(1 << r for r in regs) | (1 <<
 
 
 def arm_code(base, L, prev, off_head):
-    global SENDS, BRIGHT, HOLD, K2TYPE
+    global SENDS, BRIGHT, HOLD, K2TYPE, THRK
     import rhbuild
     K2TYPE = bool(rhbuild.OPT.get("k2type"))
+    THRK = K2TYPE and bool(rhbuild.OPT.get("thrknob"))
     SENDS = bool(rhbuild.OPT.get("sends"))
     BRIGHT = bool(rhbuild.OPT.get("fxbright"))
     HOLD = bool(rhbuild.OPT.get("fxhold"))
@@ -1071,6 +1079,79 @@ def arm_code(base, L, prev, off_head):
     # ---- c_fxknob (the Mixer's knob slot: r0 = view, r1 = knob, r2 = delta): Grid FX, a slot held + Shift + K1 = its type
     #      (k2type: none; the stock's K2 lists every type, ours too)
     a.label("c_fxknob")
+    if THRK:
+        # (thrknob) a held slot of ours: K1 = macro 1 (the sends' level), K3 = macro 2 (the delay's feedback / the reverb's decay), in the
+        # live row (and the source in the stock's assign mode, as its macro knobs do); a throw on = sent again
+        E(cmp_imm, 1, 0)
+        E(b_cond, "tk_k", "eq")
+        E(cmp_imm, 1, 2)
+        E(b_cond, "tk_k", "eq")
+        E(b_w, prev["knob"])
+        a.label("tk_k")
+        E(push_list, [0, 1, 2, 4, 5, 6, 7], lr=True)
+        E(bl, "c_fxmix")
+        E(cmp_imm, 0, 0)
+        bc("tk_p", "eq")
+        imm32(0, HELD)
+        E(ldrb_imm, 0, 0, 0)
+        E(cmp_imm, 0, 15)
+        bc("tk_p", "hi")
+        E(bl, "c_fxty")
+        E(mov_reg, 4, 1)                                                  # r4 = the live row
+        E(subs_imm8, 0, T_DEL)
+        E(cmp_imm, 0, 1)
+        bc("tk_p", "hi")
+        E(mov_reg, 5, 0)                                                  # r5 = 0 delay, 1 reverb
+        E(ldr_sp, 6, 4)
+        E(lsrs_imm, 6, 6, 1)
+        E(adds_imm8, 6, 1)                                                # r6 = the row's byte (1 / 2)
+        E(ldrb_reg, 0, 4, 6)
+        E(ldr_sp, 2, 8)
+        E(adds_reg, 0, 0, 2)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "tk_lo", "ge")
+        E(movs_imm, 0, 0)
+        a.label("tk_lo")
+        E(cmp_imm, 0, 127)
+        E(b_cond, "tk_hi", "le")
+        E(movs_imm, 0, 127)
+        a.label("tk_hi")
+        E(strb_reg, 0, 4, 6)
+        E(mov_reg, 7, 0)                                                  # r7 = the value
+        imm32(0, ED)
+        E(ldr_imm, 0, 0, ED_ASN)
+        E(movs_imm, 1, 0)
+        E(bl, PARAM_GET)
+        E(ldrb_imm, 0, 0, 0)
+        E(cmp_imm, 0, 1)
+        E(b_cond, "tk_t", "ne")
+        imm32(0, MGR)
+        E(ldr_imm, 0, 0, 0xC)
+        imm32(1, TBL)
+        E(subs_reg, 1, 4, 1)
+        E(adds_reg, 0, 0, 1)
+        E(strb_reg, 7, 0, 6)                                              # the source's row too
+        a.label("tk_t")
+        E(bl, "c_fxr")
+        E(ldrb_imm, 0, 0, O_THR)
+        E(lsrs_reg, 0, 5)
+        E(movs_imm, 1, 1)
+        E(tst_reg, 0, 1)
+        E(b_cond, "tk_x", "eq")
+        E(mov_reg, 0, 5)
+        E(adds_imm8, 0, T_DEL)
+        E(movs_imm, 1, 0)
+        E(mov_reg, 2, 4)
+        E(bl, "c_fxthr")
+        E(mov_reg, 0, 5)
+        E(adds_imm8, 0, T_DEL)
+        E(movs_imm, 1, 1)
+        E(mov_reg, 2, 4)
+        E(bl, "c_fxthr")
+        a.label("tk_x")
+        E(pop_list, [0, 1, 2, 4, 5, 6, 7], pc=True)
+        a.label("tk_p")
+        E(raw, popw([0, 1, 2, 4, 5, 6, 7], lr=True))
     if K2TYPE:
         E(b_w, prev["knob"])
     E(cmp_imm, 1, 0)
@@ -1316,6 +1397,41 @@ def arm_code(base, L, prev, off_head):
     E(adds_imm8, 4, 1)
     E(cmp_imm, 4, 16)
     E(b_cond, "ld_gl", "lo")
+    if THRK:                                                              # (thrknob) a held throw: K1 / K3 in its colour, the macros as brightness
+        imm32(0, HELD)
+        E(ldrb_imm, 0, 0, 0)
+        E(cmp_imm, 0, 15)
+        bc("ld_x", "hi")
+        E(bl, "c_fxty")
+        E(subs_imm8, 0, T_DEL)
+        E(cmp_imm, 0, 1)
+        bc("ld_x", "hi")
+        E(mov_reg, 5, 1)                                                  # r5 = the row
+        E(mov_reg, 6, 0)                                                  # r6 = 0 delay, 1 reverb
+        E(bl, L["c_rst"])
+        E(cmp_imm, 0, 0)
+        bc("ld_x", "eq")
+        E(movw, 1, L["O_KB"])
+        E(adds_reg, 4, 0, 1)
+        E(ldrb_imm, 0, 4, 0)
+        E(cmp_imm, 0, 0)
+        bc("ld_x", "ne")
+        E(movs_imm, 0, 5)                                                 # K1, K3
+        E(strb_imm, 0, 4, 0)
+        E(ldrb_imm, 0, 5, 1)
+        E(strb_imm, 0, 4, 1)
+        E(ldrb_imm, 0, 5, 2)
+        E(strb_imm, 0, 4, 3)
+        E(movs_imm, 0, COL_DEL)
+        E(cmp_imm, 6, 0)
+        E(b_cond, "ld_t1", "eq")
+        E(movs_imm, 0, COL_REV)
+        a.label("ld_t1")
+        E(strb_imm, 0, 4, 10)
+        E(strb_imm, 0, 4, 14)
+        E(movs_imm, 0, 0)
+        E(strb_imm, 0, 4, 11)
+        E(strb_imm, 0, 4, 15)
     a.label("ld_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
 
@@ -1512,6 +1628,74 @@ def arm_code(base, L, prev, off_head):
         a.label("li_s")
         E(b_w, LIS0)
 
+    if THRK:
+        # ---- c_fxsrc (the manager's source type setter: r0 = its second vtable's this, r1 = the slot, r2 = the type): the stock's (its
+        #      defaults put our macros to 0: a throw at 0 = silent); ours then get 100 / 0
+        a.label("c_fxsrc")
+        E(push_list, [4, 5, 6], lr=True)
+        E(mov_reg, 4, 0)
+        E(mov_reg, 5, 1)
+        E(bl, SRC0)
+        E(mov_reg, 0, 4)
+        E(subs_imm8, 0, 8)
+        E(ldr_imm, 0, 0, 0xC)
+        E(lsls_imm, 1, 5, 3)
+        E(subs_reg, 1, 1, 5)
+        E(adds_reg, 0, 0, 1)                                              # the source's row
+        E(ldrb_imm, 1, 0, 0)
+        E(cmp_imm, 1, T_DEL)
+        E(b_cond, "sr_x", "lo")
+        E(cmp_imm, 1, T_MAX)
+        E(b_cond, "sr_x", "hi")
+        E(movs_imm, 1, NEW_MAC[0])
+        E(strb_imm, 1, 0, 1)
+        E(movs_imm, 1, NEW_MAC[1])
+        E(strb_imm, 1, 0, 2)
+        a.label("sr_x")
+        E(pop_list, [4, 5, 6], pc=True)
+
+        # ---- c_fxord (in place of K2's list loop: r6 = the view, sl = the type now, fp = the list, r5 = 0): the types in the order
+        #      0 1 2 3 5 6 4 7 8 (Digitiser after Vinyl), the type now always, the others unless masked (bit t of [view + 0x14] p0);
+        #      r8 = the type now's position, r5 = the count; back to the stock after its loop
+        a.label("c_fxord")
+        E(movs_imm, 7, 0)
+        a.label("or_l")
+        E(mov_reg, 3, 7)
+        E(cmp_imm, 3, 4)
+        E(b_cond, "or_t", "lo")
+        E(cmp_imm, 3, 6)
+        E(b_cond, "or_t", "hi")
+        E(adds_imm8, 3, 1)
+        E(cmp_imm, 3, 7)
+        E(b_cond, "or_t", "ne")
+        E(movs_imm, 3, 4)
+        a.label("or_t")
+        E(mov_reg, 0, 10)
+        E(cmp_reg, 3, 0)
+        E(b_cond, "or_m", "ne")
+        E(mov_reg, 8, 5)
+        E(b, "or_s")
+        a.label("or_m")
+        E(push_list, [2, 3])
+        E(ldr_imm, 0, 6, 0x14)
+        E(movs_imm, 1, 0)
+        E(bl, PARAM_GET)
+        E(ldr_imm, 0, 0, 0)
+        E(pop_list, [2, 3])
+        E(lsrs_reg, 0, 3)
+        E(movs_imm, 1, 1)
+        E(tst_reg, 0, 1)
+        E(b_cond, "or_n", "ne")
+        a.label("or_s")
+        E(mov_reg, 0, 11)
+        E(strb_reg, 3, 0, 5)
+        E(adds_imm8, 5, 1)
+        a.label("or_n")
+        E(adds_imm8, 7, 1)
+        E(cmp_imm, 7, 9)
+        E(b_cond, "or_l", "lo")
+        E(b_w, ORD_RET)
+
     return a.assemble()
 
 
@@ -1563,6 +1747,9 @@ def install(img, report, base_addr):
         rhbuild.patch(img, VR_AT, V_HEAD, b_w(VR_AT, labels["c_fxvr"]))
         rhbuild.patch(img, DEF_CALL, f"bl #{DEF_FN:#x}", bl(DEF_CALL, labels["c_fxdef"]))
         rhbuild.patch_word(img, LIS_W, LIS0 | 1, labels["c_fxlis"] | 1)
+    if THRK:
+        rhbuild.patch_word(img, SRC_W, SRC0 | 1, labels["c_fxsrc"] | 1)
+        rhbuild.patch(img, ORD_AT, ORD_HEAD, b_w(ORD_AT, labels["c_fxord"]))
     for c in UNLOCK_SITES:
         rhbuild.patch(img, c, f"bl #{UNLOCK:#x}", bl(c, labels["c_fxunl"]))
     report["fxseq"] = dict(prev={k: hex(v) for k, v in prev.items()}, ram=hex(FXR),
