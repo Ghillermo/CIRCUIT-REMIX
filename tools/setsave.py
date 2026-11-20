@@ -38,8 +38,10 @@ def arm_code(base, L, prev):
         E(movt, rd, (v >> 16) & 0xFFFF)
 
     # ---- c_ssled (the LED task's calls: ctrl, frame): the chain, then the save when bits 20..31 of parameter 2 changed
+    B4 = rhbuild.OPT.get("setp4b1")                                       # (RH102) and p4 byte 1 (knobhold's switch), apart: + 6
+    REGS = [3, 4, 5, 6, 7] if B4 else [3, 4, 5, 6]
     a.label("c_ssled")
-    E(push_list, [3, 4, 5, 6], lr=True)
+    E(push_list, REGS, lr=True)
     E(bl, prev["ledtask"])
     E(bl, L["c_ciok"])
     E(cmp_imm, 0, 0)
@@ -63,17 +65,49 @@ def arm_code(base, L, prev):
         E(lsls_imm, 0, 0, 8)
         E(lsrs_imm, 0, 0, 16)
         E(orrs_reg, 5, 0)
+    B3 = rhbuild.OPT.get("setp3b3")                                       # (RH101) and p3 byte 3 (ingain's), apart: + 5
+    if B3:
+        imm32(0, SETTINGS)
+        E(movs_imm, 1, 3)
+        E(bl, GET)
+        E(ldrb_imm, 6, 0, 3)                                              # r6 = p3 byte 3
+    if B4:
+        imm32(0, SETTINGS)
+        E(movs_imm, 1, 4)
+        E(bl, GET)
+        E(ldrb_imm, 7, 0, 1)                                              # r7 = p4 byte 1
     E(ldrb_imm, 0, 4, 4)
     E(cmp_imm, 0, KNOWN)
     E(b_cond, "ss_k", "eq")
     E(movs_imm, 0, KNOWN)                                                 # the first: taken
     E(strb_imm, 0, 4, 4)
     E(str_imm, 5, 4, 0)
-    E(pop_list, [3, 4, 5, 6], pc=True)
+    if B3:
+        E(strb_imm, 6, 4, 5)
+    if B4:
+        E(strb_imm, 7, 4, 6)
+    E(pop_list, REGS, pc=True)
     a.label("ss_k")
     E(ldr_imm, 0, 4, 0)
     E(cmp_reg, 0, 5)
-    E(b_cond, "ss_x", "eq")
+    if B4:
+        E(b_cond, "ss_c", "ne")
+        if B3:
+            E(ldrb_imm, 0, 4, 5)
+            E(cmp_reg, 0, 6)
+            E(b_cond, "ss_c", "ne")
+        E(ldrb_imm, 0, 4, 6)
+        E(cmp_reg, 0, 7)
+        E(b_cond, "ss_x", "eq")
+        a.label("ss_c")
+    elif B3:
+        E(b_cond, "ss_c", "ne")
+        E(ldrb_imm, 0, 4, 5)
+        E(cmp_reg, 0, 6)
+        E(b_cond, "ss_x", "eq")
+        a.label("ss_c")
+    else:
+        E(b_cond, "ss_x", "eq")
     imm32(0, TRANSPORT)
     E(movs_imm, 1, 0)
     E(bl, GET)
@@ -90,10 +124,22 @@ def arm_code(base, L, prev):
     E(cmp_reg, 0, 1)
     E(b_cond, "ss_x", "ne")
     E(str_imm, 5, 4, 0)
+    if B3:                                                                # (r6 = the saver: p3 byte 3 read again)
+        imm32(0, SETTINGS)
+        E(movs_imm, 1, 3)
+        E(bl, GET)
+        E(ldrb_imm, 0, 0, 3)
+        E(strb_imm, 0, 4, 5)
+    if B4:
+        imm32(0, SETTINGS)
+        E(movs_imm, 1, 4)
+        E(bl, GET)
+        E(ldrb_imm, 0, 0, 1)
+        E(strb_imm, 0, 4, 6)
     E(mov_reg, 0, 6)
     E(bl, SAVE)
     a.label("ss_x")
-    E(pop_list, [3, 4, 5, 6], pc=True)
+    E(pop_list, REGS, pc=True)
     return a.assemble()
 
 

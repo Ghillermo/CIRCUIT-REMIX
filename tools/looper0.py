@@ -33,6 +33,13 @@ BUS, INB = 0x4B18, 0x30710
 N_HEADS = 4
 
 
+def _lint():
+    """(RH103, OPT dsplint) the multiply pairs dsptool has: `mpy x0,y0` is not one (its asm makes it mpysu: the same product with these
+    positive operands, but read as unsigned)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("dsplint"))
+
+
 def items():
     """the looper's body: called with jsr (r0-r5, a, b, x0, x1, y0, y1, n0-n5 free to use: drybus saves them); ends with rts"""
     hd = lambda h, k: f"x:>${HD + 8 * h + k:x}"                           # noqa: E731
@@ -95,6 +102,6 @@ def items():
     # lp_addr (a = a frame, r4 = its head) -> r1 = its address in the buffer: BASE + h STEP + 2 frame (a, x0, x1 used)
     L += [("label", "lp_addr"),
           "asl a", "move a1,x1", "move r4,a", f"move #>${HD:x},x0", "sub x0,a", "asr #3,a,a",
-          f"move a1,x0", f"move #>${STEP:x},a", "move a1,y0", "mpy x0,y0,a", "asr a", "move a0,a",
+          f"move a1,x0", f"move #>${STEP:x},a", "move a1,y0", ("mpy y0,x0,a" if _lint() else "mpy x0,y0,a"), "asr a", "move a0,a",
           f"add #>${BUF0:x},a", "add x1,a", "move a1,r1", "nop", "rts"]
     return L

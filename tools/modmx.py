@@ -135,6 +135,21 @@ ORDERS = {
 }
 for _k, _v in ORDERS.items():
     assert len(_v) == len(set(_v)) and len(_v) <= 64, _k
+ID_OSX = 50                                            # (RH101, OPT osc1x) 50-55 = tools/osc1x.py's (vsel's e 5..10: sub, env -> sub, noise,
+                                                       # env -> noise, LFO -> sub, LFO -> noise), class 5, right after 36 (the OSC 1 page)
+
+
+def orders():
+    """the lists, as this build makes them: (osc1x) the VA's with 50-55 after 36"""
+    import rhbuild
+    if not rhbuild.OPT.get("osc1x"):
+        return ORDERS
+    o = dict(ORDERS)
+    va = list(ORDERS[E_VA])
+    i = va.index(36) + 1
+    o[E_VA] = va[:i] + list(range(ID_OSX, ID_OSX + 6)) + va[i:]
+    assert len(o[E_VA]) <= 64 and len(set(o[E_VA])) == len(o[E_VA])
+    return o
 ENG_ORDER = (E_SAMPLE, E_IN, E_IN, E_VA, E_SAMPLE, E_SAMPLE, E_GR, E_FM)   # the engine -> its list (VA-drum / wavetable: none yet)
 
 
@@ -148,10 +163,11 @@ def mx64():
 def order_tables():
     """T_OI (8 offsets by engine) + T_OL (the lists, 0xFF after each)"""
     lists, off, oi = bytearray(), {}, []
+    O = orders()
     for e in ENG_ORDER:
         if e not in off:
             off[e] = len(lists)
-            lists += bytes(ORDERS[e]) + b"\xFF"
+            lists += bytes(O[e]) + b"\xFF"
         oi.append(off[e])
     return bytes(oi), bytes(lists)
 
@@ -238,6 +254,9 @@ def arm_code(base, L, prev):
     if VA and LL:                                                         # (va) K7's zones' colours (synthpage.VA_ZONES)
         tabs += b"".join(struct.pack("<H", v) for v in SY.VA_ZONES + (0,))
     bipm9 = tuple(bipm) + (0, 0x1F, 0b1100, 0b10, 0)                      # (mx64) classes 4-8: none, the OSC 1 extras, env slope / -> filter, pan
+    OSX = rhbuild.OPT.get("osc1x")
+    if OSX:                                                               # (RH101) class 5's e 6, 8, 9, 10 (the depths) bipolar too
+        bipm9 = bipm9[:5] + (0x1F | 1 << 6 | 1 << 8 | 1 << 9 | 1 << 10,) + bipm9[6:]
     M = mx64()
     ND = ND64 if M else NDEST
     import esel as ES_
@@ -795,8 +814,22 @@ def arm_code(base, L, prev):
         E(subs_imm8, 5, 32)
         E(cmp_imm, 5, 14)
         E(b_cond, "cm_a", "lo")
-        E(cmp_imm, 5, 18)
-        bc("cl_n", "hs")
+        if OSX:                                                           # (RH101) 50-55: tools/osc1x.py's, class 5 (e 5..10), a synth's
+            E(cmp_imm, 5, 18)
+            E(b_cond, "cm_mx", "lo")
+            E(cmp_imm, 5, 24)
+            bc("cl_n", "hs")
+            E(bl, L["c_sysnd"])
+            E(cmp_imm, 0, SY.SND_SYNTH)
+            bc("cl_n", "ne")
+            E(subs_imm8, 5, ID_OSX - 32 - 5)
+            E(mov_reg, 1, 5)
+            E(movs_imm, 0, 5)
+            E(pop_list, [4, 5, 6], pc=True)
+            a.label("cm_mx")
+        else:
+            E(cmp_imm, 5, 18)
+            bc("cl_n", "hs")
         E(subs_imm8, 5, 14)
         E(mov_reg, 1, 5)
         E(movs_imm, 0, 7)
@@ -871,6 +904,8 @@ def arm_code(base, L, prev):
     E(pop_list, [4, 5, 6], pc=True)
     a.label("cl_2")
     E(subs_imm8, 5, 16)
+    if rhbuild.OPT.get("mxslot"):                                         # (RH98) the track, not c_sysnd's sound code (RH64-RH97: a synth's
+        E(mov_reg, 0, 4)                                                  #   page found the slot of the track numbered as its sound code)
     E(bl, L["c_syslot"])
     E(cmp_imm, 0, SY.NSL)
     E(b_cond, "cl_s", "lo")
@@ -957,6 +992,23 @@ def arm_code(base, L, prev):
     E(pop_list, [4], pc=True)
     if M:
         a.label("ge_5")                                                   # the OSC 1 extras: ESR + 72 + 5 t + e, XOR 64
+        if OSX:                                                           # (RH101) e 5..10: tools/osc1x.py's RAM, a level plain
+            import osc1x as OX
+            E(cmp_imm, 1, OX.E0)
+            E(b_cond, "ge_5o", "lo")
+            E(subs_imm8, 1, OX.E0)
+            imm32(0, OX.ram())
+            E(movs_imm, 2, OX.NE)
+            E(muls, 2, 4)
+            E(adds_reg, 0, 0, 2)
+            E(ldrb_reg, 0, 0, 1)
+            for lv in OX.LEVELS:
+                E(cmp_imm, 1, lv)
+                E(b_cond, "ge_s", "eq")
+            E(movs_imm, 1, 64)
+            E(eors_reg, 0, 1)
+            E(b, "ge_s")
+            a.label("ge_5o")
         imm32(0, ESR_EXT)
         E(movs_imm, 2, 5)
         E(muls, 2, 4)
@@ -1065,6 +1117,25 @@ def arm_code(base, L, prev):
     E(pop_list, [4, 5, 6], pc=True)
     if M:
         a.label("se_5")
+        if OSX:                                                           # (RH101) e 5..10: tools/osc1x.py's RAM, a level plain
+            import osc1x as OX
+            E(cmp_imm, 1, OX.E0)
+            E(b_cond, "se_5o", "lo")
+            E(subs_imm8, 1, OX.E0)
+            imm32(0, OX.ram())
+            E(movs_imm, 2, OX.NE)
+            E(muls, 2, 4)
+            E(adds_reg, 0, 0, 2)
+            E(lsrs_imm, 2, 5, 7)
+            for lv in OX.LEVELS:
+                E(cmp_imm, 1, lv)
+                E(b_cond, "se_k", "eq")
+            E(movs_imm, 3, 64)
+            E(eors_reg, 2, 3)
+            a.label("se_k")
+            E(strb_reg, 2, 0, 1)
+            E(b, "se_p")
+            a.label("se_5o")
         imm32(0, ESR_EXT)
         E(movs_imm, 2, 5)
         E(muls, 2, 4)
@@ -1073,6 +1144,8 @@ def arm_code(base, L, prev):
         E(movs_imm, 3, 64)
         E(eors_reg, 2, 3)
         E(strb_reg, 2, 0, 1)
+        if OSX:
+            a.label("se_p")
         E(mov_reg, 0, 4)
         E(bl, L["c_syslot"])
         E(cmp_imm, 0, SY.NSL)
@@ -2513,9 +2586,20 @@ def arm_code(base, L, prev):
     E(pop_list, [4], pc=True)
 
     # ---- c_mxtick() (r7 = our RAM): the sources, the offsets of every track, one track's engine words; clobbers r0-r3
+    SLIM = bool(rhbuild.OPT.get("ledslim"))                            # (RH99) the targets in the ITCM, not on the LED task's stack
+
+    def tkbuf():
+        if SLIM:
+            import ledslim
+            assert 2 * ND <= ledslim.TK_LEN
+            E(movw, 2, ledslim.TK)                                        # r2 = the targets (only the LED task runs c_mxtick)
+        else:
+            E(raw, h(0x466A))                                             # mov r2, sp
+
     a.label("c_mxtick")
     E(push_list, [4, 5, 6], lr=True)
-    E(sub_sp_imm, 2 * ND)
+    if not SLIM:
+        E(sub_sp_imm, 2 * ND)
     if M:
         E(bl, "c_mxhrf")                                                  # (mx64) the high bits' cache
     E(bl, "c_mxro")
@@ -2544,7 +2628,7 @@ def arm_code(base, L, prev):
     E(movs_imm, 0, 0)
     E(strb_imm, 0, 7, R_ANY)
     E(movs_imm, 1, 2 * ND)
-    E(raw, h(0x466A))                                                     # mov r2, sp
+    tkbuf()
     a.label("ti_z")
     E(subs_imm8, 1, 4)
     E(raw, h(0x5000 | 1 << 6 | 2 << 3 | 0))                               # str r0, [r2, r1]
@@ -2573,7 +2657,7 @@ def arm_code(base, L, prev):
     E(raw, asrs_imm(0, 0, 4))
     E(lsrs_imm, 6, 6, 4)
     E(lsls_imm, 6, 6, 1)
-    E(raw, h(0x466A))                                                     # mov r2, sp
+    tkbuf()
     E(raw, ldrsh_reg(1, 2, 6))
     E(adds_reg, 0, 0, 1)
     E(movw, 1, 16383)
@@ -2619,7 +2703,7 @@ def arm_code(base, L, prev):
     E(movs_imm, 5, 0)
     a.label("ti_c")
     E(lsls_imm, 3, 5, 1)
-    E(raw, h(0x466A))                                                     # mov r2, sp
+    tkbuf()
     E(raw, AR.ldrh_reg(2, 2, 3))
     E(raw, AR.ldrh_reg(1, 6, 3))
     E(cmp_reg, 1, 2)
@@ -2677,7 +2761,8 @@ def arm_code(base, L, prev):
     E(mov_reg, 0, 2)
     E(bl, L["c_sypend"])
     a.label("ti_x")
-    E(add_sp_imm, 2 * ND)
+    if not SLIM:
+        E(add_sp_imm, 2 * ND)
     E(pop_list, [4, 5, 6], pc=True)
 
     # ---- c_mxcol(r0 = track, r1 = destination) -> r0 = its page's colour, 0 without one; clobbers r1-r3
@@ -2719,6 +2804,17 @@ def arm_code(base, L, prev):
         a.label("ml_zx")
         E(pop_list, [4, 5, 6], pc=True)
         a.label("ml_nz")
+    if VA and LL and rhbuild.OPT.get("fmviolet"):                          # (RH100, fmviolet) the FM: its direction, the lilac reciprocal
+        import fmmap as MM_
+        E(cmp_imm, 5, MM_.FM_KNOB)
+        E(b_cond, "ml_nfm", "ne")
+        E(lsrs_imm, 0, 6, 7)
+        E(movs_imm, 3, 0)
+        MM_.emit_fmled(E, a, "ml_fm", KB_LEFT)
+        E(orrs_reg, 3, 2)
+        E(mov_reg, 1, 3)
+        E(pop_list, [4, 5, 6], pc=True)
+        a.label("ml_nfm")
     if VA:                                                                # (va) K1 / K3: the morph's nearest wave ((v + 21) / 42)
         E(cmp_imm, 5, 0)
         E(b_cond, "ml_va", "eq")

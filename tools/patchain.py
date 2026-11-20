@@ -53,6 +53,7 @@ END_HOOK, END_OLD = 0x080346FE, bytes.fromhex("baf1000f")                 # cmp.
 SCN_FN, SCN_BODY, SCN_OLD = 0x08034746, 0x0803474C, bytes.fromhex("f8b500f12c05")
 SCN_COMMIT = 0x080347EC
 SC_SET, SC_SAVE, SC_COPY = 0x080331D8, 0x0803642C, 0x080365BC
+SC_CLEAR = 0x08036740                                      # (RH104, scclr) the scene clear's first write (its track 1 entry)
 SC_FIRST = 0x08033242
 LOAD_TAIL, RESEND = 0x080379AE, 0x08031A10                                # the end of «apply the record»: b.w 0x08031A10
 PV, PV_VT = 0x2004D87C, 0x080678A0
@@ -770,6 +771,36 @@ def arm_code(base, L, prev, iterled=False):
     E(raw, POP_LR)
     E(b_w, SC_SET)
 
+    if rhbuild.OPT.get("scclr"):
+        # ---- c_pcsclr (RH104; Hacks' Alpha 7.04: the scene clear's first write, 0x08036740: r1 = the scene): the scene back to the normal
+        # mode and one play (a cleared scene saved again kept its old chain flag and repeats); then the stock's setter
+        a.label("c_pcsclr")
+        E(push_list, [0, 1, 2, 3, 4, 5, 6], lr=True)
+        E(mov_reg, 4, 1)
+        E(cmp_imm, 4, 16)
+        E(b_cond, "cl_x", "hs")
+        E(bl, "c_pcst")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "cl_x", "eq")
+        E(mov_reg, 6, 0)
+        E(bl, "c_pcvalid")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "cl_x", "eq")
+        E(mov_reg, 1, 4)
+        E(adds_imm8, 1, P_FLAGS)
+        E(movs_imm, 0, 0)
+        E(strb_reg, 0, 6, 1)
+        E(mov_reg, 1, 4)
+        E(adds_imm8, 1, P_REPS)
+        E(movs_imm, 0, 1)
+        E(strb_reg, 0, 6, 1)
+        E(mov_reg, 0, 6)
+        E(bl, "c_pcsum")
+        a.label("cl_x")
+        E(pop_list, [0, 1, 2, 3, 4, 5, 6])
+        E(raw, POP_LR)
+        E(b_w, SC_SET)
+
     # ---- c_pcon() -> r0 = the Patterns view when it is on the screen, else 0; clobbers r1
     a.label("c_pcon")
     imm32(0, CTRL)
@@ -1454,6 +1485,8 @@ def install(img, report, base_addr, iterled=False):
     rhbuild.patch(img, SCN_COMMIT, f"bl #{SCN_FN:#x}", bl(SCN_COMMIT, labels["c_pcscn_c"]))
     rhbuild.patch(img, SC_SAVE, f"bl #{SC_SET:#x}", bl(SC_SAVE, labels["c_pcssave"]))
     rhbuild.patch(img, SC_COPY, f"bl #{SC_SET:#x}", bl(SC_COPY, labels["c_pcscopy"]))
+    if rhbuild.OPT.get("scclr"):
+        rhbuild.patch(img, SC_CLEAR, f"bl #{SC_SET:#x}", bl(SC_CLEAR, labels["c_pcsclr"]))
     rhbuild.patch(img, LOAD_TAIL, f"b.w #{RESEND:#x}", b_w(LOAD_TAIL, labels["c_pcload"]))
     rhbuild.patch_word(img, PV_VT, prev["pad"] | 1, labels["c_pcpad"] | 1)
     rhbuild.patch_word(img, MIX_VT, prev["mixpad"] | 1, labels["c_pcmixpad"] | 1)

@@ -15,6 +15,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import struct
 import sys
 from pathlib import Path
 
@@ -23,7 +24,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import rh_fw  # noqa: E402
 
 STOCK_BIN = ROOT / "stock/circuitrhythm-firmware-5706-STOCK.bin"
-DEFAULT = ["A0.15", "A0.15S", "A0.14", "A0.14S", "A0.13", "A0.13S", "A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
+DEFAULT = ["A0.16", "A0.16S", "A0.15", "A0.15S", "A0.14", "A0.14S", "A0.13", "A0.13S", "A0.12", "A0.12S", "A0.11", "A0.11S", "A0.10", "A0.10S", "A0.08", "A0.08S", "A0.09", "A0.09S", "A0.07", "A0.07S", "A0.06", "A0.06S", "A0.05", "A0.05S", "A0.04", "A0.04S", "A0.03", "A0.03S", "A0.02", "A0.02S", "A0.01", "A0.01S", "A0.0", "A0.0S"]
 
 MIN = 8
 
@@ -94,17 +95,26 @@ def dz_split_more(img: bytes, man, raw: bytes, n0: int, holes):
     BASE = 0x08010000
     rep = man["report"]["core0"]
     stock = STOCK_BIN.read_bytes()
+    rc = bool(struct.unpack_from("<I", img, C0.BLK0 - BASE + 12)[0] & DZ.RC_FLAG)   # (RH95+, OPT dzrc) the range coder
     more = []
-    for at, size, _ in rep["dzmore"]["blocks"]:
+    for at, size, blen in rep["dzmore"]["blocks"]:
         o = int(at, 16) - BASE
-        if DZ.unblob2(img, int(at, 16), BASE) == stock[o:o + size]:
-            more.append([o, size])
+        mraw = DZ.unblob2(img, int(at, 16), BASE)
+        if mraw == stock[o:o + size]:
+            more.append([o, size, blen, None] if rc else [o, size])
+        elif rc:                                         # (v3) a block of ours or patched in place: its raw words as a patch of the official
+            more.append([o, size, blen, make_patch(stock, mraw)])   # image, packed in the page too (no coded Novation word travels)
     cave = int(rep["blocks"][1], 16)
     spec = dict(blk=[C0.BLK0 - BASE, n0], ours=make_patch(stock, raw[n0:]), holes=[[lo - BASE, hi - lo] for lo, hi in holes],
                 cave=[cave - BASE, rep["dspz"]["pieces"][-1][0]], hl=DZ.H_ENT + (len(holes) + 2) * DZ.ENT, more=more)
+    if rc:
+        spec["rc"] = 1
     out = bytearray(img)
-    for o, n in spec["more"] + spec["holes"] + [spec["cave"]]:
-        out[o:o + n] = bytes(n)
+    used = spec["holes"]
+    if rc:                                               # (v3) only the bytes the stream uses: the rest of a hole may hold our code (RH97 holes)
+        used = [[ho, (spec["hl"] if k == 0 else 0) + n] for k, ((ho, _), (n, _)) in enumerate(zip(spec["holes"], rep["dspz"]["pieces"]))]
+    for o, n in [m[:2] if not rc else [m[0], m[2]] for m in spec["more"]] + used + [spec["cave"]]:
+        out[o:o + n] = bytes(n)                          # (v3: only the packed block's bytes; its tail may hold our tables)
     assert dz_apply(stock, out, spec) == img
     return bytes(out), spec
 
@@ -136,6 +146,8 @@ def dz_apply2(src: bytes, out: bytearray, spec):
     import dspz as DZ
     BASE = 0x08010000
     out = bytearray(out)
+    if spec.get("rc"):
+        return dz_apply3(src, out, spec)
     for o, size in spec["more"]:
         b1 = DZ.pack(bytes(src[o:o + size]))
         words = st_.unpack_from("<I", b1, 4)[0]
@@ -151,6 +163,33 @@ def dz_apply2(src: bytes, out: bytearray, spec):
     assert len(hd) == hl and len(pieces[-1][0]) == spec["cave"][1]
     for (ho, hn), body in zip(H, [hd + pieces[0][0]] + [pieces[k][0] for k in range(1, len(H))]):
         out[ho:ho + hn] = body + bytes([0xFF]) * (hn - len(body))
+    co = spec["cave"][0]
+    out[co:co + spec["cave"][1]] = pieces[-1][0]
+    return bytes(out)
+
+
+def dz_apply3(src: bytes, out: bytearray, spec):
+    """op 2 v3 (RH95+, the range coder): each packed DSP block from the official image (the stock's as they are, ours / patched ones from
+    their patch), then core 0's stream cut anywhere in its holes and the cave"""
+    import struct as st_
+    import dspz as DZ
+    BASE = 0x08010000
+    for o, size, blen, ops in spec["more"]:
+        b1 = DZ.pack_rc(bytes(src[o:o + size]) if ops is None else apply(src, ops))
+        words = st_.unpack_from("<I", b1, 4)[0]
+        body = DZ.header2(b1, [(BASE + o + DZ.H_ENT + 2 * DZ.ENT, (b1[12:], words))]) + b1[12:]
+        assert len(body) == blen
+        out[o:o + blen] = body
+    o, n = spec["blk"]
+    blob = DZ.pack_rc(bytes(src[o:o + n]) + apply(src, spec["ours"]))
+    H, hl = spec["holes"], spec["hl"]
+    pieces = DZ.split_rc(blob, [H[0][1] - hl] + [m for _, m in H[1:]])
+    hd = DZ.header2(blob, [(BASE + H[0][0] + hl, pieces[0])] + [(BASE + H[k][0], pieces[k]) for k in range(1, len(H))]
+                    + [(BASE + spec["cave"][0], pieces[-1])])
+    assert len(hd) == hl and len(pieces[-1][0]) == spec["cave"][1]
+    for (ho, hn), body in zip(H, [hd + pieces[0][0]] + [pieces[k][0] for k in range(1, len(H))]):
+        assert len(body) <= hn
+        out[ho:ho + len(body)] = body                    # (the rest of the hole: the patch's)
     co = spec["cave"][0]
     out[co:co + spec["cave"][1]] = pieces[-1][0]
     return bytes(out)
@@ -189,6 +228,9 @@ def main(versions):
         check_add(stock, ops)
         if dz:
             check_add(stock, dz["ours"])
+            for m in dz.get("more", []):
+                if len(m) > 3 and m[3]:
+                    check_add(stock, m[3])
         lit = sum(len(base64.b64decode(o[1])) for o in ops if o[0] == 1)
         assert hashlib.sha256(rh_fw.encode(img)).hexdigest() == man["syx_sha256"]
         patches[v] = dict(dir=v.lower(), image_sha256=man["image_sha256"], syx_sha256=man["syx_sha256"], size=len(img), ops=ops)
@@ -200,7 +242,11 @@ def main(versions):
     print("tools/rm_uploader.html", len(page), "bytes")
 
 
-DESC = {"A0.15": ("⚠️ experimental, necesita pulirse — Alpha 0.15 — la versión completa: Alpha 0.14 más los lanzamientos del Grid FX como los tipos del original: guardados en un pad con el pad 15 conservan su nivel, K1 / K3 los ajustan con el hueco mantenido, y Digitiser va tras Vinyl en K2; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
+DESC = {"A0.16": ("⚠️ experimental, necesita pulirse — Alpha 0.16 — la versión completa: Alpha 0.15 más los carriles extra de automatización, el mapa del algoritmo FM y su ruteo propio, sub y ruido en OSC 1, la ganancia de entrada, knob hold, Duplicate + hueco vacío = guardar el patch, sin Easy Start; arregla que cargar un proyecto borrara los sintes y carriles guardados del proyecto cargado, y que guardar la escena 1 quitara la pista de efectos; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto, los carriles y los patches escriben en la tarjeta",
+                  "⚠️ experimental, needs refinement — Alpha 0.16 — full build: Alpha 0.15 plus extra automation lanes, the FM algorithm map and custom routing, sub and noise on OSC 1, input gain, knob hold, Duplicate + an empty slot saves the patch, Easy Start removed; fixes a project load wiping the loaded project's saved synths and lanes, and saving scene 1 dropping the FX track; the project and sample copy, the pack delete, the project's sound, the lanes and the patches write to the card"),
+        "A0.16S": ("⚠️ experimental, necesita pulirse — Alpha 0.16S — versión más segura: Alpha 0.16 sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto, los carriles extra ni los patches del pack; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
+                   "⚠️ experimental, needs refinement — Alpha 0.16S — safer build: Alpha 0.16 without the project copy, the pack delete, the sample copy, the project's sound, the extra lanes or the pack's patches; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),
+        "A0.15": ("⚠️ experimental, necesita pulirse — Alpha 0.15 — la versión completa: Alpha 0.14 más los lanzamientos del Grid FX como los tipos del original: guardados en un pad con el pad 15 conservan su nivel, K1 / K3 los ajustan con el hueco mantenido, y Digitiser va tras Vinyl en K2; la copia de proyectos y de samples, el borrado de packs, el sonido del proyecto y los patches escriben en la tarjeta",
                   "⚠️ experimental, needs refinement — Alpha 0.15 — the full build: Alpha 0.14 plus the Grid FX throws as the original's types: saved on a pad with pad 15 they keep their level, K1 / K3 set them on a held slot, and Digitiser comes after Vinyl on K2; the project and sample copy, the pack delete, the project's sound and the patches write to the card"),
         "A0.15S": ("⚠️ experimental, necesita pulirse — Alpha 0.15S — versión más segura: Alpha 0.15 sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto ni los patches del pack; nada de Circuit Remix escribe ni borra ficheros en la SD ni en la memoria interna",
                    "⚠️ experimental, needs refinement — Alpha 0.15S — safer build: Alpha 0.15 without the project copy, the pack delete, the sample copy, the project's sound or the pack's patches; nothing of Circuit Remix writes or deletes files on the SD card or the internal memory"),

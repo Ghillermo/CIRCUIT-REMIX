@@ -73,6 +73,12 @@ KB_LEFT = 0x8000                                                    # kbright.BI
 
 
 
+def fmmap_on():
+    """(RH100, OPT fmmap) tools/fmmap.py: the algorithm map on pad 7, the custom algorithm, pad 24 closes the page"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("fmmap"))
+
+
 def pclr():
     """(RH90, OPT pclr; the user, 2026-11-10: «clear+track should restore to chosen preset, knob+clear should restore knobs» -> «Preset,
     else as now», «Only the sound's pages»): Clear + a knob of this page = the value of the preset the track loaded last (rpatch's stub)"""
@@ -135,6 +141,7 @@ def itab_blob(data: bytes) -> bytes:
 def arm_code(base, L, prev):
     import rhbuild
     DEMOS = rhbuild.OPT.get("demos")                                      # (RH83: rpatch's demo patches)
+    MAP = fmmap_on()                                                      # (RH100) the algorithm map, the custom algorithm
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -157,13 +164,15 @@ def arm_code(base, L, prev):
 
     # ---- the tables (OPT itab, RH86: packed here, unpacked into the ITCM at ITAB by c_itunp at each core 0 upload)
     ITB = itab()
+    import tabpack as TBP_
+    IT0 = TBP_.flash_next() if ITB and TBP_.flash() else ITAB            # (RH95, tabflash) the tables in the flash
     data = bytearray()
     T = {}
 
     def put(name, bs):
         while len(data) % 4:
             data.append(0)
-        T[name] = (ITAB if ITB else base) + len(data)
+        T[name] = (IT0 if ITB else base) + len(data)
         data.extend(bs)
     descs, defs = kd()
     put("slb", struct.pack("<128I", *V.SLB))
@@ -178,12 +187,15 @@ def arm_code(base, L, prev):
     put("icol", bytes(b_ for x in I.INST for b_ in FP.ST_FAM[FAM[x["fam"]]]))
     put("acol", bytes(b_ for c in ALG_COL for b_ in c))
     put("zero", bytes((C.F_E, C.F_OFS, C.F_OUT, C.F_PH, C.F_R, C.F_AMP, C.F_AS, C.F_O2)))
+    if MAP:
+        import fmmap as MM
+        put("mfam", MM.fam_table())
     while len(data) % 4:
         data.append(0)
     import tabpack as TBP_
     if ITB and TBP_.v2():                                                 # (RH91, tabpack2) the tables in tabpack's stream, before the upload
         assert ITAB + len(data) <= ITAB_END
-        TBP_.region("fm8page", [(bytes(data), 1)], at=ITAB, early=True)
+        TBP_.region("fm8page", [(bytes(data), 1)], at=IT0, early=True)
     elif not ITB:
         E(raw, bytes(data))
     else:
@@ -489,9 +501,14 @@ def arm_code(base, L, prev):
     E(b_cond, "vc_w", "eq")
     E(movs_imm, 2, 72)
     a.label("vc_w")
+    if MAP:                                                               # (RH100) a custom routing kept (the operators' + 21)
+        E(cmp_imm, 7, V.SPARE)
+        E(b_cond, "vc_s", "eq")
     E(mov_reg, 0, 4)
     E(mov_reg, 1, 6)
     E(bl, "c_f8wr")
+    if MAP:
+        a.label("vc_s")
     E(adds_imm8, 6, 1)
     E(cmp_imm, 6, 192)
     E(b_cond, "vc_l", "lo")
@@ -510,7 +527,8 @@ def arm_code(base, L, prev):
     a.label("c_f8cv")
     E(push_list, [4, 5, 6, 7], lr=True)
     E(sub_sp_imm, 40)                                                     # [sp + 0..23] the operator's bytes, + 24 alg, + 25 fb, + 26 trn, + 27 sync,
-    E(mov_reg, 4, 0)                                                      # + 28 nz, + 29 nzop, + 32 the algorithm's entry, + 36 fbc
+    E(mov_reg, 4, 0)                                                      # + 28 nz, + 29 nzop, + 30 the operators run (fmmap), + 32 the algorithm's
+                                                                          # entry, + 36 fbc
     E(mov_reg, 7, 1)
     E(bl, "c_f8src")
     E(mov_reg, 6, 0)                                                      # r6 = the parameters' slot
@@ -561,16 +579,37 @@ def arm_code(base, L, prev):
         E(bl, "c_f8rd")
         E(mov_reg, 1, 13)
         E(strb_imm, 0, 1, k)
-    E(mov_reg, 1, 13)
-    E(ldrb_imm, 0, 1, 24)
-    E(cmp_imm, 0, V.NALG)
-    E(b_cond, "cv_a1", "lo")
-    E(movs_imm, 0, 0)
-    a.label("cv_a1")
-    E(lsls_imm, 0, 0, 4)
-    imm32(1, T["alg"])
-    E(adds_reg, 0, 0, 1)
+    if MAP:                                                               # (RH100) c_f8ent: the custom algorithm too
+        E(mov_reg, 1, 13)
+        E(ldrb_imm, 1, 1, 24)
+        E(mov_reg, 0, 6)
+        E(bl, "c_f8ent")
+    else:
+        E(mov_reg, 1, 13)
+        E(ldrb_imm, 0, 1, 24)
+        E(cmp_imm, 0, V.NALG)
+        E(b_cond, "cv_a1", "lo")
+        E(movs_imm, 0, 0)
+        a.label("cv_a1")
+        E(lsls_imm, 0, 0, 4)
+        imm32(1, T["alg"])
+        E(adds_reg, 0, 0, 1)
     E(str_sp, 0, 32)
+    if MAP:                                                               # (RH100) [sp + 30] = the operators core 0 runs: N, or with noise
+        E(ldrb_imm, 1, 0, 0)                                              #   the noise's operator + 1 when past it (fm8v.words)
+        E(mov_reg, 2, 13)
+        E(ldrb_imm, 3, 2, 28)
+        E(cmp_imm, 3, 0)
+        E(b_cond, "cv_rn", "eq")
+        E(ldrb_imm, 3, 2, 29)
+        E(movs_imm, 0, 7)
+        E(ands_reg, 3, 0)
+        E(adds_imm8, 3, 1)
+        E(cmp_reg, 3, 1)
+        E(b_cond, "cv_rn", "ls")
+        E(mov_reg, 1, 3)
+        a.label("cv_rn")
+        E(strb_imm, 1, 2, 30)
     E(cmp_imm, 7, 9)
     bc("cv_8", "ne")
     # 9: the globals
@@ -586,11 +625,19 @@ def arm_code(base, L, prev):
     E(mov_reg, 0, 4)
     E(movs_imm, 1, C.G_FLG)
     E(bl, "c_f8ww")
-    E(ldrb_imm, 2, 5, 0)                                                  # N
+    if MAP:                                                               # N (RH100: the operators run, [sp + 30])
+        E(mov_reg, 2, 13)
+        E(ldrb_imm, 2, 2, 30)
+    else:
+        E(ldrb_imm, 2, 5, 0)                                              # N
     E(mov_reg, 0, 4)
     E(movs_imm, 1, C.G_N)
     E(bl, "c_f8ww")
-    E(ldrb_imm, 2, 5, 0)                                                  # TOPA = FB0 + $200 s + OP0 + OPS (N - 1)
+    if MAP:
+        E(mov_reg, 2, 13)
+        E(ldrb_imm, 2, 2, 30)
+    else:
+        E(ldrb_imm, 2, 5, 0)                                              # TOPA = FB0 + $200 s + OP0 + OPS (N - 1)
     E(subs_imm8, 2, 1)
     E(lsls_imm, 2, 2, 5)
     E(lsls_imm, 0, 4, 9)
@@ -677,6 +724,16 @@ def arm_code(base, L, prev):
     E(adds_imm8, 5, 1)
     E(cmp_imm, 5, V.OPB)
     E(b_cond, "co_rd", "lo")
+    if MAP:                                                               # (RH100) muted on the map: its level 0 (not heard)
+        E(mov_reg, 0, 6)
+        E(mov_reg, 1, 7)
+        E(bl, "c_mmmute")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "co_nm", "eq")
+        E(movs_imm, 0, 0)
+        E(mov_reg, 1, 13)
+        E(strb_imm, 0, 1, V.O_OL)
+        a.label("co_nm")
     E(movs_imm, 5, 0)                                                     # T1-T4 = L << 13; S1-S4 = SLB[min(127, R + RS x 180 >> 6)]
     a.label("co_t")
     E(mov_reg, 0, 13)
@@ -720,8 +777,12 @@ def arm_code(base, L, prev):
     E(ldrb_imm, 3, 0, V.O_OL)
     E(cmp_imm, 3, 0)
     bc("co_bw", "eq")
-    E(ldr_sp, 0, 32)
-    E(ldrb_imm, 0, 0, 0)
+    if MAP:                                                               # (RH100) k < the operators run ([sp + 30])
+        E(mov_reg, 0, 13)
+        E(ldrb_imm, 0, 0, 30)
+    else:
+        E(ldr_sp, 0, 32)
+        E(ldrb_imm, 0, 0, 0)
     E(cmp_reg, 7, 0)
     bc("co_bw", "hs")
     E(movs_imm, 0, 99)
@@ -928,16 +989,25 @@ def arm_code(base, L, prev):
         E(push_list, [4, 5, 6, 7], lr=True)
         E(mov_reg, 5, 1)
         E(bl, "c_f8src")
-        E(movs_imm, 1, G + V.G_ALG)
-        E(bl, "c_f8rd")
-        E(mov_reg, 4, 0)
-        E(cmp_imm, 4, V.NALG)
-        E(b_cond, "ol_0", "lo")
-        E(movs_imm, 4, 0)
-        a.label("ol_0")
-        E(lsls_imm, 4, 4, 4)
-        imm32(0, T["alg"])
-        E(adds_reg, 4, 4, 0)                                              # r4 = its entry
+        if MAP:                                                           # (RH100) c_f8ent: the custom algorithm too
+            E(mov_reg, 4, 0)
+            E(movs_imm, 1, G + V.G_ALG)
+            E(bl, "c_f8rd")
+            E(mov_reg, 1, 0)
+            E(mov_reg, 0, 4)
+            E(bl, "c_f8ent")
+            E(mov_reg, 4, 0)
+        else:
+            E(movs_imm, 1, G + V.G_ALG)
+            E(bl, "c_f8rd")
+            E(mov_reg, 4, 0)
+            E(cmp_imm, 4, V.NALG)
+            E(b_cond, "ol_0", "lo")
+            E(movs_imm, 4, 0)
+            a.label("ol_0")
+            E(lsls_imm, 4, 4, 4)
+            imm32(0, T["alg"])
+            E(adds_reg, 4, 4, 0)                                          # r4 = its entry
         E(bl, "c_f8ram")
         E(ldrb_imm, 6, 0, O_SEL)
         E(movs_imm, 7, 0)
@@ -1308,6 +1378,8 @@ def arm_code(base, L, prev):
     E(bl, L["c_fmon"])
     E(cmp_imm, 0, 0)
     bc("fp_q", "eq")                                                      # FM off: fmpage's (FM on)
+    if MAP:                                                               # (RH100) the page opened: the map off
+        E(bl, "c_mmoff")
     E(bl, "c_f8ram")
     E(adds_imm8, 4, 1)
     E(strb_imm, 4, 0, O_OPEN)
@@ -1363,6 +1435,22 @@ def arm_code(base, L, prev):
     E(bl, "c_f8kset")
     E(b, "fp_sw")
     a.label("fp_nh")
+    if MAP:                                                               # (RH100) pads 9-32: the map when shown, else pad 24 closes the page
+        E(cmp_imm, 5, PAD_OP0)
+        E(b_cond, "fp_r1", "lo")
+        E(bl, "c_mmshow")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "fp_nm", "eq")
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, "c_mmpad")
+        E(b, "fp_sw")
+        a.label("fp_nm")
+        E(cmp_imm, 5, 23)
+        E(b_cond, "fp_r1", "ne")
+        E(bl, "c_f8shut")
+        E(b, "fp_sw")
+        a.label("fp_r1")
     E(cmp_imm, 5, PAD_ALG)
     E(b_cond, "fp_n7", "ne")
     E(bl, L["c_spheld"])
@@ -1372,6 +1460,13 @@ def arm_code(base, L, prev):
     E(bl, "c_f8voice")
     E(b, "fp_sw")
     a.label("fp_7h")
+    if MAP:                                                               # (RH100) Shift + pad 7: the list while held; pad 7: the map
+        E(bl, L["c_spshift"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "fp_7l", "ne")
+        E(bl, "c_mm7press")
+        E(b, "fp_sw")
+        a.label("fp_7l")
     E(movs_imm, 0, 7)
     E(strb_imm, 0, 7, O_HOLD)
     E(movs_imm, 0, 0)
@@ -1415,6 +1510,9 @@ def arm_code(base, L, prev):
     bc("fr_p", "hs")
     E(push_list, [0, 1, 2, 4], lr=True)
     E(mov_reg, 4, 1)
+    if MAP:                                                               # (RH100) pad 7 (the map pinned / unpinned), the held operator
+        E(mov_reg, 0, 4)
+        E(bl, "c_mmrel")
     E(bl, "c_f8ram")
     E(cmp_imm, 4, PAD_ALG)
     E(b_cond, "fr_8", "eq")
@@ -1426,6 +1524,8 @@ def arm_code(base, L, prev):
     E(b_cond, "fr_s", "eq")
     E(movs_imm, 2, 0)
     E(strb_imm, 2, 0, O_HOLD)
+    if MAP:                                                               # (RH100) no more «a tap on pad 7 closes the page»
+        E(b, "fr_s")
     E(cmp_imm, 1, 7)
     E(b_cond, "fr_s", "ne")
     E(ldrb_imm, 1, 0, O_PICK)
@@ -1612,6 +1712,8 @@ def arm_code(base, L, prev):
     E(bl, "c_f8cv")
     # the FM page's pads
     a.label("le_pg")
+    if MAP:
+        E(bl, "c_mmtick")
     E(bl, "c_f8page")
     E(cmp_imm, 0, NSL)
     bc("le_kb", "hs")
@@ -1720,6 +1822,12 @@ def arm_code(base, L, prev):
     E(b, "le_kb")
     # the operators: those the algorithm uses (N first, carriers green, modulators blue), the chosen one bright
     a.label("le_ops")
+    if MAP:                                                               # (RH100) c_mmops: the map, or the operators and pad 24
+        E(bl, "c_f8page")
+        E(mov_reg, 1, 4)
+        E(mov_reg, 2, 5)
+        E(bl, "c_mmops")
+        E(b, "le_kb")
     E(cmp_imm, 4, V.NALG)
     E(b_cond, "le_o0", "lo")
     E(movs_imm, 4, 0)
@@ -1825,6 +1933,9 @@ def arm_code(base, L, prev):
     bc("le_kk", "lo")
     a.label("le_x")
     E(pop_list, [3, 4, 5, 6, 7], pc=True)
+    if MAP:
+        import fmmap as MM
+        MM.emit(a, dict(c_rst=L["c_rst"], c_spshift=L["c_spshift"], HAL=CI.HAL_TICK), T, sys.modules[__name__])
     return a.assemble()
 
 

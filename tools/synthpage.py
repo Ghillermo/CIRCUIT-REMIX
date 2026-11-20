@@ -127,6 +127,12 @@ VA_WORDS = ((2, 0, 0), (3, 1, VA_PW), (0x30 + 2, 2, 0), (0x30 + 3, 3, VA_PW), (0
 NVA = len(VA_WORDS)
 VA_WORDS_EXT = tuple((o, (0 if o == 0 else 1), VA_EXT) if kind == VA_ZERO else (o, k, kind) for o, k, kind in VA_WORDS)   # (OSC 1's TUNE / FINE)
 Y_EXT = ((S.C_G1, 2), (S.C_G2, 3), (S.C_GS, 4))                    # (OPT vsel) synth0's words: the envelope -> FM / ring / mix (va0 envx)
+Y_OSX = ((S.C_K, 5), (S.C_FM, 6), (S.C_GN, 7), (S.C_VFM, 8), (S.C_SHP, 9), (S.C_P2, 10))   # (RH101, OPT osc1x) tools/osc1x.py's: sub, noise
+
+
+def y_ext():
+    import rhbuild
+    return Y_EXT + (Y_OSX if rhbuild.OPT.get("osc1x") else ())
 ORDER_VA = tuple(range(16, 15 + NVA, 2)) + tuple(range(17, 15 + NVA, 2)) + (15 + NVA,) + ORDER   # the bulk send: the VA's words (VMAG
                                                                      # last; not 16..31 in a row: a plain run the provenance check finds
                                                                      # in any image), then synth0's (the key last)
@@ -225,15 +231,20 @@ def va_raw_bytes(knobs, raw13=LEN_DEF, raw14=64, raw15=0):
     return b
 
 
-def va_words(knobs, ext=None, granted=False):
+def sydual(knobs):
+    """(RH101, OPT osc1x: c_sydual) two oscillators = OSC 2's own knobs off their rest: MIX > 0, RING > 0, K7 in a zone, FM off the centre"""
+    return bool(knobs[7] or knobs[5] != 64 or knobs[K_RING] or knobs[6] >= 19)
+
+
+def va_words(knobs, ext=None, granted=False, osc1x=False):
     """(va) {va0 X offset in the block: word} the ARM writes for a slot's 16 knob values (the tests'); ext = tools/vsel.py's 5 stored bytes of
     the track (OPT dualext, RH85: OSC 1's envelope -> FM (a stored byte <> 0) or -> mix upwards (stored 1 .. 63: XOR 64) turns the second
-    oscillator on; -> ring alone changes nothing with RING 0)"""
+    oscillator on; -> ring alone changes nothing with RING 0); osc1x (RH101): not those (sydual, or the 2x grant)"""
     import va0 as V
     out = {}
     for off, k, kind in VA_WORDS:
         v = knobs[k]
-        dual = knobs[7] or knobs[5] != 64 or knobs[K_RING] or knobs[6] >= 19 or (ext is not None and (ext[2] or 1 <= ext[4] <= 63)) or granted
+        dual = sydual(knobs) or (not osc1x and ext is not None and (ext[2] or 1 <= ext[4] <= 63)) or granted
         w = {0: v, VA_PW: (v * 807) >> 10, VA_SEMI: ((3 * v + 4) >> 3) - 24, VA_BIP: v - 64, VA_ZERO: 0,
              VA_DUAL: V.DUAL if dual else 0, VA_MAG: V.VMAGIC3}[kind]
         if ratio2() and off == 0x30:                                    # (ratio2) TUNE 2's word 0, FINE 2's = the ratio + the detune
@@ -244,9 +255,17 @@ def va_words(knobs, ext=None, granted=False):
     return out
 
 
-def va_model_words(knobs, trk1, raw14=64):
-    """(va) synth0's 16 Y words of a slot (the ARM's: the unused ones 0)"""
+def va_model_words(knobs, trk1, raw14=64, osx=None, ext=None):
+    """(va) synth0's 16 Y words of a slot (the ARM's: the unused ones 0); (RH101, osc1x) osx = the track's 6 stored bytes of tools/osc1x.py
+    (C_K .. C_P2 with one oscillator, 0 with two), ext = vsel's 5 (C_G1 / C_G2 / C_GS with two oscillators, 0 with one)"""
     c = [0] * 16
+    if osx is not None:
+        import osc1x as OX
+        two = sydual(knobs)
+        for (w, e) in Y_OSX:
+            c[w] = 0 if two else OX.word(e, osx[e - OX.E0])
+        for (w, e) in Y_EXT:
+            c[w] = ((ext[e] ^ 64) - 64) if (two and ext is not None) else 0
     c[S.C_TRK] = trk1
     c[S.C_OCT] = (((knobs[K_OCT] * 7) >> 7) - 3) * 0xC0000
     c[S.C_GLD], c[S.C_REL] = glide_t()[knobs[K_GLIDE]], rel_t()[knobs[K_LEN]]
@@ -681,6 +700,8 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         t_gld = t_def + 64
     import tabpack as TBP
     LL = rhbuild.OPT.get("leftlight")
+    import fmmap as MM_
+    FMV = MM_.fmviolet()                                                  # (RH100) the VA's FM knob: the lilac reciprocal
     R2 = V and ratio2()
     parts = [(b"".join(x.to_bytes(4, "little") for x in glide_t()), 4), (b"".join(x.to_bytes(4, "little") for x in rel_t()), 4)]
     if ui:
@@ -1104,6 +1125,21 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         imm32(0, t_kdef)
         E(ldrb_reg, 0, 0, 1)
         E(raw, h(0x4770))
+    if V and rhbuild.OPT.get("osc1x"):                                    # (RH101) c_sydual(r0 = slot) -> r0 = 1 with two oscillators: MIX > 0,
+        a.label("c_sydual")                                               # RING > 0, K7 in a sync / bitwise zone, FM off the centre; clobbers r1-r3
+        E(push_list, [4], lr=True)                                        # on the BASE values (c_syv, never the matrix's offsets: a source on
+        E(mov_reg, 4, 0)                                                  # MIX / RING / K7 / FM must not flip the mode and mute the sub)
+        for k, op, lim in ((7, "ne", 0), (K_RING, "ne", 0), (6, "hs", 19), (5, "ne", 64)):
+            E(mov_reg, 0, 4)
+            E(movs_imm, 1, k)
+            E(bl, "c_syv")
+            E(cmp_imm, 0, lim)
+            E(b_cond, "dl_1", op)
+        E(movs_imm, 0, 0)
+        E(pop_list, [4], pc=True)
+        a.label("dl_1")
+        E(movs_imm, 0, 1)
+        E(pop_list, [4], pc=True)
     a.label("c_syword")
     E(push_list, [4, 5, 6], lr=True)
     E(mov_reg, 4, 0)
@@ -1181,7 +1217,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         E(b, "w_x")
         a.label("v7")
         if rhbuild.OPT.get("vsel"):                                       # (RH80) the envelope -> FM / ring / mix: vsel's
-            for i, x in Y_EXT:
+            for i, x in y_ext():                                          # (RH101, osc1x: and the sub's / the noise's)
                 E(cmp_imm, 5, i)
                 E(b_cond, f"vy{i}", "ne")
                 E(mov_reg, 0, 4)
@@ -1263,6 +1299,13 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
             E(lsrs_reg, 0, 4)
             E(lsls_imm, 0, 0, 31)
             E(b_cond, "vd1", "ne")
+        if rhbuild.OPT.get("osc1x"):                                      # (RH101) c_sydual: OSC 2's own knobs (decision A)
+            E(mov_reg, 0, 4)
+            E(bl, "c_sydual")
+            E(cmp_imm, 0, 0)
+            E(b_cond, "vd1", "ne")
+            E(movs_imm, 0, 0)
+            E(b, "w_x")
         val(7)
         E(cmp_imm, 0, 0)
         E(b_cond, "vd1", "ne")
@@ -1275,7 +1318,7 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         val(5)
         E(cmp_imm, 0, 64)
         E(b_cond, "vd1", "ne")
-        if dualext():                                                     # (RH85) or OSC 1's envelope -> FM, or -> mix upwards (vsel's 2 / 4;
+        if dualext() and not rhbuild.OPT.get("osc1x"):                    # (RH85) or OSC 1's envelope -> FM, or -> mix upwards (vsel's 2 / 4;
             E(mov_reg, 0, 4)                                              # -> ring needs RING > 0, -> mix down from 0 changes nothing)
             E(movs_imm, 1, 2)
             E(bl, "c_syext")
@@ -1726,6 +1769,12 @@ def arm_code(base, L, prev, ui=False, menu2=False, env=False, spall=False, nobli
         E(ldrb_reg, 2, 2, 1)
         if ui:
             E(movs_imm, 3, UI_KNOB)                                       # r3 = the colour
+        if ui and V and LL and k == 5 and FMV:                            # (RH100, fmviolet) K6 = the FM: its direction, the lilac reciprocal
+            E(cmp_imm, 1, MM_.FM_KNOB)
+            E(b_cond, f"lf_{k}", "ne")
+            MM_.emit_fmled(E, a, f"lv{k}", KB_LEFT)
+            E(b, f"lu_{k}")
+            a.label(f"lf_{k}")
         E(cmp_imm, 2, 0)
         E(b_cond, f"lu_{k}", "eq")
         if ui and V and k in (0, 2):                                      # (va) K1 / K3: the morph's nearest wave ((v + 21) / 42)

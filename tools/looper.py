@@ -33,6 +33,7 @@ import countin as CI  # noqa: E402
 import granpage as GP  # noqa: E402
 import looper0 as L0  # noqa: E402
 import fxseq as FX  # noqa: E402
+import rhbuild  # noqa: E402
 
 LPR = FX.FXR + 96
 MAG = 0x504F4F4C                                          # "LOOP"
@@ -618,10 +619,13 @@ def arm_code(base, L, prev):
     E(ldrb_imm, 0, 7, O_HELD)
     E(tst_reg, 0, 6)
     E(b_cond, "rl_h", "ne")                                               # its press was ours: ours
-    E(bl, "c_lpgrid")
-    E(cmp_imm, 0, 0)
-    bc("rl_p", "eq")                                                      # (RD50 on the device: step 11 lost its release) elsewhere: the stock's
-    E(b, "rl_x")
+    if rhbuild.OPT.get("lprel"):                                          # (RH103) not ours: the chain's, also in Grid FX (a step pressed in a
+        E(b, "rl_p")                                                      #  track view and let go in Grid FX lost its release: the stock edits
+    else:                                                                 #  the step on the release, the heads below kept it held)
+        E(bl, "c_lpgrid")
+        E(cmp_imm, 0, 0)
+        bc("rl_p", "eq")                                                  # (RD50 on the device: step 11 lost its release) elsewhere: the stock's
+        E(b, "rl_x")
     a.label("rl_h")
     E(ldrb_imm, 0, 7, O_HELD)
     E(bics_reg, 0, 6)

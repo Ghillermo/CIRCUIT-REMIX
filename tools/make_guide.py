@@ -93,6 +93,8 @@ def view(vid, part, es, en, figs=()):
     V.append(dict(id=vid, part=part, es=es, en=en, figs=list(figs)))
 
 
+A16 = "*(Alpha 0.16)*"
+A16_EN = "*(Alpha 0.16)*"
 A15 = "*(Alpha 0.15)*"
 A15_EN = "*(Alpha 0.15)*"
 A14 = "*(Alpha 0.14)*"
@@ -572,10 +574,11 @@ view("fm", "2", ("FM de 8 operadores", "Sample mode, selector (pad 8), pad 24 (p
 |---|---|
 | **9-16** | el operador 1-8 a editar (portadores verde, moduladores azul, el elegido brillante; los que el algoritmo no usa, apagados) |
 | **3** | la envolvente de pitch (lavanda) |
-| **7 mantenido** | los 56 algoritmos en los pads 9-32, en tres páginas con ▼ / ▲ (los de 4 operadores verdes, los de 8 ámbar, los del DX7 blancos); uno pulsado = ese algoritmo |
+| **7** {A16} | **el mapa del algoritmo** en los pads 9-32: un toque = fijo (otro toque lo quita), mantenido = mientras se mantiene ([abajo](#fm)) |
+| **Shift + 7** | los 56 algoritmos en los pads 9-32, en tres páginas con ▼ / ▲ (los de 4 operadores verdes, los de 8 ámbar, los del DX7 blancos); uno pulsado = ese algoritmo (hasta Alpha 0.15: el pad 7 mantenido) |
 | **Clear + 7** | una voz tocable del algoritmo (todos los ratios a 1) |
 | **8 mantenido** | los 24 instrumentos de partida (en el color de su familia); uno pulsado = cargado |
-| **7 (toque)** | cierra la página |
+| **24** {A16} | cierra la página (hasta Alpha 0.15: un toque al pad 7) |
 
 **Los knobs** (en la página FM y en la página Sinte de una pista con FM: menú, pad 2 = el operador, pad 3 = la envolvente de pitch):
 
@@ -601,10 +604,11 @@ Con la envolvente de pitch: K1 transposición, K3 ruido, K4 su operador, K5-K8 R
 |---|---|
 | **9-16** | the operator 1-8 to edit (carriers green, modulators blue, the chosen one bright; those the algorithm does not use, off) |
 | **3** | the pitch envelope (lavender) |
-| **7 held** | the 56 algorithms on pads 9-32, in three pages with ▼ / ▲ (the 4-operator ones green, the 8-operator ones amber, the DX7's white); one pressed = that algorithm |
+| **7** {A16_EN} | **the algorithm map** on pads 9-32: a tap = latched (another tap removes it), held = while held ([below](#fm)) |
+| **Shift + 7** | the 56 algorithms on pads 9-32, in three pages with ▼ / ▲ (the 4-operator ones green, the 8-operator ones amber, the DX7's white); one pressed = that algorithm (up to Alpha 0.15: pad 7 held) |
 | **Clear + 7** | a playable voicing of the algorithm (every ratio 1) |
 | **8 held** | the 24 starting instruments (in their family's colour); one pressed = loaded |
-| **7 (tap)** | closes the page |
+| **24** {A16_EN} | closes the page (up to Alpha 0.15: a tap on pad 7) |
 
 **The knobs** (on the FM page and on the Synth page of a track with FM: menu, pad 2 = the operator, pad 3 = the pitch envelope):
 
@@ -1305,9 +1309,48 @@ The Grid FX view (Shift + Mixer): see [Grid FX](#gridfx) {A13_EN}. Slots latched
 """)
 
 
+more("fm", f"""
+**El mapa del algoritmo** {A16} (pad 7; como CIRCUIT-HACKS): los caminos del algoritmo en los pads 9-32, cada uno del modulador a la izquierda al portador a la derecha. Color = la clase de la ratio del operador: entera verde claro, x,5 menta, otra naranja, fija rojo; el operador del feedback lila; brillante = nivel alto. El elegido late.
+
+- Un toque en un operador = elegirlo (los knobs lo editan).
+- **Shift + operador** = callarlo mientras se ve el mapa (no se guarda).
+- **Un operador mantenido + otro** = el enlace entre los dos sí / no: el algoritmo pasa a ser **propio** (se guarda con el patch y el proyecto). Un enlace que cerraría un bucle no se hace. Shift + K1 o la lista de algoritmos vuelven a uno de los 56.
+""", f"""
+**The algorithm map** {A16_EN} (pad 7; as CIRCUIT-HACKS): the algorithm's paths on pads 9-32, each from the modulator on the left to the carrier on the right. Colour = the operator's ratio class: whole light green, x.5 mint, other orange, fixed red; the feedback operator lilac; bright = high level. The chosen one pulses.
+
+- A tap on an operator = choose it (the knobs edit it).
+- **Shift + operator** = mute it while the map shows (not saved).
+- **One operator held + another** = the link between them on / off: the algorithm becomes a **custom** one (saved with the patch and the project). A link that would close a loop is not made. Shift + K1 or the algorithm list go back to one of the 56.
+""")
+more("sinte", f"""
+{A16}: **sub y ruido en OSC 1** cuando OSC 2 está en reposo (MIX, RING y FM de OSC 2 en su sitio, K7 abajo): en OSC 1 **K5 = sub** (una octava abajo), **K6 = ruido**, **K8 = el LFO de Stock+ → sub**; Shift + K5 / K6 = la envolvente → sub / ruido, Shift + K8 = el LFO → ruido. Con dos osciladores, K5 / K6 / K8 siguen siendo envolvente → FM / ring / mezcla. Se guardan con el proyecto y el patch, y son destinos de la matriz. En el knob del FM de OSC 2, la zona recíproca (más allá de un cuarto de vuelta desde el centro) se ve en lila.
+""", f"""
+{A16_EN}: **sub and noise on OSC 1** while OSC 2 is at rest (OSC 2's MIX, RING and FM in place, K7 down): on OSC 1 **K5 = sub** (an octave down), **K6 = noise**, **K8 = Stock+'s LFO → sub**; Shift + K5 / K6 = the envelope → sub / noise, Shift + K8 = the LFO → noise. With two oscillators, K5 / K6 / K8 are still envelope → FM / ring / mix. Saved with the project and the patch, and they are matrix destinations. On OSC 2's FM knob, the reciprocal zone (past a quarter turn from the centre) shows lilac.
+""")
+more("matriz", f"""
+{A16}: **carriles extra de automatización**: al grabar un knob sin carril libre del original, toma un carril propio (un valor por paso; entre dos pasos con valor el parámetro va en línea recta). Hasta 92 en total. Se guardan con el proyecto en el banco de patches del pack (no en el pack interno ni en las versiones S). Las páginas Sinte / OSC de un VA se graban también en cualquier pista (hasta Alpha 0.15, solo en la pista 3).
+""", f"""
+{A16_EN}: **extra automation lanes**: recording a knob with no free lane of the original takes a lane of its own (one value a step; between two steps with a value the parameter moves in a straight line). Up to 92 in all. Saved with the project in the pack's patch bank (not on the internal pack nor in the S builds). A VA's Synth / OSC pages now record on any track (up to Alpha 0.15, on track 3 only).
+""")
+more("setup", f"""
+{A16}: **Setup, pad 23 = knob hold** (verde / verde tenue; con los ajustes del aparato, apagado de fábrica): un knob que estás girando sigue moviendo lo que movía aunque cambies de vista, de pista o de Shift a mitad del giro, hasta que lo dejas quieto un segundo; su luz sigue enseñando lo de antes. **Advanced Setup, K3 = ganancia de la entrada** de línea: 0 a +24 dB (2 clics por dB; verde, brillo = la ganancia), para Sample Rec, las pistas de entrada y el looper. **Sin Easy Start:** el modo de almacenamiento USB del original no está (el botón 9 de Advanced Setup no hace nada); el aparato sigue siendo un dispositivo MIDI USB.
+""", f"""
+{A16_EN}: **Setup, pad 23 = knob hold** (green / dim green; with the device's settings, off from the factory): a knob you are turning keeps moving what it moved even if you change view, track or Shift halfway through, until you leave it still for a second; its light keeps showing the old one. **Advanced Setup, K3 = line input gain**: 0 to +24 dB (2 clicks a dB; green, brightness = the gain), for Sample Rec, the input tracks and the looper. **No Easy Start:** the original's USB mass storage mode is gone (Advanced Setup's button 9 does nothing); the device is still a USB MIDI device.
+""")
+more("patches", f"""
+{A16}: con la lista del pack abierta (pad 8 mantenido), **Duplicate + un hueco vacío** = guarda ahí el sonido de la pista al momento (verde; rojo si no se puede: pack interno o una pista de sample / entrada). Con un hueco elegido antes (A), Duplicate + vacío sigue moviendo / copiando A.
+""", f"""
+{A16_EN}: with the pack's list open (pad 8 held), **Duplicate + an empty slot** = saves the track's sound there at once (green; red when it can't: internal pack or a sample / input track). With a slot chosen first (A), Duplicate + empty still moves / copies A.
+""")
+
 # ---------------------------------------------------------------------------------------------------- the glossary: one entry per function
 # (name es, name en, what es, what en, chapter, since)
 GLOSSARY = [
+    ("Mapa del algoritmo FM", "FM algorithm map", "los caminos del algoritmo en los pads; enlazar operadores = algoritmo propio; página FM, pad 7", "the algorithm's paths on the pads; linking operators = a custom algorithm; FM page, pad 7", "fm", "0.16"),
+    ("Sub y ruido de OSC 1", "OSC 1 sub and noise", "sub una octava abajo y ruido, con OSC 2 en reposo; OSC 1, K5 / K6 / K8", "a sub an octave down and noise, with OSC 2 at rest; OSC 1, K5 / K6 / K8", "sinte", "0.16"),
+    ("Carriles extra de automatización", "Extra automation lanes", "más carriles al grabar knobs, guardados en el banco de patches", "more lanes when recording knobs, saved in the patch bank", "matriz", "0.16"),
+    ("Knob hold", "Knob hold", "un knob sigue moviendo lo suyo al cambiar de vista; Setup, pad 23", "a knob keeps moving its own parameter when the view changes; Setup, pad 23", "setup", "0.16"),
+    ("Ganancia de la entrada", "Input gain", "0 a +24 dB en la entrada de línea; Advanced Setup, K3", "0 to +24 dB on the line input; Advanced Setup, K3", "setup", "0.16"),
     ("Patches del pack", "Pack patches", "64 patches de sinte y granular por pack; Sample mode, pad 8 mantenido", "64 synth and granular patches per pack; Sample mode, pad 8 held", "patches", "0.13"),
     ("Starters", "Starters", "sonidos de partida por motor; Sample mode, pad de motor mantenido", "starting sounds per engine; Sample mode, engine pad held", "patches", "0.13"),
     ("Pattern Mutate", "Pattern Mutate", "listas de patrones al azar por pista (diseño de mefisme); Shift + Duplicate", "random pattern lists per track (mefisme's design); Shift + Duplicate", "mutate", "0.13"),
@@ -1402,13 +1445,13 @@ GLOSSARY = [
 UI = dict(es=dict(title=f"Circuit Remix {VERSION} — manual", how="Cómo se llega:", toc="Índice", glossary="Glosario de funciones",
                   gl_cols=("Función", "Qué es / gesto", "Capítulo", "Desde"), other='[English](MANUAL_EN.md) · [versión ilustrada](manual/index.html)',
                   other_html='<p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>',
-                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.13 es experimental:** el secuenciador de efectos y el looper se han probado en el aparato; casi todo lo demás desde Alpha 0.04, sobre todo en emulación. **Haz una copia de tu tarjeta SD.**",
+                  cover="Manual por vistas", warn="> ⚠️ **Alpha 0.16 es experimental:** el secuenciador de efectos y el looper (Alpha 0.13) se han probado en el aparato; casi todo lo demás desde Alpha 0.04, sobre todo en emulación. **Haz una copia de tu tarjeta SD.**",
                   intro="Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.", md="MANUAL.md", html="index.html", lang="es",
                   footer="Circuit Remix — MIT. Sin código de Novation."),
           en=dict(title=f"Circuit Remix {VERSION} — manual", how="How to get there:", toc="Contents", glossary="Glossary of functions",
                   gl_cols=("Function", "What it is / gesture", "Chapter", "Since"), other='[Español](MANUAL.md) · [illustrated version](manual/en.html)',
                   other_html='<p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>',
-                  cover="Manual by views", warn="> ⚠️ **Alpha 0.13 is experimental:** the FX sequencer and the looper have been tried on the device; most other things since Alpha 0.04 mostly in emulation. **Back up your SD card.**",
+                  cover="Manual by views", warn="> ⚠️ **Alpha 0.16 is experimental:** the FX sequencer and the looper (Alpha 0.13) have been tried on the device; most other things since Alpha 0.04 mostly in emulation. **Back up your SD card.**",
                   intro="Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.", md="MANUAL_EN.md", html="en.html", lang="en",
                   footer="Circuit Remix — MIT. No Novation code."))
 

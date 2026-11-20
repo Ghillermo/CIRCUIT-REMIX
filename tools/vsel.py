@@ -52,10 +52,23 @@ OLD_STOCK, OLD_SP, OLD_GRAN, OLD_SYNTH, OLD_ENV, OLD_MX, OLD_SEQ, OLD_INIT, OLD_
 COL_FILT, DIM_FILT = 0xBF, 0xCD                        # lime (docs/INTERFAZ.md)
 COL_MOD, DIM_MOD = EV.COL, EV.DIM
 COL_STOCK, DIM_STOCK = 0x01, 0x09
+D_EXT, D_LEVEL, D_SYLEN = 32, 46, 31                    # (RH98, mxfix) modmx's destinations (mx64): OSC 1's extras 32 + e, the level,
+D_ENV = (37, 40, 38, 39)                               #   the Envelope's K1-K4 (start, length, slope, -> filter); a synth's length = 31
 K_EXT = 0x80                                           # (the knob maps) 0x80 | e = our value e; 0xFF = nothing
 # OSC 1 / OSC 2: knob k (+ 8 with Shift) -> synthpage's knob index, or ours
 OSC1 = (K_EXT | 0, K_EXT | 1, 0, 1, K_EXT | 2, K_EXT | 3, SY.K_ENVM, K_EXT | 4, 8, SY.K_GLIDE, SY.K_OCT, 9, 0xFF, 0xFF, 0xFF, 0xFF)
 OSC2 = (4, 12, 2, 3, 5, SY.K_RING, 6, 7) + (0xFF,) * 8
+# (RH101, OPT osc1x) OSC 1 with one oscillator (OSC 2's own knobs at rest: synthpage's c_sydual): K5 the sub, K6 the noise, K8 LFO -> sub;
+# Shift + K5 env -> sub, Shift + K6 env -> noise, Shift + K8 LFO -> noise (tools/osc1x.py's values e 5..10); Shift + K7 dark
+OSC1S = (K_EXT | 0, K_EXT | 1, 0, 1, K_EXT | 5, K_EXT | 7, SY.K_ENVM, K_EXT | 9, 8, SY.K_GLIDE, SY.K_OCT, 9, K_EXT | 6, K_EXT | 8, 0xFF,
+         K_EXT | 10)
+XKEY = (64,) * 5 + (0, 64, 0, 64, 64, 64)              # (osc1x) each value's stored XOR (and its default: a level 0, a depth the centre)
+D_OSX = 50                                             # (osc1x) modmx's destinations 50..55 = e 5..10
+
+
+def osc1x():
+    import rhbuild
+    return bool(rhbuild.OPT.get("osc1x"))
 EXT_SEMI = (1, 0, 0, 0, 0)                             # tune 1 in semitones (as OSC 2's: ((3 v + 4) >> 3) - 24); the rest v - 64
 LEVELS, SETTER, GETTER = 0x20012098, 0x08038A08, 0x08046410
 GSET_OBJ, ID_LEVEL0 = 0x20011998, 0x91                 # (found in emulation: ids 0x91 + t write the Mixer's levels)
@@ -89,6 +102,10 @@ def ext_word(e, v):
 def arm_code(base, L, prev):
     import rhbuild
     R81 = rhbuild.OPT.get("rh81")
+    MXF = rhbuild.OPT.get("mxfix")                                        # (RH98) the matrix's views on top; our knobs recorded
+    FMV = rhbuild.OPT.get("fmviolet")                                     # (RH100) the VA's FM knob: the lilac reciprocal
+    FMC = rhbuild.OPT.get("fmmap")                                        # (RH100) a page picked in the menu closes the FM page
+    assert not osc1x() or MXF, "osc1x: ko_e keeps e in r7 (mxfix)"
     a = Asm(base)
     E = a.emit
     zc = [0]
@@ -114,6 +131,9 @@ def arm_code(base, L, prev):
         data.extend(bs)
     put("osc1", bytes(OSC1))
     put("osc2", bytes(OSC2))
+    if osc1x():                                                           # (RH101) one oscillator's OSC 1, the stored XORs
+        put("osc1s", bytes(OSC1S))
+        put("xkey", bytes(XKEY))
     put("waves", bytes(SY.UI_WAVES_VA))
     put("zones", bytes(SY.VA_ZONES))
     put("bip", bytes(SY.BIP_VA))                                          # synthpage's knob indices: bipolar
@@ -147,6 +167,14 @@ def arm_code(base, L, prev):
     a.label("c_vspage")
     E(push_list, [4, 5], lr=True)
     E(mov_reg, 4, 0)
+    if MXF:                                                               # (RH98) modmx's Matrix / Sequenceable / Non-sequenceable view on
+        E(bl, L["c_mxram"])                                               #   top (its page byte, a track's): its knobs and LEDs, not ours
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vp_m", "eq")
+        E(ldrb_reg, 0, 0, 4)
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vp_n", "ne")
+        a.label("vp_m")
     E(bl, "c_vsram")
     E(adds_reg, 5, 0, 4)
     E(ldrb_imm, 0, 5, O_VP)
@@ -186,48 +214,136 @@ def arm_code(base, L, prev):
     E(pop_list, [4, 5], pc=True)
 
     # ---- c_vsext(r0 = slot, r1 = e) -> r0 = our value e's word for that slot's track (synthpage's stub c_syext); clobbers r1-r3
-    a.label("c_vsext")
-    E(push_list, [4, 5], lr=True)
-    E(mov_reg, 5, 1)
-    E(mov_reg, 4, 0)
-    E(bl, L["c_syb"])
-    E(cmp_imm, 0, 0)
-    E(b_cond, "vx_0", "eq")
-    E(movs_imm, 1, SY.SL)
-    E(muls, 1, 4)
-    E(adds_reg, 0, 0, 1)
-    E(ldrb_imm, 4, 0, 2)                                                  # r4 = the track + 1
-    E(cmp_imm, 4, 0)
-    E(b_cond, "vx_0", "eq")
-    E(subs_imm8, 4, 1)
-    E(bl, L["c_esram"])
-    E(movs_imm, 1, NEXT)
-    E(muls, 1, 4)
-    E(adds_reg, 0, 0, 1)
-    E(adds_reg, 0, 0, 5)
-    E(ldrb_w, 0, 0, EXT0)
-    E(movs_imm, 1, 64)
-    E(raw, h(0x4048))                                                     # eors r0, r1
-    E(cmp_imm, 5, 0)
-    E(b_cond, "vx_b", "ne")
-    E(movs_imm, 1, 3)                                                     # tune 1: ((3 v + 4) >> 3) - 24
-    E(muls, 0, 1)
-    E(adds_imm8, 0, 4)
-    E(lsrs_imm, 0, 0, 3)
-    E(subs_imm8, 0, 24)
-    E(pop_list, [4, 5], pc=True)
-    a.label("vx_b")
-    E(subs_imm8, 0, 64)
-    E(pop_list, [4, 5], pc=True)
-    a.label("vx_0")
-    E(movs_imm, 0, 0)
-    E(pop_list, [4, 5], pc=True)
+    #      (osc1x) e 2..4 (envelope -> FM / ring / mix) 0 with one oscillator, e 5..10 (the sub, the noise) 0 with two: the DSP never checks;
+    #      the matrix's live offsets reach the word here (destinations 32 + e / 50 + (e - 5), as modmx's c_mxsyv; a lane writes the store)
+    if osc1x():
+        a.label("c_vsext")
+        E(push_list, [4, 5, 6], lr=True)
+        E(mov_reg, 5, 1)
+        E(mov_reg, 6, 0)                                                  # r6 = the slot
+        E(bl, L["c_syb"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vq_0", "eq")
+        E(movs_imm, 1, SY.SL)
+        E(muls, 1, 6)
+        E(adds_reg, 0, 0, 1)
+        E(ldrb_imm, 4, 0, 2)                                              # r4 = the track + 1
+        E(cmp_imm, 4, 0)
+        E(b_cond, "vq_0", "eq")
+        E(subs_imm8, 4, 1)
+        E(cmp_imm, 5, 2)
+        E(b_cond, "vq_g", "lo")
+        E(mov_reg, 0, 6)
+        E(bl, L["c_sydual"])
+        E(cmp_imm, 5, 5)
+        E(b_cond, "vq_h", "hs")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vq_0", "eq")
+        E(b, "vq_g")
+        a.label("vq_h")
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vq_0", "ne")
+        a.label("vq_g")
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, "c_vsextv")
+        E(ldrb_imm, 0, 0, 0)
+        imm32(1, T["xkey"])
+        E(ldrb_reg, 1, 1, 5)
+        E(raw, h(0x4048))                                                 # eors r0, r1: the 7-bit value
+        import osc1x as OX
+        E(lsls_imm, 0, 0, 7)                                              # + the matrix's offset (c_mxadd: 14 bits, clamped), as c_mxsyv
+        E(mov_reg, 1, 4)
+        E(mov_reg, 2, 5)
+        E(adds_imm8, 2, D_EXT)
+        E(cmp_imm, 5, OX.E0)
+        E(b_cond, "vq_m", "lo")
+        E(adds_imm8, 2, D_OSX - D_EXT - OX.E0)
+        a.label("vq_m")
+        E(bl, L["c_mxadd"])
+        E(lsrs_imm, 0, 0, 7)
+        E(cmp_imm, 5, 0)
+        E(b_cond, "vq_b", "ne")
+        E(movs_imm, 1, 3)                                                 # tune 1: ((3 v + 4) >> 3) - 24
+        E(muls, 0, 1)
+        E(adds_imm8, 0, 4)
+        E(lsrs_imm, 0, 0, 3)
+        E(subs_imm8, 0, 24)
+        E(pop_list, [4, 5, 6], pc=True)
+        a.label("vq_b")
+        imm32(1, T["xkey"])                                               # (c_mxadd clobbered r1: the key again)
+        E(ldrb_reg, 1, 1, 5)
+        E(subs_reg, 0, 0, 1)                                              # (v ^ key) - key: a level as it is, a depth v - 64
+        E(pop_list, [4, 5, 6], pc=True)
+        a.label("vq_0")
+        E(movs_imm, 0, 0)
+        E(pop_list, [4, 5, 6], pc=True)
 
-    # ---- c_vsextv(r0 = track, r1 = e) -> r0 = the address of our value e
+        # ---- c_vsdual(r0 = track) -> r0 = 1 with two oscillators (or no synth slot), 0 with one; clobbers r1-r3
+        a.label("c_vsdual")
+        E(push_list, [4], lr=True)
+        E(bl, L["c_syslot"])
+        E(cmp_imm, 0, ES.NSL)
+        E(b_cond, "vu_1", "hs")
+        E(bl, L["c_sydual"])
+        E(pop_list, [4], pc=True)
+        a.label("vu_1")
+        E(movs_imm, 0, 1)
+        E(pop_list, [4], pc=True)
+    else:
+        a.label("c_vsext")
+        E(push_list, [4, 5], lr=True)
+        E(mov_reg, 5, 1)
+        E(mov_reg, 4, 0)
+        E(bl, L["c_syb"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "vx_0", "eq")
+        E(movs_imm, 1, SY.SL)
+        E(muls, 1, 4)
+        E(adds_reg, 0, 0, 1)
+        E(ldrb_imm, 4, 0, 2)                                              # r4 = the track + 1
+        E(cmp_imm, 4, 0)
+        E(b_cond, "vx_0", "eq")
+        E(subs_imm8, 4, 1)
+        E(bl, L["c_esram"])
+        E(movs_imm, 1, NEXT)
+        E(muls, 1, 4)
+        E(adds_reg, 0, 0, 1)
+        E(adds_reg, 0, 0, 5)
+        E(ldrb_w, 0, 0, EXT0)
+        E(movs_imm, 1, 64)
+        E(raw, h(0x4048))                                                 # eors r0, r1
+        E(cmp_imm, 5, 0)
+        E(b_cond, "vx_b", "ne")
+        E(movs_imm, 1, 3)                                                 # tune 1: ((3 v + 4) >> 3) - 24
+        E(muls, 0, 1)
+        E(adds_imm8, 0, 4)
+        E(lsrs_imm, 0, 0, 3)
+        E(subs_imm8, 0, 24)
+        E(pop_list, [4, 5], pc=True)
+        a.label("vx_b")
+        E(subs_imm8, 0, 64)
+        E(pop_list, [4, 5], pc=True)
+        a.label("vx_0")
+        E(movs_imm, 0, 0)
+        E(pop_list, [4, 5], pc=True)
+
+    # ---- c_vsextv(r0 = track, r1 = e) -> r0 = the address of our value e; (osc1x) e 5..10 in tools/osc1x.py's RAM
     a.label("c_vsextv")
     E(push_list, [4, 5], lr=True)
     E(mov_reg, 4, 0)
     E(mov_reg, 5, 1)
+    if osc1x():
+        import osc1x as OX
+        E(cmp_imm, 5, OX.E0)
+        E(b_cond, "xv_o", "lo")
+        imm32(0, OX.ram() - OX.E0)
+        E(movs_imm, 1, OX.NE)
+        E(muls, 1, 4)
+        E(adds_reg, 0, 0, 1)
+        E(adds_reg, 0, 0, 5)
+        E(pop_list, [4, 5], pc=True)
+        a.label("xv_o")
     E(bl, L["c_esram"])
     E(movs_imm, 1, NEXT)
     E(muls, 1, 4)
@@ -326,6 +442,8 @@ def arm_code(base, L, prev):
     E(push_list, [1, 2])
     E(cmp_imm, 5, 15)                                                     # (Project init: the page stays)
     E(b_cond, "pd_old", "eq")
+    if FMC:                                                               # (RH100) a page picked: the FM page closed (fm8page's c_f8shut)
+        E(bl, L["c_f8shut"])
     # our page: kept with the engine; the page before (a hold puts it back)
     E(adds_reg, 3, 7, 4)
     E(ldrb_imm, 0, 3, O_VP)
@@ -546,6 +664,10 @@ def arm_code(base, L, prev):
     E(mov_reg, 1, 4)
     E(adds_imm8, 1, ID_LEVEL0)
     E(bl, SETTER)
+    if MXF:
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, D_LEVEL)
+        E(bl, "c_vsrec")
     E(b, "kn_x")
     a.label("kf_1")
     E(cmp_imm, 5, 4)
@@ -555,12 +677,16 @@ def arm_code(base, L, prev):
     E(ldr_sp, 2, 8)
     E(ldr_sp, 3, 0)
     E(bl, "c_vsenv")
+    if MXF:
+        E(mov_reg, 0, 4)
+        E(movs_imm, 1, D_ENV[3])
+        E(bl, "c_vsrec")
     E(b, "kn_x")
     a.label("kf_2")
     E(cmp_imm, 5, 1)
-    E(b_cond, "kn_x", "eq")
+    (bc if osc1x() else (lambda t_, c_: E(b_cond, t_, c_)))("kn_x", "eq")
     E(cmp_imm, 5, 2)
-    E(b_cond, "kn_x", "eq")
+    (bc if osc1x() else (lambda t_, c_: E(b_cond, t_, c_)))("kn_x", "eq")
     E(ldr_sp, 0, 0)                                                       # K4, K6-K8: the stock's own
     E(mov_reg, 1, 5)
     E(ldr_sp, 2, 8)
@@ -577,10 +703,18 @@ def arm_code(base, L, prev):
     E(ldr_sp, 2, 8)
     E(ldr_sp, 3, 0)
     E(bl, "c_vsenv")
+    if MXF:                                                               # its destination: D_ENV[k]
+        imm32(1, sum(d << 8 * i for i, d in enumerate(D_ENV)))
+        E(lsls_imm, 2, 5, 3)
+        E(lsrs_reg, 1, 2)
+        E(lsls_imm, 1, 1, 24)
+        E(lsrs_imm, 1, 1, 24)
+        E(mov_reg, 0, 4)
+        E(bl, "c_vsrec")
     E(b, "kn_x")
     a.label("km_s")
     E(cmp_imm, 5, 6)                                                      # K5 / K6: Stock+'s K3 / K4 (the LFO's rate / depth)
-    E(b_cond, "kn_x", "hs")
+    (bc if osc1x() else (lambda t_, c_: E(b_cond, t_, c_)))("kn_x", "hs")
     E(mov_reg, 0, 4)
     E(subs_imm8, 5, 2)
     E(mov_reg, 1, 5)
@@ -597,14 +731,26 @@ def arm_code(base, L, prev):
     imm32(0, T["osc2"])
     E(cmp_imm, 6, VP_OSC2)
     E(b_cond, "ko_t", "eq")
-    imm32(0, T["osc1"])
+    if osc1x():                                                           # (RH101) one oscillator: K5 / K6 / K8 the sub / the noise
+        E(mov_reg, 0, 4)
+        E(bl, "c_vsdual")
+        imm32(1, T["osc1"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "ko_d", "ne")
+        imm32(1, T["osc1s"])
+        a.label("ko_d")
+        E(mov_reg, 0, 1)
+    else:
+        imm32(0, T["osc1"])
     a.label("ko_t")
     E(ldrb_reg, 1, 0, 5)                                                  # r1 = the target
     E(cmp_imm, 1, 0xFF)
-    E(b_cond, "kn_x", "eq")
+    (bc if osc1x() else (lambda t_, c_: E(b_cond, t_, c_)))("kn_x", "eq")
     E(cmp_imm, 1, K_EXT)
     E(b_cond, "ko_e", "hs")
     E(movs_imm, 3, 0)                                                     # synthpage's knob: through the chain, Shift as it needs
+    if MXF:
+        E(mov_reg, 7, 1)                                                  # r7 = its value index
     E(cmp_imm, 1, 8)
     E(b_cond, "ko_s", "lo")
     E(movs_imm, 3, 1)
@@ -613,9 +759,20 @@ def arm_code(base, L, prev):
     E(ldr_sp, 0, 0)
     E(ldr_sp, 2, 8)
     E(bl, "c_vsfwd")
+    if MXF:                                                               # (modmx records the lower eight itself, never with Shift: one of
+        E(cmp_imm, 5, 8)                                                  #   the upper eight that we show without it, here)
+        (bc if osc1x() else (lambda t_, c_: E(b_cond, t_, c_)))("kn_x", "hs")
+        E(cmp_imm, 7, 8)
+        (bc if osc1x() else (lambda t_, c_: E(b_cond, t_, c_)))("kn_x", "lo")
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 7)
+        E(adds_imm8, 1, 16)
+        E(bl, "c_vsrec")
     E(b, "kn_x")
     a.label("ko_e")                                                       # ours: +- the delta, 0..127 (stored XOR 64), Clear = the centre
     E(subs_imm8, 1, K_EXT)
+    if MXF:
+        E(mov_reg, 7, 1)                                                  # r7 = e
     E(mov_reg, 0, 4)
     E(bl, "c_vsextv")
     E(mov_reg, 5, 0)                                                      # r5 = its address
@@ -630,29 +787,96 @@ def arm_code(base, L, prev):
         a.label("c_vscd")                                                 # c_vscd(r0 = track, r1 = the value's address) -> rpatch's b.w
         E(b_w, "vscd_d")
         a.label("vscd_d")
+        if osc1x():                                                       # (RH101) tools/osc1x.py's: a level 0, a depth the centre
+            import osc1x as OX
+            imm32(2, OX.ram())
+            E(subs_reg, 1, 1, 2)
+            E(b_cond, "vc_64", "lo")
+            E(movs_imm, 2, OX.NE)
+            E(muls, 2, 0)
+            E(subs_reg, 1, 1, 2)
+            E(cmp_imm, 1, OX.NE)
+            E(b_cond, "vc_64", "hs")
+            imm32(2, T["xkey"] + OX.E0)
+            E(ldrb_reg, 0, 2, 1)
+            E(raw, h(0x4770))
+            a.label("vc_64")
         E(movs_imm, 0, 64)
         E(raw, h(0x4770))
         a.label("ko_c")
+    elif osc1x():
+        imm32(1, T["xkey"])                                               # (RH101) the default: the value's XOR (a level 0, a depth 64)
+        E(ldrb_reg, 0, 1, 7)
+        E(b_cond, "ko_w", "mi")
     else:
         E(movs_imm, 0, 64)
         E(b_cond, "ko_w", "mi")
     E(ldrb_imm, 0, 5, 0)
-    E(movs_imm, 1, 64)
+    if osc1x():
+        imm32(1, T["xkey"])
+        E(ldrb_reg, 1, 1, 7)
+    else:
+        E(movs_imm, 1, 64)
     E(raw, h(0x4048))                                                     # eors r0, r1
     E(ldr_sp, 1, 8)
     E(adds_reg, 0, 0, 1)
     E(bl, "c_vsclamp")
     a.label("ko_w")
-    E(movs_imm, 1, 64)
+    if osc1x():
+        imm32(1, T["xkey"])
+        E(ldrb_reg, 1, 1, 7)
+    else:
+        E(movs_imm, 1, 64)
     E(raw, h(0x4048))
     E(strb_imm, 0, 5, 0)
     E(mov_reg, 0, 4)                                                      # its slots' words
     E(bl, "c_vspend")
+    if MXF:
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 7)
+        E(adds_imm8, 1, D_EXT)
+        if osc1x():                                                       # (RH101) e 5..10: modmx's 50..55
+            E(cmp_imm, 7, 5)
+            E(b_cond, "ko_r", "lo")
+            E(adds_imm8, 1, D_OSX - 5 - D_EXT)
+            a.label("ko_r")
+        E(bl, "c_vsrec")
     a.label("kn_x")
     E(pop_list, [0, 1, 2, 4, 5, 6, 7], pc=True)
     a.label("kn_q")
     E(raw, GP.popw([0, 1, 2, 4, 5, 6, 7], lr=True))
     E(b_w, prev["knob"])
+
+    if MXF:
+        # ---- c_vsrec(r0 = track, r1 = modmx's destination): what we just moved, into its lane while the transport records (as modmx's
+        #      c_mxknob does for the pages it sees; Clear + knob is a default, not a turn); the Envelope's length of a synth = its 31
+        a.label("c_vsrec")
+        E(push_list, [4, 5], lr=True)
+        E(mov_reg, 4, 0)
+        E(mov_reg, 5, 1)
+        E(bl, L["c_spheld"])
+        E(lsls_imm, 0, 0, 31 - SP.BIT_CLEAR)
+        E(b_cond, "qvr_x", "mi")
+        E(bl, L["c_mxrecing"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "qvr_x", "eq")
+        a.label("qvr_g")
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, L["c_mxget"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "qvr_r", "ge")
+        E(cmp_imm, 5, D_ENV[1])
+        E(b_cond, "qvr_x", "ne")
+        E(movs_imm, 5, D_SYLEN)
+        E(b, "qvr_g")
+        a.label("qvr_r")
+        E(lsrs_imm, 2, 0, 7)
+        E(mov_reg, 0, 4)
+        E(mov_reg, 1, 5)
+        E(bl, L["c_mxrec"])
+        a.label("qvr_x")
+        E(pop_list, [4, 5], pc=True)
 
     # ---- c_vsclamp(r0) -> 0..127
     a.label("c_vsclamp")
@@ -922,7 +1146,17 @@ def arm_code(base, L, prev):
     imm32(0, T["osc2"])
     E(cmp_imm, 6, VP_OSC2)
     E(b_cond, "kv_ot", "eq")
-    imm32(0, T["osc1"])
+    if osc1x():                                                           # (RH101) one oscillator's OSC 1
+        E(mov_reg, 0, 4)
+        E(bl, "c_vsdual")
+        imm32(1, T["osc1"])
+        E(cmp_imm, 0, 0)
+        E(b_cond, "kv_d1", "ne")
+        imm32(1, T["osc1s"])
+        a.label("kv_d1")
+        E(mov_reg, 0, 1)
+    else:
+        imm32(0, T["osc1"])
     a.label("kv_ot")
     E(ldrb_reg, 5, 0, 5)                                                  # r5 = the target
     E(cmp_imm, 5, 0xFF)
@@ -935,9 +1169,18 @@ def arm_code(base, L, prev):
     E(mov_reg, 1, 5)
     E(bl, "c_vsextv")
     E(ldrb_imm, 0, 0, 0)
-    E(movs_imm, 1, 64)
-    E(raw, h(0x4048))
-    E(b, "kv_bip")
+    if osc1x():                                                           # (RH101) a level (XOR 0): brightness = the level, dark at 0
+        imm32(1, T["xkey"])
+        E(ldrb_reg, 1, 1, 5)
+        E(raw, h(0x4048))
+        E(cmp_imm, 1, 0)
+        E(b_cond, "kv_bip", "ne")
+        E(mov_reg, 1, 6)
+        E(pop_list, [4, 5, 6, 7], pc=True)
+    else:
+        E(movs_imm, 1, 64)
+        E(raw, h(0x4048))
+        E(b, "kv_bip")
     a.label("kv_oe")
     E(mov_reg, 0, 4)
     E(bl, L["c_syslot"])
@@ -945,6 +1188,16 @@ def arm_code(base, L, prev):
     bc("kv_0", "hs")
     E(mov_reg, 1, 5)
     E(bl, L["c_syv"])                                                     # r0 = its value
+    if FMV:                                                               # (RH100, fmviolet) the FM: its direction, the lilac reciprocal
+        import fmmap as MM_
+        E(cmp_imm, 5, MM_.FM_KNOB)
+        E(b_cond, "kv_nfm", "ne")
+        E(mov_reg, 3, 6)
+        MM_.emit_fmled(E, a, "kv_fm", SY.KB_LEFT)
+        E(orrs_reg, 3, 2)
+        E(mov_reg, 1, 3)
+        E(pop_list, [4, 5, 6, 7], pc=True)
+        a.label("kv_nfm")
     E(cmp_imm, 5, 0)                                                      # the waves: the nearest one's colour
     E(b_cond, "kv_w", "eq")
     E(cmp_imm, 5, 2)
@@ -1023,6 +1276,14 @@ def install(img, report, base_addr):
              c_eseng=lab("esel", "c_eseng"), c_esram=lab("esel", "c_esram"), c_f8ram=lab("fm8page", "c_f8ram"), F8_SEL=F8.O_SEL)
     if rhbuild.OPT.get("rh81"):
         L["c_f8opled"] = lab("fm8page", "c_f8opled")
+    if rhbuild.OPT.get("fmmap"):
+        L["c_f8shut"] = lab("fm8page", "c_f8shut")
+    if rhbuild.OPT.get("osc1x"):                                          # (RH101) the oscillators' mode; the matrix's offsets on our values
+        L["c_sydual"] = lab("synthpage", "c_sydual")
+        L["c_mxadd"] = lab("modmx", "c_mxadd")
+    if rhbuild.OPT.get("mxfix"):
+        assert rhbuild.OPT.get("mx64") and "modmx" in report
+        L.update({k: lab("modmx", k) for k in ("c_mxram", "c_mxrecing", "c_mxget", "c_mxrec")})
     prev = dict(pad=rhbuild.bw_target(img, GP.PP_ENTRY), rel=rhbuild.bw_target(img, GP.PR_ENTRY), knob=u(SY.SLOT_KNOB) & ~1,
                 ledtask=rhbuild.bl_target(img, CI.LED_CALLS[0]))
     assert all(rhbuild.bl_target(img, c) == prev["ledtask"] for c in CI.LED_CALLS)

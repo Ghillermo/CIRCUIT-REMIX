@@ -91,6 +91,13 @@ S_PH1B, S_PH2B = 62, 63
 P_START, P_LEN = 7, 8
 
 
+def _lint():
+    """(RH103, OPT dsplint) the multiply pairs dsptool has: `mpy x0,y0` is not one (its asm makes it mpysu: the same product with these
+    positive operands, but read as unsigned)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("dsplint"))
+
+
 def _fmw():
     """(RD38, OPT fm) FMW's address, else None"""
     import rhbuild
@@ -336,9 +343,13 @@ def items(tab_at, entry, env2=False, sp=False, sl=False, poly=None, va=False, vm
       f"move {ys(S_FH)},x0", *svf("r5"), *svf("r5"), "move y1,y:(r0)+", ("label", "fb_end"), "rts")
 
     # ================================================================ s_init (r6): a slot's state from zero, once (MAGIC); keeps x1, y0, y1
+    # (osc1x) S_NZ = r6, the slot's own Y base: each slot's noise LCG starts elsewhere in the cycle (seeded 1, slots triggered together --
+    # unison, poly voices of one block -- played the identical sequence and summed coherently); two words, as `move #>$1,a` was
+    osc1x_ = bool(__import__("rhbuild").OPT.get("osc1x"))
     e(("label", "s_init"), f"move {ys(S_MAG)},a", f"move #>${MAGIC:x},x0", "cmp x0,a", ("jcc", "eq", "i_r"),
       "clr a", f"lua (r6+${S_PH1:x}),r1", "nop", f"do #${S_INCS - S_PH1 + 1:x},${{s_z:x}}", "move a,y:(r1)+", ("label", "s_z"),
-      f"move #>${IDLE:x},a", f"move a,{ys(S_STG)}", "move #>$1,a", f"move a,{ys(S_NZ)}", "move #>$ff,a", f"move a,{ys(S_T)}",
+      f"move #>${IDLE:x},a", f"move a,{ys(S_STG)}", *(["move r6,a", "nop"] if osc1x_ else ["move #>$1,a"]), f"move a,{ys(S_NZ)}",
+      "move #>$ff,a", f"move a,{ys(S_T)}",
       *(["clr a"] + [f"move a,{ys(o)}" for o in (S_LIN, S_HC, S_GATE, S_VCA)] if env2 else []),
       f"move x0,{ys(S_MAG)}",
       ("label", "i_r"), "rts")
@@ -500,7 +511,7 @@ def sl_pieces(L, tab_at, sp=False):
           f"move {y(G_R1S)},r1", "nop", "jsr (r2)",
           f"move #>${PBX:x},r1", f"move {y(G_RJ)},r2", "nop", "jsr (r2)",
           f"move {y(G_R1S)},r1", f"move #>${PBX:x},r4", f"move {y(G_MF)},y0", "nop",
-          "do #$20,${mw_x:x}", "move y:(r1),a", "move y:(r4)+,b", "sub a,b", "move b,x0", "mac x0,y0,a", "move a,y:(r1)+",
+          "do #$20,${mw_x:x}", "move y:(r1),a", "move y:(r4)+,b", "sub a,b", "move b,x0", ("mac y0,x0,a" if _lint() else "mac x0,y0,a"), "move a,y:(r1)+",
           ("label", "mw_x"), "rts"]
     # ---- UNI (r5 = the track's parameters, r6 = the slot; r0 kept): length < 127: both copies -> PB1 / PB2 averaged, a = 1; else a = 0
     if "osc" in L:
@@ -605,6 +616,9 @@ def segs(entry, env2=False, sp=False, sl=False):
     if "poly" in labels:                                             # (RH72) tools/poly0.py's two pieces
         import poly0
         out += poly0.segs(labels)
+    if rhbuild.OPT.get("ingain"):                                    # (RH101) tools/ingain.py: the input stage's asl #4 (two words)
+        import ingain
+        out += ingain.segs()
     if "vm" in labels:                                               # (RH80) tools/vmode0.py's pieces
         import poly0
         import vmode0
@@ -681,7 +695,7 @@ class Model:
             for k, (c, st) in enumerate(blocks):
                 if c[C_KEY] != KEY or c[C_TRK] == 0 or (w0 & 7) + 1 != c[C_TRK]:
                     continue
-                self.init(st)
+                self.init(st, self.seed(k))
                 typ = w0 & 0xF00000
                 if typ == 0x900000:
                     v = (w0 >> 8) & 0x7F
@@ -705,11 +719,16 @@ class Model:
             if self.sp is not None:
                 self.sp.note(w0)
 
-    @staticmethod
-    def init(st):
+    def seed(self, k):
+        """(osc1x) s_init's S_NZ = the block's Y base (r6), one per slot (k >= NSLOT: a granular envelope block); 1 before RH101"""
+        if not getattr(self, "osc1x", False):
+            return 1
+        return (Y0 + SN * k) if k < NSLOT else (GE0 + SN * (k - NSLOT))
+
+    def init(self, st, nz=1):
         if st.get("mag") != MAGIC:
             st.clear()
-            st.update(mag=MAGIC, ph1=0, ph2=0, phs=0, nz=1, pit=0, tgt=0, stg=IDLE, env=0, vel=0, ec=0, es=0, t=0xFF,
+            st.update(mag=MAGIC, ph1=0, ph2=0, phs=0, nz=nz, pit=0, tgt=0, stg=IDLE, env=0, vel=0, ec=0, es=0, t=0xFF,
                       ll=0, lb=0, hl=0, hb=0, fl=0, fh=0, lon=0, hon=0, tfl=0, tfh=0, lin=0, hc=0, gate=0, vca=0,
                       ll2=0, lb2=0, hl2=0, hb2=0, ph1b=0, ph2b=0)
 
@@ -728,7 +747,7 @@ class Model:
             for k in range(GE_N):
                 c, st = self.gctl[k], self.ge[k]
                 if c[C_KEY] == KEY and c[C_TRK] != 0:
-                    self.init(st)
+                    self.init(st, self.seed(NSLOT + k))
                     self.env2_step(st, c)
         if self.vm is not None:                                    # (RH80) VMX: the block's count after the slots
             self.vm["vblk"] = (self.vm["vblk"] + 1) & 0xFFFFFF
@@ -775,7 +794,7 @@ class Model:
         st = self.st[s]
         if c[C_KEY] != KEY or c[C_TRK] == 0:
             return None
-        self.init(st)
+        self.init(st, self.seed(s))
         t = (c[C_TRK] - 1) & 7
         if st["t"] != t:
             st.update(t=t, ll=0, lb=0, hl=0, hb=0, lon=0, hon=0)
@@ -796,6 +815,11 @@ class Model:
         if self.va:                                            # (RD41) CIRCUIT-HACKS' oscillators
             buf = self.vam.block(s, _sat(acc1), st["env"], lambda a_: self.inc(a_ >> 24)[0],
                                  ext=(s24(c[C_G1]), s24(c[C_G2]), s24(c[C_GS])) if getattr(self, "envx", False) else None)
+            if getattr(self, "osc1x", False):                  # (RH101) tools/osc1x.py's SUBN: OSC 1's sub and the noise
+                import osc1x
+                keyed = self.sp is not None and self.sp.on(t)
+                lfo = osc1x.lfo_of(self.sp.S(t)["ph"], True) if keyed else 0
+                buf = osc1x.model(buf, st, c, self.vam.inc1y, st["env"], lfo)
         else:
             morph = (p[P_START] & 0x7F) if self.sl else 0
             det = (0x7F - (p[P_LEN] & 0x7F)) if self.sl else 0

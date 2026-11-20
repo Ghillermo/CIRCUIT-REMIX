@@ -25,7 +25,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </style></head><body>
 <header class="cover"><h1>Circuit Remix</h1><p>Manual por vistas</p><p>Alpha 0.15</p><div class="bar"></div></header><main>
 <p class="lang"><a href="en.html">English</a> · <a href="../MANUAL.md">texto</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.13 es experimental:</strong> el secuenciador de efectos y el looper se han probado en el aparato; casi todo lo demás desde Alpha 0.04, sobre todo en emulación. <strong>Haz una copia de tu tarjeta SD.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.16 es experimental:</strong> el secuenciador de efectos y el looper (Alpha 0.13) se han probado en el aparato; casi todo lo demás desde Alpha 0.04, sobre todo en emulación. <strong>Haz una copia de tu tarjeta SD.</strong></p>
 <p>Circuit Remix en el Circuit Rhythm (firmware 2.0.1, build 5706), vista por vista.</p>
 <nav class="toc"><h2>Índice</h2>
 <h3>0. Introducción</h3><ol>
@@ -891,6 +891,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Hasta Alpha 0.11 el sinte era otro (dos osciladores clásicos con SUB y ruido, una sola página).</li>
 </ul>
 <p><em>(Alpha 0.13)</em>: <strong>OSC 2 sigue a OSC 1</strong> como relación armónica (K5 de OSC 2: 0,25 … 31; su fino ±50 cents), como en CIRCUIT-HACKS. Arreglado: K6 (FM) no hacía nada y RING ponía también el FM. <strong>Sobremuestreo 2×</strong> (Sample mode, selector, pad 4 en una pista VA): menos aliasing en agudos con FM y sync, si el DSP tiene sitio. Choke (pad 29) en un sinte cambia de lado el modo de voz; reverse invierte la Envolvente.</p>
+<p><em>(Alpha 0.16)</em>: <strong>sub y ruido en OSC 1</strong> cuando OSC 2 está en reposo (MIX, RING y FM de OSC 2 en su sitio, K7 abajo): en OSC 1 <strong>K5 = sub</strong> (una octava abajo), <strong>K6 = ruido</strong>, <strong>K8 = el LFO de Stock+ → sub</strong>; Shift + K5 / K6 = la envolvente → sub / ruido, Shift + K8 = el LFO → ruido. Con dos osciladores, K5 / K6 / K8 siguen siendo envolvente → FM / ring / mezcla. Se guardan con el proyecto y el patch, y son destinos de la matriz. En el knob del FM de OSC 2, la zona recíproca (más allá de un cuarto de vuelta desde el centro) se ve en lila.</p>
 </section>
 <section class="feat" id="filtro"><h3><span class="code">2.6</span>Páginas Filtro / VCA y Envolvente + LFO</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> menú de pista, pads 4 y 5 (cualquier pista)</p></div>
@@ -1008,10 +1009,11 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <table><thead><tr><th>Pad</th><th>Qué hace</th></tr></thead><tbody>
 <tr><td><strong>9-16</strong></td><td>el operador 1-8 a editar (portadores verde, moduladores azul, el elegido brillante; los que el algoritmo no usa, apagados)</td></tr>
 <tr><td><strong>3</strong></td><td>la envolvente de pitch (lavanda)</td></tr>
-<tr><td><strong>7 mantenido</strong></td><td>los 56 algoritmos en los pads 9-32, en tres páginas con ▼ / ▲ (los de 4 operadores verdes, los de 8 ámbar, los del DX7 blancos); uno pulsado = ese algoritmo</td></tr>
+<tr><td><strong>7</strong> <em>(Alpha 0.16)</em></td><td><strong>el mapa del algoritmo</strong> en los pads 9-32: un toque = fijo (otro toque lo quita), mantenido = mientras se mantiene (<a href="#fm">abajo</a>)</td></tr>
+<tr><td><strong>Shift + 7</strong></td><td>los 56 algoritmos en los pads 9-32, en tres páginas con ▼ / ▲ (los de 4 operadores verdes, los de 8 ámbar, los del DX7 blancos); uno pulsado = ese algoritmo (hasta Alpha 0.15: el pad 7 mantenido)</td></tr>
 <tr><td><strong>Clear + 7</strong></td><td>una voz tocable del algoritmo (todos los ratios a 1)</td></tr>
 <tr><td><strong>8 mantenido</strong></td><td>los 24 instrumentos de partida (en el color de su familia); uno pulsado = cargado</td></tr>
-<tr><td><strong>7 (toque)</strong></td><td>cierra la página</td></tr>
+<tr><td><strong>24</strong> <em>(Alpha 0.16)</em></td><td>cierra la página (hasta Alpha 0.15: un toque al pad 7)</td></tr>
 </tbody></table>
 <p><strong>Los knobs</strong> (en la página FM y en la página Sinte de una pista con FM: menú, pad 2 = el operador, pad 3 = la envolvente de pitch):</p>
 <table><thead><tr><th>Knob</th><th>Operador</th><th>Con Shift</th></tr></thead><tbody>
@@ -1026,6 +1028,12 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>Sample mode, pad 24 mantenido:</strong> los 24 instrumentos en las filas 1, 2 y 4, sin abrir la página.</li>
 <li><strong>Polifonía y modos de voz:</strong> <a href="#voces">Voz</a>.</li>
 <li><strong>Se guarda con el proyecto en la tarjeta</strong> (el banco de patches del pack) <em>(Alpha 0.12)</em>; no en el pack interno ni en las versiones S.</li>
+</ul>
+<p><strong>El mapa del algoritmo</strong> <em>(Alpha 0.16)</em> (pad 7; como CIRCUIT-HACKS): los caminos del algoritmo en los pads 9-32, cada uno del modulador a la izquierda al portador a la derecha. Color = la clase de la ratio del operador: entera verde claro, x,5 menta, otra naranja, fija rojo; el operador del feedback lila; brillante = nivel alto. El elegido late.</p>
+<ul>
+<li>Un toque en un operador = elegirlo (los knobs lo editan).</li>
+<li><strong>Shift + operador</strong> = callarlo mientras se ve el mapa (no se guarda).</li>
+<li><strong>Un operador mantenido + otro</strong> = el enlace entre los dos sí / no: el algoritmo pasa a ser <strong>propio</strong> (se guarda con el patch y el proyecto). Un enlace que cerraría un bucle no se hace. Shift + K1 o la lista de algoritmos vuelven a uno de los 56.</li>
 </ul>
 </section>
 <section class="feat" id="voces"><h3><span class="code">2.8</span>Voz: modos, polifonía y unísono</h3>
@@ -1180,6 +1188,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <p><strong>Carril extra:</strong> una novena automatización por pista, con un valor por paso. La toma el primer destino que no encuentra carril; sin más carriles, los demás destinos no se graban. Clear + Shift + cualquier knob de Secuenciables lo borra en los 8 patrones.</p>
 <p>El pad 8 del menú devuelve también la matriz y los No secuenciables a sus valores de fábrica; los carriles conservan su destino y sus datos.</p>
 <p><em>(Alpha 0.13)</em>: <strong>todos los parámetros</strong> (salvo los operadores del FM) son destinos, en el orden de las vistas de la pista y solo los que tiene su motor: los extras de OSC 1, la Envolvente, el tipo de waveshaper, la capa Shift de Stock+, nivel, panorama y envíos.</p>
+<p><em>(Alpha 0.16)</em>: <strong>carriles extra de automatización</strong>: al grabar un knob sin carril libre del original, toma un carril propio (un valor por paso; entre dos pasos con valor el parámetro va en línea recta). Hasta 92 en total. Se guardan con el proyecto en el banco de patches del pack (no en el pack interno ni en las versiones S). Las páginas Sinte / OSC de un VA se graban también en cualquier pista (hasta Alpha 0.15, solo en la pista 3).</p>
 </section>
 <section class="feat" id="entrada"><h3><span class="code">2.11</span>Entrada de línea y enlace estéreo</h3>
 <div class="summary"><p><strong>Cómo se llega:</strong> Sample mode, selector (pad 8): pads 18 / 19 y 2 / 3; enlace: pad 14 (hasta 0.11: pads 8 / 15 / 16 y 14)</p></div>
@@ -1600,6 +1609,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Clear + knob</strong> (OSC 1 / OSC 2, Granular, FM)</td><td>ese knob vuelve al valor del patch cargado</td></tr>
 </tbody></table>
 <p>Un hueco vacío del pack enseña primero un patch de ejemplo hasta que guardas encima. <strong>No están en Alpha 0.13S, 0.14S ni 0.15S</strong> (escriben en la tarjeta).</p>
+<p><em>(Alpha 0.16)</em>: con la lista del pack abierta (pad 8 mantenido), <strong>Duplicate + un hueco vacío</strong> = guarda ahí el sonido de la pista al momento (verde; rojo si no se puede: pack interno o una pista de sample / entrada). Con un hueco elegido antes (A), Duplicate + vacío sigue moviendo / copiando A.</p>
 </section>
 <h2 class="group">5. Mezcla y efectos</h2>
 <section class="feat" id="mixer"><h3><span class="code">5.1</span>Mixer</h3>
@@ -1683,6 +1693,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </tbody></table>
 <p>Todo se guarda en los ajustes del aparato, salvo el modo GM, que va con el proyecto. Si los dos canales de Program Change son distintos, el recibido se reenvía por el de salida.</p>
 <p><em>(Alpha 0.13)</em>: modo GM, los knobs muestran su nota con el brillo, y una nota nueva suena en la pista.</p>
+<p><em>(Alpha 0.16)</em>: <strong>Setup, pad 23 = knob hold</strong> (verde / verde tenue; con los ajustes del aparato, apagado de fábrica): un knob que estás girando sigue moviendo lo que movía aunque cambies de vista, de pista o de Shift a mitad del giro, hasta que lo dejas quieto un segundo; su luz sigue enseñando lo de antes. <strong>Advanced Setup, K3 = ganancia de la entrada</strong> de línea: 0 a +24 dB (2 clics por dB; verde, brillo = la ganancia), para Sample Rec, las pistas de entrada y el looper. <strong>Sin Easy Start:</strong> el modo de almacenamiento USB del original no está (el botón 9 de Advanced Setup no hace nada); el aparato sigue siendo un dispositivo MIDI USB.</p>
 </section>
 <h2 class="group">A. Apéndice</h2>
 <section class="feat" id="guardado"><h3><span class="code">A.1</span>Qué se guarda y dónde</h3>
@@ -1715,6 +1726,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Borrar un pack</strong></td><td>Clear + pack dos veces en Packs</td><td><a href="#projects">6.1 Projects y Packs</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Cadenas con reglas</strong></td><td>patrones que se encadenan «n veces A, luego B»</td><td><a href="#patterns">3.3 Patterns: cadenas</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Carril extra</strong></td><td>una novena automatización, un valor por paso</td><td><a href="#matriz">2.10 Matriz, Secuenciables y No secuenciables</a></td><td>Alpha 0.10</td></tr>
+<tr><td><strong>Carriles extra de automatización</strong></td><td>más carriles al grabar knobs, guardados en el banco de patches</td><td><a href="#matriz">2.10 Matriz, Secuenciables y No secuenciables</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Compresor master</strong></td><td>umbral, soft clip, ataque y release en la vista Sidechain</td><td><a href="#fx">5.2 FX y Sidechain</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Copiar parámetros de pista</strong></td><td>Duplicate + pista A, pista B</td><td><a href="#pista">2.1 El botón de pista</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Copiar proyectos</strong></td><td>Duplicate + A, Duplicate + B en Projects, también a otro pack</td><td><a href="#projects">6.1 Projects y Packs</a></td><td>Alpha 0.0</td></tr>
@@ -1742,16 +1754,19 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Frecuencia por paso</strong></td><td>el paso suena en la última de cada n pasadas</td><td><a href="#patternsettings">3.2 Pattern Settings y probabilidad</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Fusión USB</strong></td><td>el DIN In también por USB; Advanced Setup, pad 23</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>FX hacia una entrada</strong></td><td>el retorno que toma una pista de entrada deja el master; su realimentación, a tres cuartos</td><td><a href="#entrada">2.11 Entrada de línea y enlace estéreo</a></td><td>Alpha 0.09</td></tr>
+<tr><td><strong>Ganancia de la entrada</strong></td><td>0 a +24 dB en la entrada de línea; Advanced Setup, K3</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Gate por pulsación</strong></td><td>el golpe dura lo que mantienes el pad; Micro Step, pad 32</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>General MIDI</strong></td><td>las pistas por el canal 10 con su nota GM; Setup, pad 22</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Grabación estéreo</strong></td><td>L y R en dos huecos; Sample Rec, pad 24</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Granular</strong></td><td>el motor granular en hasta 4 pistas; Sample mode, selector, pad 23; menú pad 2</td><td><a href="#granular">2.4 Página Granular</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Guardar al parar</strong></td><td>Save espera a parar; Advanced Setup, pad 24</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Inicio y longitud en el granular</strong></td><td>el inicio del original se suma a la posición, la longitud estrecha la zona</td><td><a href="#granular">2.4 Página Granular</a></td><td>Alpha 0.09</td></tr>
+<tr><td><strong>Knob hold</strong></td><td>un knob sigue moviendo lo suyo al cambiar de vista; Setup, pad 23</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Latch</strong></td><td>un acorde que sigue a cada nota; Shift + tecla en la vista Note</td><td><a href="#note">2.12 Vista Note</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>LFO de tono</strong></td><td>Stock+, K3 / K4; libre o a tempo</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.01</td></tr>
 <tr><td><strong>Longitud fija</strong></td><td>los golpes a mano con una longitud; Micro Step, pad 31</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Looper</strong></td><td>4 loops grabados de la entrada o la mezcla; vista Grid FX, pads 9-14</td><td><a href="#gridfx">5.3 Grid FX: secuenciador de efectos y looper</a></td><td>Alpha 0.13</td></tr>
+<tr><td><strong>Mapa del algoritmo FM</strong></td><td>los caminos del algoritmo en los pads; enlazar operadores = algoritmo propio; página FM, pad 7</td><td><a href="#fm">2.7 FM de 8 operadores</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Marcas de Velocity</strong></td><td>en el paso marcado los parámetros vuelven a Project init (hasta 0.08, al knob); Shift + paso</td><td><a href="#velocity">3.1 Velocity y Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Matriz de modulación</strong></td><td>8 fuentes por pista hacia 32 destinos; menú, pad 6</td><td><a href="#matriz">2.10 Matriz, Secuenciables y No secuenciables</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Menú de pista</strong></td><td>tocar el botón de la pista elegida (se queda abierto) o mantener el de una pista</td><td><a href="#menu">2.2 El menú de pista</a></td><td>Alpha 0.04</td></tr>
@@ -1790,6 +1805,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Sonido del proyecto en la tarjeta</strong></td><td>el FM, los modos de voz y los valores del VA con el proyecto, en el banco de patches</td><td><a href="#guardado">A.1 Qué se guarda y dónde</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Starters</strong></td><td>sonidos de partida por motor; Sample mode, pad de motor mantenido</td><td><a href="#patches">4.3 Patches del pack y starters</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Stretch</strong></td><td>más lento o rápido sin cambiar el tono; Stock+ K7, Sample mode pads 9 / 10</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>Sub y ruido de OSC 1</strong></td><td>sub una octava abajo y ruido, con OSC 2 en reposo; OSC 1, K5 / K6 / K8</td><td><a href="#sinte">2.5 Páginas OSC 1 / OSC 2 (el VA)</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Teclado externo al arpegiador</strong></td><td>Advanced Setup, pad 22</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Thru: Out 2 / Merge / Filter</strong></td><td>Duplicate en Advanced Setup</td><td><a href="#setup">6.2 Setup y Advanced Setup</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Tipo de filtro (24 dB, comb)</strong></td><td>Stock+, Shift + K6</td><td><a href="#stockplus">2.3 Página Stock+</a></td><td>Alpha 0.02</td></tr>

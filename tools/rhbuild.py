@@ -34,6 +34,27 @@ _TARGETS = None
 OPT = {}                     # (RH62 on) switches for modules deep in the builders' chain, set with options(): empty = the older builds byte for byte
 
 
+FORCE: dict = {}
+PLACE: dict = {}             # (RH97) "key#n" (the n-th add of key) -> the address of a hole the module goes in (tools/holes.py's plan)
+
+
+class _At(bytearray):
+    """(RH97) the image for a module placed in a hole: len() = where it appends, += writes there (the image keeps its length)"""
+    def __init__(self, data, end):
+        super().__init__(data)
+        self._end = end
+
+    def __len__(self):
+        return self._end
+
+    def __iadd__(self, other):
+        b = bytes(other)
+        assert self._end + len(b) <= bytearray.__len__(self), "a placed module ran past the image"
+        self[self._end:self._end + len(b)] = b
+        self._end += len(b)
+        return self
+
+
 @contextlib.contextmanager
 def options(compact=False, **kw):
     """Around a builder's chain: literal pools (thumb.COMPACT) and the OPT switches; nested calls add to each other, the end puts things back."""
@@ -41,6 +62,7 @@ def options(compact=False, **kw):
     old = thumb.COMPACT, dict(OPT)
     thumb.COMPACT = thumb.COMPACT or compact
     OPT.update(kw)
+    OPT.update(FORCE)                                                     # (RH95) switches a later build turns off under its whole chain
     try:
         yield
     finally:
@@ -133,6 +155,14 @@ class Build:
         self.report = {}
         self.patched = []                      # (offset, length) of the changed stock bytes
         self.cave_start = self.next_base()
+        self.BASE = BASE
+        self.holes = []                        # (RH97) [lo, hi]: flash our code may go in (noes' Easy Start code)
+        self.placed = []                       # (RH97) (lo, hi) of our code in a hole
+        self.sizes = {}                        # "key#n" -> the bytes a module added (holes.plan)
+        self.order = []                        # "key#n" in the order they were added
+        if OPT.get("noes"):                    # (RH97) Easy Start off, its code free
+            import noes
+            noes.free(self)
         if OPT.get("modhost"):                 # (RH67) Arrhythmia's host table first, at its fixed 0x0806A570 (modhost fills it)
             import modhost
             assert self.cave_start == modhost.TABLE
@@ -157,10 +187,27 @@ class Build:
         self.patched.append((off, len(new)))
 
     def add(self, key: str, module, **kw):
-        """A module with install(img, report, base) that appends its code; its stock edits are tracked by diff."""
+        """A module with install(img, report, base) that appends its code; its stock edits are tracked by diff.  (RH97) PLACE: in a hole."""
         before = bytes(self.img[:len(self.stock)])
-        base = self.next_base()
-        module.install(self.img, self.report, base, **kw)
+        n = sum(1 for k in self.order if k.split("#")[0] == key)
+        tag = f"{key}#{n}"
+        self.order.append(tag)
+        if tag in PLACE:
+            at = PLACE[tag]
+            whole = bytes(self.img)
+            px = _At(self.img, at - BASE)
+            module.install(px, self.report, at, **kw)
+            end = BASE + px._end
+            assert bytearray.__len__(px) == len(self.img), f"{key}: the image grew"
+            assert whole[at - BASE:end - BASE] == bytes([0xFF]) * (end - at), f"{key}: its place {at:#x}-{end:#x} was not free"
+            self.img[:] = bytes(px)
+            self.placed.append((at, end))
+            self.sizes[tag] = end - at
+            base = at
+        else:
+            base = self.next_base()
+            module.install(self.img, self.report, base, **kw)
+            self.sizes[tag] = BASE + len(self.img) - base
         for i, (a, b) in enumerate(zip(before, self.img[:len(self.stock)])):
             if a != b:
                 self.patched.append((i, 1))
@@ -171,13 +218,18 @@ class Build:
         if not TRACKS.exists():
             return "not checked (no Tracks image here)"
         tracks = TRACKS.read_bytes()
-        cave = bytes(self.img[len(self.stock):])
         seen = set(tracks[i:i + run] for i in range(len(tracks) - run))
-        for i in range(0, max(0, len(cave) - run)):
-            w = cave[i:i + run]
-            if w.count(0xFF) < run // 2 and w.count(0) < run // 2 and w in seen:
-                raise SystemExit(f"provenance: our code at {BASE + len(self.stock) + i:#x} repeats {run} bytes of the Circuit Tracks image")
-        return f"ok ({len(cave)} B, no {run}-byte run of the Tracks image)"
+        n = 0
+        for lo, hi in [(BASE + len(self.stock), BASE + len(self.img))] + list(self.placed):   # (RH97) and our code in holes
+            cave = bytes(self.img[lo - BASE:hi - BASE])
+            n += len(cave)
+            for i in range(0, max(0, len(cave) - run)):
+                w = cave[i:i + run]
+                if w.count(0xFF) < run // 2 and w.count(0) < run // 2 and w in seen:
+                    raise SystemExit(f"provenance: our code at {lo + i:#x} repeats {run} bytes of the Circuit Tracks image")
+        if not self.placed:
+            return f"ok ({n} B, no {run}-byte run of the Tracks image)"
+        return f"ok ({n} B with {len(self.placed)} placed in holes, no {run}-byte run of the Tracks image)"
 
     # ---- output
     def finish(self, outdir: Path | None = None) -> Path:
