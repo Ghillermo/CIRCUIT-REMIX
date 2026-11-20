@@ -26,6 +26,7 @@ from thumb import (Asm, adds_imm8, b, b_cond, b_w, bl, cmp_imm, cmp_reg, h, ldr_
                    mov_reg, movs_imm, movt, movw, pop_list, push_list, raw, strb_imm)
 import countin as CI  # noqa: E402
 import rhstate  # noqa: E402
+import rhbuild  # noqa: E402
 
 CTRL = CI.CTRL
 MIX_VIEW, MIX_VT = 0x2004E090, 0x08067918
@@ -53,10 +54,17 @@ def arm_code(base, L, prev):
     E(ldr_imm, 0, 0, 0)
     imm32(1, MIX_VT)
     E(cmp_reg, 0, 1)
-    E(movs_imm, 0, 0)
-    E(b_cond, "mm_x", "ne")
-    E(movs_imm, 0, 1)
-    a.label("mm_x")
+    if rhbuild.OPT.get("vtfix"):                                          # (RH103) the movs set Z between the cmp and its branch: always 1
+        E(b_cond, "mm_x", "ne")
+        E(movs_imm, 0, 1)
+        E(raw, h(0x4770))
+        a.label("mm_x")
+        E(movs_imm, 0, 0)
+    else:
+        E(movs_imm, 0, 0)
+        E(b_cond, "mm_x", "ne")
+        E(movs_imm, 0, 1)
+        a.label("mm_x")
     E(raw, h(0x4770))
 
     # ---- c_qmpad (the Mixer view's slot 0: view, pad, velocity): Shift + pads 1-8 = queue / cancel that track's toggle

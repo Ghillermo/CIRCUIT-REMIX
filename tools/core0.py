@@ -180,6 +180,7 @@ def pack_more(img, rep, rep_all):
     """(RD47, OPT dzmore) each of the other three DSP blocks packed where it is (a DZ2 header with one piece: c_dzs sends it as the stock
     sends a block); -> the tails they free [(start, end)], for core 0's stream"""
     import dspz as DZ
+    import rhbuild
     out = []
     info = []
     for at in more_blocks(img, rep_all):
@@ -187,7 +188,8 @@ def pack_more(img, rep, rep_all):
         assert bytes(img[o:o + 4]) != DZ.MAGIC2
         n = int.from_bytes(img[o + 1:o + 3], "big")                      # (the stock sender's count: bytes 1-2 of the first word)
         size = 6 + 3 * n
-        b1 = DZ.pack(bytes(img[o:o + size]))
+        rc = rhbuild.OPT.get("dzrc", False)                              # (RH95) the range coder
+        b1 = (DZ.pack_rc if rc else DZ.pack)(bytes(img[o:o + size]))
         st_, words = b1[12:], struct.unpack_from("<I", b1, 4)[0]
         hl = DZ.H_ENT + 2 * DZ.ENT
         hd = DZ.header2(b1, [(at + hl, (st_, words))])
@@ -195,9 +197,14 @@ def pack_more(img, rep, rep_all):
         if len(body) + 16 >= size:
             continue                                                      # (not worth it: left as it is)
         img[o:o + size] = body + bytes([0xFF]) * (size - len(body))
-        assert DZ.unblob2(img, at, BASE) == DZ.unblob(b1)
-        lo = at + len(body)
-        out.append((lo, at + size))
+        assert DZ.unblob2(img, at, BASE) == (DZ.unblob_rc if rc else DZ.unblob)(b1)
+        lo, hi = at + len(body), at + size
+        import tabpack
+        FL = tabpack.area()
+        if tabpack.flash() and lo <= FL[1] and hi > FL[0]:                # (RH95) the tables' flash place kept off
+            assert lo <= FL[0], "core0: the packed block reaches the tables' flash place"
+            hi = FL[0]
+        out.append((lo, hi))
         info.append((hex(at), size, len(body)))
     rep["dzmore"] = dict(blocks=info, freed=sum(hi - lo for lo, hi in out))
     return out
@@ -253,12 +260,13 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
     more = hole and rhbuild.OPT.get("dzmore", False)                     # (RD47) the other three DSP blocks packed in place too
     if hole:
         o = BLK0 - BASE
-        blob = DZ.pack(bytes(img[o:o + 6 + 3 * N0]) + raw)
+        rc = rhbuild.OPT.get("dzrc", False)                              # (RH95) the range coder: the pieces cut anywhere
+        blob = (DZ.pack_rc if rc else DZ.pack)(bytes(img[o:o + 6 + 3 * N0]) + raw)
         R = hole_places()
         if more:
             R = R + pack_more(img, rep, report)
         HL = DZ.H_ENT + (len(R) + 2) * DZ.ENT                             # the pieces + the cave's + the end entry
-        pieces = DZ.split(blob, [R[0][1] - R[0][0] - HL] + [hi - lo for lo, hi in R[1:]])
+        pieces = (DZ.split_rc if rc else DZ.split)(blob, [R[0][1] - R[0][0] - HL] + [hi - lo for lo, hi in R[1:]])
         blks = [blks[0], pieces[-1][0]]
         rep["dspz"].update(hole=[(hex(a), hex(b)) for a, b in R], packed=len(blob), pieces=[(len(p), w) for p, w in pieces])
 
@@ -346,7 +354,7 @@ def install(img, report, base_addr, counter=True, loader=True, segs=None):
         for (lo, hi), body in zip(R, [hd + pieces[0][0]] + [pieces[k][0] for k in range(1, len(R))]):
             assert len(body) <= hi - lo
             img[lo - BASE:hi - BASE] = body + bytes([0xFF]) * (hi - lo - len(body))
-        assert DZ.unblob2(img, BLK0, BASE) == DZ.unblob(blob)
+        assert DZ.unblob2(img, BLK0, BASE) == (DZ.unblob_rc if rc else DZ.unblob)(blob)
     rhbuild.patch(img, UPLOAD_BL0, f"bl #{SEND:#x}", bl(UPLOAD_BL0, labels["c_d0up"]))
     if more:                                                              # core 1's sends (rhdsp1's c_d1up: the stock block, ours) through c_dzs
         for x in d1up_sends(img, report):

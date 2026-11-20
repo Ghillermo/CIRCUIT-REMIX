@@ -73,6 +73,13 @@ FMAGIC = 0x1F7E4C
 PAR, LP_I, HP_I, RES_I, LP_OPEN = 0x307C8, 0xC, 0xB, 0xD, 127
 
 
+def MPY():
+    """the gain multiply: dsptool turns `mpy y1,x0` (no such pair) into `mpysu` without a word, so the gain was read unsigned: a ramp
+    that ends 1-31 LSB below 0 (the gate closing) played at about 2x (RH103, OPT limpy: `mpy x0,y1`, the same product, signed)"""
+    import rhbuild
+    return "mpy x0,y1,a" if rhbuild.OPT.get("limpy") else "mpy y1,x0,a"
+
+
 def items(spl, two=False, fx=None, excl=None):
     if fx is not None:
         return items_fx(spl, fx, excl)
@@ -97,7 +104,7 @@ def items(spl, two=False, fx=None, excl=None):
     e(f"move #>${INB:x},r1", "nop", "do #$20,${li_l:x}",
       "move y:(r1)+,a", "asr a", "move y:(r1)+,b", "asr b", "add b,a", "move a,y1",
       f"move y:>${GC:x},b", f"move y:>${GS:x},x1", "add x1,b", f"move b,y:>${GC:x}", "move b,x0",
-      "mpy y1,x0,a", "move a,y:(r0)+", ("label", "li_l"))
+      MPY(), "move a,y:(r0)+", ("label", "li_l"))
     for i, k in enumerate((0, 1)):
         e(f"move y:>${SV + i:x},r{k}", ("words", [0x05F060 | k, SV + 2 + i]))
     e(("jmp", spl))
@@ -127,7 +134,7 @@ def items2(spl):
           ("label", x + "g"), f"move y:>${gc:x},b", "sub b,a", "asr #5,a,a", f"move a,y:>${GS:x}")
         # the 32 samples x the gain: slot 0 (L + R) / 2 alone, L with a slot 1; slot 1 R
         tail = [f"move y:>${gc:x},b", f"move y:>${GS:x},x1", "add x1,b", f"move b,y:>${gc:x}", "move b,x0",
-                "mpy y1,x0,a", "move a,y:(r0)+", ("label", x + "l")]
+                MPY(), "move a,y:(r0)+", ("label", x + "l")]
         e(f"move #>${INB:x},r1")
         if sl == 0:
             e(f"move y:>${LTRK2:x},a", "tst a", ("jcc", "ne", x + "o"),
@@ -183,7 +190,7 @@ def items_fx(spl, tabs, excl=None):
           "cmp x0,b", ("jcc", "eq", x + "s"), f"move #>${DLY:x},a", ("label", x + "s"), "move a1,r1")
         # the 32 samples: slot 0 (L + R) / 2 alone, L with a slot 1; slot 1 R; gated: through the filter; x the gain
         tail = [("jsr", "lf_smp"), f"move y:>${gc:x},b", f"move y:>${GS:x},x1", "add x1,b", f"move b,y:>${gc:x}", "move b,x0",
-                "mpy y1,x0,a", "move a,y:(r0)+", ("label", x + "l")]
+                MPY(), "move a,y:(r0)+", ("label", x + "l")]
         e(f"move y:>${wg:x},a", f"move a,y:>${GSW:x}")                    # (lf_smp's switch: this slot gated)
         if sl == 0:
             e(f"move y:>${LTRK2:x},a", "tst a", ("jcc", "ne", x + "o"),

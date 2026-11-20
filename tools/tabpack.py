@@ -34,6 +34,26 @@ GAP = 16                                                                  # snap
 SEP = 1
 ST = {"items": [], "at": AREA[0], "areas": None, "low": None}
 LOW = (0x100, 0x400)                                                      # (lowtab) never written by the stock (RH66), outside dspz's window
+FLASH = (0x08017400, 0x0801A834)                                          # (RH95, tabflash) the end of the stock core 1 block's place, which
+                                                                          # its range-coded copy leaves free (core0.pack_more keeps off it)
+FLASH2 = (0x08016880, 0x0801A834)                                         # (RH97, tabflash2) from just after that copy (it ends at 0x080167FC):
+                                                                          # the room after the tables, one hole for a module (tools/holes.py)
+
+
+def area():
+    import rhbuild
+    return FLASH2 if rhbuild.OPT.get("tabflash2") else FLASH
+
+
+def flash():
+    """(RH95, OPT tabflash) the tables at their own place in the flash (FLASH), read there: the ITCM keeps only the zeroed ranges"""
+    import rhbuild
+    return on() and bool(rhbuild.OPT.get("tabflash"))
+
+
+def flash_next():
+    """(tabflash) the address the next region gets"""
+    return ST["flash"] if ST.get("flash") is not None else area()[0]
 
 
 def on():
@@ -51,6 +71,7 @@ def reset():
     ST["at"] = AREA[0]
     ST["areas"] = None
     ST["low"] = None
+    ST["flash"] = None
 
 
 def lowtab():
@@ -65,6 +86,13 @@ def region(name, parts, at=None, early=False, low=False):
             assert it["parts"] == [(bytes(p), k) for p, k in parts], name
             return it["at"]
     size = sum(len(p) for p, _ in parts)
+    if flash():                                                           # (RH95) in the flash, written by install(); no ITCM, no unpacking
+        at_ = flash_next()
+        assert at is None or at < 0x08000000 or at == at_, name
+        assert at_ + size <= area()[1], f"tabpack: no room in the flash place for {name} ({size} B)"
+        ST["flash"] = (at_ + size + 3) & ~3
+        ST["items"].append(dict(name=name, at=at_, parts=[(bytes(p), k) for p, k in parts], flash=True))
+        return at_
     if low:                                                               # (lowtab) ITCM 0x100-0x3FF, unpacked before core 0's block
         assert lowtab()
         if ST["low"] is None:
@@ -110,10 +138,12 @@ def where(name):
     return next(it["at"] for it in ST["items"] if it["name"] == name)
 
 
-def contents():
-    """{address: byte} of every region (the build's checks)"""
+def contents(stream_only=False):
+    """{address: byte} of every region (the build's checks; stream_only: those the stream writes, not tabflash's)"""
     out = {}
     for it in ST["items"]:
+        if stream_only and it.get("flash"):
+            continue
         a = it["at"]
         for p, _ in it["parts"]:
             for i, x in enumerate(p):
@@ -200,7 +230,7 @@ def _recs2(items):
 
 
 def stream(items=None):
-    items = ST["items"] if items is None else items
+    items = [it for it in ST["items"] if not it.get("flash")] if items is None else items
     if v2():
         out = bytearray(MAGIC)
         out += _recs2([it for it in items if it.get("early")])
@@ -594,9 +624,17 @@ def install(img, report, base_addr):
     while len(img) % 4:
         img += bytes([0xFF])
     rhbuild.patch(img, core0.UPLOAD_BL0, f"bl #{prev:#x}", bl(core0.UPLOAD_BL0, labels["c_tbup"]))
+    fl = [it for it in ST["items"] if it.get("flash")]
+    for it in fl:                                                         # (RH95, tabflash) the tables written in their flash place
+        a_ = it["at"]
+        for p, k in it["parts"]:
+            o = a_ - BASE
+            assert k != 0 and bytes(img[o:o + len(p)]) == bytes([0xFF]) * len(p), f"tabpack: {it['name']}'s flash place is not free"
+            img[o:o + len(p)] = bytes(p)
+            a_ += len(p)
     if late1:
         rhbuild.patch(img, core0.UPLOAD_BL1, f"bl #{prev1:#x}", bl(core0.UPLOAD_BL1, labels["c_tb1"]))
-    want = contents()
+    want = contents(stream_only=True)
     got = {}
     for a_, bs in unpack(stream()):
         for i, x in enumerate(bs):
@@ -619,6 +657,8 @@ def install(img, report, base_addr):
     report["tabpack"] = dict(prev=hex(prev), labels={k: hex(v) for k, v in labels.items() if k.startswith("c_")},
                              regions={it["name"]: hex(it["at"]) for it in ST["items"]}, stream=len(stream()),
                              raw=sum(len(p) for it in ST["items"] for p, _ in it["parts"]))
+    if fl:
+        report["tabpack"]["flash"] = [hex(area()[0]), hex(flash_next()), hex(area()[1])]
     if late1:
         report["tabpack"]["written"] = written
     return labels, code_

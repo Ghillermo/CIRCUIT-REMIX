@@ -25,7 +25,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </style></head><body>
 <header class="cover"><h1>Circuit Remix</h1><p>Manual by views</p><p>Alpha 0.15</p><div class="bar"></div></header><main>
 <p class="lang"><a href="index.html">Español</a> · <a href="../MANUAL_EN.md">text</a></p>
-<p class="warn">⚠️ <strong>Alpha 0.13 is experimental:</strong> the FX sequencer and the looper have been tried on the device; most other things since Alpha 0.04 mostly in emulation. <strong>Back up your SD card.</strong></p>
+<p class="warn">⚠️ <strong>Alpha 0.16 is experimental:</strong> the FX sequencer and the looper (Alpha 0.13) have been tried on the device; most other things since Alpha 0.04 mostly in emulation. <strong>Back up your SD card.</strong></p>
 <p>Circuit Remix on the Circuit Rhythm (firmware 2.0.1, build 5706), view by view.</p>
 <nav class="toc"><h2>Contents</h2>
 <h3>0. Introduction</h3><ol>
@@ -891,6 +891,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li>Up to Alpha 0.11 the synth was another one (two classic oscillators with SUB and noise, one page).</li>
 </ul>
 <p><em>(Alpha 0.13)</em>: <strong>OSC 2 follows OSC 1</strong> as a harmonic ratio (OSC 2&#x27;s K5: 0.25 … 31; its fine ±50 cents), as in CIRCUIT-HACKS. Fixed: K6 (FM) did nothing and RING also set the FM. <strong>2× oversampling</strong> (Sample mode, selector, pad 4 on a VA track): less aliasing in the high notes with FM and sync, when the DSP has room. Choke (pad 29) on a synth switches the voice mode&#x27;s side; reverse flips the Envelope.</p>
+<p><em>(Alpha 0.16)</em>: <strong>sub and noise on OSC 1</strong> while OSC 2 is at rest (OSC 2&#x27;s MIX, RING and FM in place, K7 down): on OSC 1 <strong>K5 = sub</strong> (an octave down), <strong>K6 = noise</strong>, <strong>K8 = Stock+&#x27;s LFO → sub</strong>; Shift + K5 / K6 = the envelope → sub / noise, Shift + K8 = the LFO → noise. With two oscillators, K5 / K6 / K8 are still envelope → FM / ring / mix. Saved with the project and the patch, and they are matrix destinations. On OSC 2&#x27;s FM knob, the reciprocal zone (past a quarter turn from the centre) shows lilac.</p>
 </section>
 <section class="feat" id="filtro"><h3><span class="code">2.6</span>Filter / VCA and Envelope + LFO pages</h3>
 <div class="summary"><p><strong>How to get there:</strong> track menu, pads 4 and 5 (any track)</p></div>
@@ -1008,10 +1009,11 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <table><thead><tr><th>Pad</th><th>What it does</th></tr></thead><tbody>
 <tr><td><strong>9-16</strong></td><td>the operator 1-8 to edit (carriers green, modulators blue, the chosen one bright; those the algorithm does not use, off)</td></tr>
 <tr><td><strong>3</strong></td><td>the pitch envelope (lavender)</td></tr>
-<tr><td><strong>7 held</strong></td><td>the 56 algorithms on pads 9-32, in three pages with ▼ / ▲ (the 4-operator ones green, the 8-operator ones amber, the DX7&#x27;s white); one pressed = that algorithm</td></tr>
+<tr><td><strong>7</strong> <em>(Alpha 0.16)</em></td><td><strong>the algorithm map</strong> on pads 9-32: a tap = latched (another tap removes it), held = while held (<a href="#fm">below</a>)</td></tr>
+<tr><td><strong>Shift + 7</strong></td><td>the 56 algorithms on pads 9-32, in three pages with ▼ / ▲ (the 4-operator ones green, the 8-operator ones amber, the DX7&#x27;s white); one pressed = that algorithm (up to Alpha 0.15: pad 7 held)</td></tr>
 <tr><td><strong>Clear + 7</strong></td><td>a playable voicing of the algorithm (every ratio 1)</td></tr>
 <tr><td><strong>8 held</strong></td><td>the 24 starting instruments (in their family&#x27;s colour); one pressed = loaded</td></tr>
-<tr><td><strong>7 (tap)</strong></td><td>closes the page</td></tr>
+<tr><td><strong>24</strong> <em>(Alpha 0.16)</em></td><td>closes the page (up to Alpha 0.15: a tap on pad 7)</td></tr>
 </tbody></table>
 <p><strong>The knobs</strong> (on the FM page and on the Synth page of a track with FM: menu, pad 2 = the operator, pad 3 = the pitch envelope):</p>
 <table><thead><tr><th>Knob</th><th>Operator</th><th>With Shift</th></tr></thead><tbody>
@@ -1026,6 +1028,12 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <li><strong>Sample mode, pad 24 held:</strong> the 24 instruments on rows 1, 2 and 4, without opening the page.</li>
 <li><strong>Polyphony and voice modes:</strong> <a href="#voces">Voice</a>.</li>
 <li><strong>Saved with the project on the card</strong> (the pack&#x27;s patch bank) <em>(Alpha 0.12)</em>; not on the internal pack nor in the S builds.</li>
+</ul>
+<p><strong>The algorithm map</strong> <em>(Alpha 0.16)</em> (pad 7; as CIRCUIT-HACKS): the algorithm&#x27;s paths on pads 9-32, each from the modulator on the left to the carrier on the right. Colour = the operator&#x27;s ratio class: whole light green, x.5 mint, other orange, fixed red; the feedback operator lilac; bright = high level. The chosen one pulses.</p>
+<ul>
+<li>A tap on an operator = choose it (the knobs edit it).</li>
+<li><strong>Shift + operator</strong> = mute it while the map shows (not saved).</li>
+<li><strong>One operator held + another</strong> = the link between them on / off: the algorithm becomes a <strong>custom</strong> one (saved with the patch and the project). A link that would close a loop is not made. Shift + K1 or the algorithm list go back to one of the 56.</li>
 </ul>
 </section>
 <section class="feat" id="voces"><h3><span class="code">2.8</span>Voice: modes, polyphony and unison</h3>
@@ -1180,6 +1188,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <p><strong>Extra lane:</strong> a ninth automation per track, one value per step. The first destination that finds no lane takes it; with no lanes left, other destinations are not recorded. Clear + Shift + any Sequenceable knob erases it in all 8 patterns.</p>
 <p>The menu&#x27;s pad 8 also brings the matrix and the Non-sequenceable page back to factory values; lanes keep their destination and data.</p>
 <p><em>(Alpha 0.13)</em>: <strong>every parameter</strong> (but the FM&#x27;s operators) is a destination, in the order of the track&#x27;s views and only those its engine has: OSC 1&#x27;s extras, the Envelope, the waveshaper type, Stock+&#x27;s Shift layer, level, pan and sends.</p>
+<p><em>(Alpha 0.16)</em>: <strong>extra automation lanes</strong>: recording a knob with no free lane of the original takes a lane of its own (one value a step; between two steps with a value the parameter moves in a straight line). Up to 92 in all. Saved with the project in the pack&#x27;s patch bank (not on the internal pack nor in the S builds). A VA&#x27;s Synth / OSC pages now record on any track (up to Alpha 0.15, on track 3 only).</p>
 </section>
 <section class="feat" id="entrada"><h3><span class="code">2.11</span>Line input and stereo link</h3>
 <div class="summary"><p><strong>How to get there:</strong> Sample mode, pads 8 / 15 / 16 and 14</p></div>
@@ -1600,6 +1609,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Clear + knob</strong> (OSC 1 / OSC 2, Granular, FM)</td><td>that knob goes back to the loaded patch&#x27;s value</td></tr>
 </tbody></table>
 <p>An empty slot of the pack first shows an example patch until you save over it. <strong>Not in Alpha 0.13S, 0.14S or 0.15S</strong> (they write to the card).</p>
+<p><em>(Alpha 0.16)</em>: with the pack&#x27;s list open (pad 8 held), <strong>Duplicate + an empty slot</strong> = saves the track&#x27;s sound there at once (green; red when it can&#x27;t: internal pack or a sample / input track). With a slot chosen first (A), Duplicate + empty still moves / copies A.</p>
 </section>
 <h2 class="group">5. Mix and effects</h2>
 <section class="feat" id="mixer"><h3><span class="code">5.1</span>Mixer</h3>
@@ -1683,6 +1693,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 </tbody></table>
 <p>Everything is saved in the device&#x27;s settings, except GM mode, which goes with the project. If the two Program Change channels differ, the received one is forwarded on the send channel.</p>
 <p><em>(Alpha 0.13)</em>: GM mode, the knobs show their note as brightness, and a new note plays on the track.</p>
+<p><em>(Alpha 0.16)</em>: <strong>Setup, pad 23 = knob hold</strong> (green / dim green; with the device&#x27;s settings, off from the factory): a knob you are turning keeps moving what it moved even if you change view, track or Shift halfway through, until you leave it still for a second; its light keeps showing the old one. <strong>Advanced Setup, K3 = line input gain</strong>: 0 to +24 dB (2 clicks a dB; green, brightness = the gain), for Sample Rec, the input tracks and the looper. <strong>No Easy Start:</strong> the original&#x27;s USB mass storage mode is gone (Advanced Setup&#x27;s button 9 does nothing); the device is still a USB MIDI device.</p>
 </section>
 <h2 class="group">A. Appendix</h2>
 <section class="feat" id="guardado"><h3><span class="code">A.1</span>What is saved and where</h3>
@@ -1728,11 +1739,13 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Envelope + LFO</strong></td><td>the Envelope and Stock+&#x27;s LFO on one page; menu, pad 5</td><td><a href="#filtro">2.6 Filter / VCA and Envelope + LFO pages</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Envelope by play mode</strong></td><td>start, length, slope and → filter of the synth and the granular; menu, pad 5</td><td><a href="#envolvente">2.9 Envelope page</a></td><td>Alpha 0.06</td></tr>
 <tr><td><strong>External keyboard into the arpeggiator</strong></td><td>Advanced Setup, pad 22</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
+<tr><td><strong>Extra automation lanes</strong></td><td>more lanes when recording knobs, saved in the patch bank</td><td><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Extra lane</strong></td><td>a ninth automation, one value per step</td><td><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Filter / VCA</strong></td><td>level, envelope and filter on one page; menu, pad 4</td><td><a href="#filtro">2.6 Filter / VCA and Envelope + LFO pages</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Filter type (24 dB, comb)</strong></td><td>Stock+, Shift + K6</td><td><a href="#stockplus">2.3 Stock+ page</a></td><td>Alpha 0.02</td></tr>
 <tr><td><strong>Fixed length</strong></td><td>hand-entered hits with a set length; Micro Step, pad 31</td><td><a href="#velocity">3.1 Velocity and Micro Step</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Fixed Recording with external clock</strong></td><td>the length at the incoming MIDI clock&#x27;s tempo</td><td><a href="#samplerec">4.2 Sample Rec</a></td><td>Alpha 0.02</td></tr>
+<tr><td><strong>FM algorithm map</strong></td><td>the algorithm&#x27;s paths on the pads; linking operators = a custom algorithm; FM page, pad 7</td><td><a href="#fm">2.7 8-operator FM</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Fractal / deconstructed orders</strong></td><td>Pattern Settings pads 27 / 28</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>FX into an input</strong></td><td>a return taken by an input track leaves the master; its feedback, halved</td><td><a href="#entrada">2.11 Line input and stereo link</a></td><td>Alpha 0.09</td></tr>
 <tr><td><strong>FX returns as a source</strong></td><td>the reverb or the delay as an input track&#x27;s sound; Sample mode, selector, pads 2 / 3</td><td><a href="#entrada">2.11 Line input and stereo link</a></td><td>Alpha 0.06</td></tr>
@@ -1742,6 +1755,8 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>General MIDI</strong></td><td>the tracks on channel 10 with their GM note; Setup, pad 22</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Granular</strong></td><td>the granular engine on up to 4 tracks; Sample mode, selector, pad 23; menu pad 2</td><td><a href="#granular">2.4 Granular page</a></td><td>Alpha 0.04</td></tr>
 <tr><td><strong>Grid FX sends</strong></td><td>how much of each track goes through the Grid FX; the FX track&#x27;s K1-K8</td><td><a href="#gridfx">5.3 Grid FX: the FX sequencer and the looper</a></td><td>Alpha 0.13</td></tr>
+<tr><td><strong>Input gain</strong></td><td>0 to +24 dB on the line input; Advanced Setup, K3</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.16</td></tr>
+<tr><td><strong>Knob hold</strong></td><td>a knob keeps moving its own parameter when the view changes; Setup, pad 23</td><td><a href="#setup">6.2 Setup and Advanced Setup</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Latch</strong></td><td>a chord that follows every note; Shift + key in the Note view</td><td><a href="#note">2.12 Note view</a></td><td>Alpha 0.12</td></tr>
 <tr><td><strong>Level to 100 / 0</strong></td><td>Shift + knob on the Mixer&#x27;s levels</td><td><a href="#mixer">5.1 Mixer</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Line input</strong></td><td>the audio input as a track&#x27;s sound; Sample mode, pads 8 / 16</td><td><a href="#entrada">2.11 Line input and stereo link</a></td><td>Alpha 0.04</td></tr>
@@ -1755,6 +1770,7 @@ p.warn { background:rgba(255,106,19,.12); border-radius:8px; padding:10px 14px; 
 <tr><td><strong>Non-sequenceable</strong></td><td>8 knobs that are never recorded; menu, Shift + pad 1</td><td><a href="#matriz">2.10 Matrix, Sequenceable and Non-sequenceable</a></td><td>Alpha 0.10</td></tr>
 <tr><td><strong>Note arpeggiator</strong></td><td>arpeggiates the keys held in the Note view</td><td><a href="#note">2.12 Note view</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Nudge</strong></td><td>moves the chosen range one step; Pattern Settings pad 26</td><td><a href="#patternsettings">3.2 Pattern Settings and probability</a></td><td>Alpha 0.0</td></tr>
+<tr><td><strong>OSC 1 sub and noise</strong></td><td>a sub an octave down and noise, with OSC 2 at rest; OSC 1, K5 / K6 / K8</td><td><a href="#sinte">2.5 OSC 1 / OSC 2 pages (the VA)</a></td><td>Alpha 0.16</td></tr>
 <tr><td><strong>Own scale</strong></td><td>a scale per track; Shift in the Note view</td><td><a href="#note">2.12 Note view</a></td><td>Alpha 0.0</td></tr>
 <tr><td><strong>Pack patches</strong></td><td>64 synth and granular patches per pack; Sample mode, pad 8 held</td><td><a href="#patches">4.3 Pack patches and starters</a></td><td>Alpha 0.13</td></tr>
 <tr><td><strong>Pattern Mutate</strong></td><td>random pattern lists per track (mefisme&#x27;s design); Shift + Duplicate</td><td><a href="#mutate">3.4 Pattern Mutate</a></td><td>Alpha 0.13</td></tr>

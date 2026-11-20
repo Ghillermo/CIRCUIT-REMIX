@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## Alpha 0.16 (2026-11-20) — arreglos de datos, mapa del FM, sub y ruido, knob hold (experimental)
+
+> ⚠️ **Experimental: necesita pulirse.** Lo nuevo se ha comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria, y los DSP en un emulador), aún no en el aparato. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.
+
+**Español.** **Alpha 0.16** (marca `A0.16`) y **Alpha 0.16S** (marca `A0.16S`: sin la copia de proyectos, el borrado de packs, la copia de samples, el sonido del proyecto en la tarjeta, los patches del pack ni los carriles extra de automatización). Parten de Alpha 0.15. Todo en el [manual](docs/MANUAL.md) ([ilustrado](docs/manual/index.html)).
+
+**Arreglos importantes (afectan a Alpha 0.12-0.15):**
+- **Cargar un proyecto ya no estropea lo guardado.** Al cargar un proyecto o cambiar de pack, Alpha 0.12-0.15 escribían el sonido de los sintes / FM del proyecto que se dejaba encima del guardado del que se cargaba: lo guardado con un proyecto se perdía al cargarlo desde otro. Ahora solo escribe Save.
+- **La pista de efectos ya no se pierde al guardar o borrar la escena 1** (Alpha 0.13-0.15).
+- La entrada de línea con gate ya no suena al doble entre notas; el looper no se queda con sueltas de pad de otras vistas; la nota del modo GM se calla aunque salgas de Setup; Clear + escena devuelve también la escena al modo normal; la vista de probabilidad no pinta fuera de sus pads con un valor imposible.
+
+Novedades:
+- **Mapa del algoritmo FM** (página FM, pad 7, como CIRCUIT-HACKS): los caminos de operadores en los pads, color por la ratio; Shift + operador lo calla; **un operador mantenido + otro enlaza / desenlaza: algoritmo propio**, guardado con el patch y el proyecto. La lista de algoritmos pasa a **Shift + pad 7**, y el **pad 24** cierra la página.
+- **Sub y ruido en OSC 1** del VA (con OSC 2 en reposo): K5 sub, K6 ruido, K8 LFO → sub, y con Shift la envolvente → sub / ruido y el LFO → ruido.
+- **Carriles extra de automatización:** grabar un knob sin carril libre toma uno propio (un valor por paso, en línea recta entre pasos), hasta 92, guardados con el proyecto en el banco de patches del pack. Las páginas del sinte VA se graban también fuera de la pista 3.
+- **Knob hold** (Setup, pad 23): un knob que giras sigue moviendo lo suyo aunque cambies de vista a mitad del giro.
+- **Ganancia de la entrada** (Advanced Setup, K3): 0 a +24 dB.
+- **Duplicate + hueco vacío** en la lista de patches del pack = guardar ahí al momento.
+- **Sin Easy Start** (el modo de almacenamiento USB del original): deja sitio en la memoria; el aparato sigue siendo un dispositivo MIDI USB.
+- Más memoria libre (los programas del DSP con otro compresor) y una tarea de luces más ligera.
+
+**English.** **Alpha 0.16** (marker `A0.16`) and **Alpha 0.16S** (marker `A0.16S`: without the project copy, the pack delete, the sample copy, the project's sound on the card, the pack's patches or the extra automation lanes). They build on Alpha 0.15. Everything is in the [manual](docs/MANUAL_EN.md) ([illustrated](docs/manual/en.html)).
+
+> ⚠️ **Experimental: needs refinement.** What's new has been checked in emulation (the device's code run on a dump of its memory, and the DSPs in an emulator), not yet on the device. **Back up your SD card.** If it does not start: **Sample Rec + Samples + Note** at power-on and install Alpha 0.10 or the official firmware.
+
+**Important fixes (they affect Alpha 0.12-0.15):**
+- **Loading a project no longer spoils what was saved.** On a project load or a pack change, Alpha 0.12-0.15 wrote the synth / FM sound of the project being left over the saved one of the project being loaded: what was saved with a project was lost when loading it from another. Now only Save writes it.
+- **The FX track is no longer lost when scene 1 is saved or cleared** (Alpha 0.13-0.15).
+- The gated line input no longer plays twice as loud between notes; the looper no longer keeps pad releases from other views; the GM mode's note stops even if you leave Setup; Clear + scene also puts the scene back in the normal mode; the probability view no longer paints past its pads with an impossible value.
+
+What's new:
+- **FM algorithm map** (FM page, pad 7, as CIRCUIT-HACKS): the operators' paths on the pads, coloured by ratio; Shift + operator mutes it; **one operator held + another links / unlinks: a custom algorithm**, saved with the patch and the project. The algorithm list moves to **Shift + pad 7**, and **pad 24** closes the page.
+- **Sub and noise on the VA's OSC 1** (with OSC 2 at rest): K5 sub, K6 noise, K8 LFO → sub, and with Shift the envelope → sub / noise and the LFO → noise.
+- **Extra automation lanes:** recording a knob with no free lane takes one of its own (one value a step, a straight line between steps), up to 92, saved with the project in the pack's patch bank. The VA synth pages now record off track 3 too.
+- **Knob hold** (Setup, pad 23): a knob you turn keeps moving its own parameter even if you change view halfway through.
+- **Input gain** (Advanced Setup, K3): 0 to +24 dB.
+- **Duplicate + an empty slot** in the pack's patch list = save there at once.
+- **No Easy Start** (the original's USB mass storage mode): it frees memory; the device is still a USB MIDI device.
+- More free memory (the DSP programs with another compressor) and a lighter LED task.
+
 ## Alpha 0.15 (2026-11-13) — los lanzamientos del Grid FX como los tipos del original (experimental)
 
 > ⚠️ **Experimental: necesita pulirse.** Lo nuevo se ha comprobado en emulación (el código del aparato ejecutado sobre un volcado de su memoria), aún no en el aparato. **Haz una copia de la tarjeta SD.** Si no arranca: **Sample Rec + Samples + Note** al encender e instala Alpha 0.10 o el firmware oficial.

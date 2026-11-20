@@ -81,6 +81,10 @@ def arm_code(base, L, prev):
     VSEL = rhbuild.OPT.get("vsel")
     R81 = rhbuild.OPT.get("rh81")
     X2 = rhbuild.OPT.get("va2x")                                          # (RH85) the track's 2x (esel O_OS2): VA_AT + 8, bit 0
+    OSX = rhbuild.OPT.get("osc1x")                                        # (RH101) tools/osc1x.py's 6 bytes of the track: VA_AT + 9 .. 14
+    if OSX:
+        import osc1x as OX
+        assert VA_AT + 9 + OX.NE <= VA_AT + 30
     from esel import O_PRT, O_OS2
     if VMODE:
         from esel import ESR, O_MODE, O_DET
@@ -323,6 +327,14 @@ def arm_code(base, L, prev):
         for i in range(5):
             E(ldrb_imm, 2, 1, i)
             E(strb_imm, 2, 5, VA_AT + 2 + i)
+    if OSX:                                                               # (RH101) the sub's / the noise's (stored as in the RAM: 0 = off)
+        E(movs_imm, 1, OX.NE)
+        E(raw, h(0x4341))                                                 # muls r1, r0 (6 (t + 1))
+        imm32(2, OX.ram() - OX.NE)
+        E(adds_reg, 1, 1, 2)
+        for i in range(OX.NE):
+            E(ldrb_imm, 2, 1, i)
+            E(strb_imm, 2, 5, VA_AT + 9 + i)
     E(mov_reg, 0, 4)
     E(bl, L["c_fmon"])
     E(strb_imm, 0, 5, 1)
@@ -380,8 +392,12 @@ def arm_code(base, L, prev):
     E(pop_list, [4, 5, 6, 7], pc=True)
 
     # ---- c_pssv0 / c_pssv1 (the two save calls, r1 = the item): the record first, then the chain (sp untouched: the stock's stack arguments)
+    NOLS = rhbuild.OPT.get("nolsave")                                     # (RH103) 0x08038734 is the stock's project LOAD, not a save
     for k, tgt in enumerate(prev["save"]):
         a.label(f"c_pssv{k}")
+        if NOLS and k == 1:                                               # (a load wrote the project left behind into the loaded one's record)
+            E(b_w, tgt)
+            continue
         E(push_list, [0, 1, 2, 3], lr=True)
         E(ldr_imm, 0, 1, 4)
         E(ldrb_imm, 1, 1, 8)
@@ -414,6 +430,11 @@ def arm_code(base, L, prev):
             E(strb_w, 2, 1, O_PRT)
         if X2:
             E(strb_w, 2, 1, O_OS2)
+    if OSX:                                                               # (RH101) every track's sub / noise: off until the record's
+        imm32(1, OX.ram())
+        E(movs_imm, 2, 0)
+        for o in range(0, 8 * OX.NE, 4):
+            E(str_imm, 2, 1, o)
     E(movs_imm, 4, 0)
     a.label("ap_sl")
     E(cmp_imm, 7, 0)
@@ -474,6 +495,14 @@ def arm_code(base, L, prev):
         E(adds_reg, 1, 1, 2)
         for i in range(5):
             E(ldrb_imm, 2, 5, VA_AT + 2 + i)
+            E(strb_imm, 2, 1, i)
+    if OSX:
+        E(movs_imm, 1, OX.NE)
+        E(raw, h(0x4371))                                                 # muls r1, r6 (6 (t + 1))
+        imm32(2, OX.ram() - OX.NE)
+        E(adds_reg, 1, 1, 2)
+        for i in range(OX.NE):
+            E(ldrb_imm, 2, 5, VA_AT + 9 + i)
             E(strb_imm, 2, 1, i)
     E(ldrb_imm, 0, 5, 1)
     E(lsls_imm, 0, 0, 31)

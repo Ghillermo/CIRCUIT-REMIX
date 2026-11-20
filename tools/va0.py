@@ -912,6 +912,7 @@ class Model:
                 a = wrap(a + (ld(g(r2 + POS)) << 14))
             a = wrap(a + self.mod(r1, ENVP, 0x180000, env))
             incs.append(inc_of(a))
+        self.inc1y = incs[0]                                                     # (RH101, osc1x) Y S_INC1: OSC 1's, 1x
         r3, r4 = r1, r2
         two = False
         key = g(key_addr(s)) if self.os2slot else g(OS2G)

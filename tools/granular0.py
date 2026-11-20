@@ -78,6 +78,13 @@ GZ_AT = 0x3F50
 P_START, P_LEN = 7, 8
 
 
+def _lint():
+    """(RH103, OPT dsplint) the multiply pairs dsptool has: `mpy x0,y0` is not one (its asm makes it mpysu: the same product with these
+    positive operands, but read as unsigned)"""
+    import rhbuild
+    return bool(rhbuild.OPT.get("dsplint"))
+
+
 def slot_y(s):
     return SLOTY + SLOT_N * s
 
@@ -449,7 +456,7 @@ def gz_items(sp=False):
             f"move {V('r7', V_T)},a", "and #>$7,a", "asl #5,a,a", f"add #>${PAR0:x},a", "move a1,r0", "nop",
             f"move {V('r6', P_ZONE)},a", "and #>$7f,a", "add #>$1,a", "move a1,x0",
             f"move y:(r0+${P_LEN:x}),a", "and #>$7f,a", "add #>$1,a", "move a1,y0",
-            "mpy x0,y0,a", "asr a", "asr #7,a,a", "move a0,x0",
+            ("mpy y0,x0,a" if _lint() else "mpy x0,y0,a"), "asr a", "asr #7,a,a", "move a0,x0",
             f"move {V('r7', V_L)},x1", "mpy x1,x0,a", "asr a",
             "asr #7,a,a", "move a0,b", "move #>$40,x0", "cmp x0,b", "tlt x0,b", f"move b1,{V('r7', V_Z)}",
             f"move {V('r7', V_L)},a", "sub b,a", "move a1,x1", f"move {V('r6', P_POS)},a", "and #>$7f,a",

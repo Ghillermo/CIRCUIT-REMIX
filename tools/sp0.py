@@ -61,6 +61,15 @@ def _rtdc():
     return rtdc
 
 
+def _sds_to(labels):
+    """(RH101, OPT osc1x) the SDS entry's target: tools/osc1x.py's SUBN (which ends jmp e_sds), else e_sds"""
+    import rhbuild
+    if rhbuild.OPT.get("osc1x"):
+        import osc1x
+        return osc1x.AT
+    return labels["e_sds"] if labels is not None else "e_sds"
+
+
 def entry(name):
     return AT + 2 * ENTRIES.index(name)
 
@@ -111,7 +120,7 @@ def items(tab_at, gr, part="a", spx=None):
     # ---- the entries
     e(("label", "entries"))
     for n in ENTRIES:
-        e(("jmp", spx if n == "spx" else _rtdc().DCN_AT if dc and n == "note" else f"e_{n}"))
+        e(("jmp", spx if n == "spx" else _rtdc().DCN_AT if dc and n == "note" else _sds_to(None) if n == "sds" else f"e_{n}"))
 
     # ================================================================ TICK (from SY, once a block): one track's update in turn; the
     # granular slots' pitch (for the follow); the blocks from zero once
@@ -337,14 +346,18 @@ def code(gr):
     labels.update(lb)
     import rhbuild
     for n in ENTRIES:
-        to = _rtdc().DCN_AT if rhbuild.OPT.get("rtdc") and n == "note" else labels[f"e_{n}"]
+        to = _rtdc().DCN_AT if rhbuild.OPT.get("rtdc") and n == "note" else _sds_to(labels) if n == "sds" else labels[f"e_{n}"]
         assert w[entry(n) - AT:entry(n) - AT + 2] == [0x0AF080, to], n
     return w, labels, tw + wb, tab_at
 
 
 def segs(gr):
-    """for granular0's extra: our code at P:AT, the tables at P:TAB"""
+    """for granular0's extra: our code at P:AT, the tables at P:TAB; (RH101, OPT osc1x) tools/osc1x.py's SUBN at its P"""
     w, labels, tw, _ = code(gr)
+    import rhbuild
+    if rhbuild.OPT.get("osc1x"):
+        import osc1x
+        return [(AT, w), (TAB, tw), (osc1x.AT, osc1x.code(labels["e_sds"])[0])]
     return [(AT, w), (TAB, tw)]
 
 

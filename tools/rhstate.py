@@ -37,6 +37,30 @@ OUR_LIMIT = ST2                            # the heap limit once c_rst has run w
 SIZE3 = 0x200
 ST3 = ST2 - SIZE3                          # 0x2004EC60
 MAGIC3 = 0x33545352                        # "RST3"
+# ---- (RH99, OPT raminit) the RAM of ours outside the blocks that a module keeps "from zero once" behind its own magic (rpatch 0x2004EAA0,
+# latch 0x2004EB00, fm8page 0x2004EB50, esel 0x2004EB80 (+ vsel's values), vsel 0x2004EE20) and the lanes' control block (xlanes, its
+# magic at CB + 0): the SRAM is not cleared at a reset or after an install, so their magics outlived a reboot with the values of the boot
+# before (or of another build, or what the bootloader left).  With raminit c_rst's first call of a boot (the blocks zeroed) zeroes them
+# too, and the lanes' magic: every module starts them again from zero at its next use.  Not dspz's stage / state (0x2004EC00-0x2004EE13:
+# an upload writes them before it reads them, and one may run before our first call).
+EXT_CLR = ((0x2004EAA0, 0x2004EC00), (0x2004EE20, 0x2004EE60))
+CB_MAGIC = 0x2004F760
+
+
+def check_raminit():
+    """the modules' areas inside EXT_CLR, nothing else of ours there (build time)"""
+    import dspz
+    import esel
+    import fm8page
+    import latch
+    import rpatch
+    import vsel
+    import xlanes
+    (a0, a1), (b0, b1) = EXT_CLR
+    areas = [(rpatch.PTR, rpatch.PTR_LEN), (latch.RAM, latch.RAM_LEN), (fm8page.FMR, fm8page.RAM_LEN), (esel.ESR, esel.ESR_LEN81)]
+    assert rpatch.PTR == a0 and all(a0 <= s and s + n <= a1 for s, n in areas), "raminit: an area outside the first range"
+    assert vsel.VSR == b0 and vsel.VSR + vsel.VSR_LEN == b1 and b0 >= dspz.S + 20 and a1 <= dspz.STAGE, "raminit: vsel / dspz moved"
+    assert xlanes.CB + xlanes.O_MAGIC == CB_MAGIC and b1 == ST2
 
 
 def our_limit():
@@ -61,6 +85,7 @@ OFF2 = {                                   # module -> (offset, length) inside t
     "modmx": (352, 1072),                  # (RH64) the matrix: pages, sources, offsets: modmx.R_*
     "arpmods": (248, 12),                  # (RH63) the arpeggio's modifiers running: arpmods.X_*
     "dspgate": (260, 12),                  # (RH66) + 0 in a PCM upload's bulk interval, + 4 the intervals, + 8 our DSP writes dropped (clkprobe's room)
+    "bulkflag": (344, 8),                  # (RH101, tools/bulkflag.py) + 0 in a PCM upload's bulk interval, + 4 the intervals (clkprobe's room, after fmpage)
     "itcm": (288, 20),
     "fmpage": (260, 84),                   # (RH70) the FM engine's pages: the slots with FM, to send, the round, pad 12 held, the 4 x 16 values                     # (RH66) the ITCM canary: + 0 state, + 4 the next word, + 8 bad words, + 12 the first, + 16 full sweeps (clkprobe's room)
     "startfix": (228, 12),                 # (RD25) tick 0 played at the start: ACT, the passes N, T0 (HAL tick)
@@ -116,7 +141,7 @@ OFF = {                                    # module -> (offset, length) inside t
 }
 
 
-SHARED = {"fmpage": "clkprobe", "dspgate": "clkprobe","itcm": "clkprobe", "modmx": "stallprof", "savedefer": "clkprobe", "velcurve": "clkprobe", "arpmods": "clkprobe", "clkci": "latdiag", "slinkofs": "latdiag", "smodes": "latdiag", "fxroute": "latdiag", "autoinit": "latdiag", "dqchain": "latdiag",
+SHARED = {"fmpage": "clkprobe", "dspgate": "clkprobe", "bulkflag": "clkprobe", "itcm": "clkprobe", "modmx": "stallprof", "savedefer": "clkprobe", "velcurve": "clkprobe", "arpmods": "clkprobe", "clkci": "latdiag", "slinkofs": "latdiag", "smodes": "latdiag", "fxroute": "latdiag", "autoinit": "latdiag", "dqchain": "latdiag",
           "trigflash": "latdiag"}               # slots that share a diagnostic module's room (never in the same build: the module's install checks)
 
 
@@ -233,6 +258,19 @@ def arm_code2(base, ram3=False):
     E(adds_imm8, 2, 4)
     E(cmp_reg, 2, 3)
     E(b_cond, "r2_clr", "lo")
+    import rhbuild
+    if rhbuild.OPT.get("raminit"):                             # (RH99) the areas of ours outside the blocks, the lanes' magic (r1 = 0)
+        check_raminit()
+        for k, (lo, hi) in enumerate(EXT_CLR):
+            imm32(2, lo)
+            imm32(3, hi)
+            a.label(f"r2_x{k}")
+            E(str_imm, 1, 2, 0)
+            E(adds_imm8, 2, 4)
+            E(cmp_reg, 2, 3)
+            E(b_cond, f"r2_x{k}", "lo")
+        imm32(2, CB_MAGIC)
+        E(str_imm, 1, 2, 0)
     imm32(2, MAGIC)
     E(str_imm, 2, 0, 0)
     imm32(1, ST2)

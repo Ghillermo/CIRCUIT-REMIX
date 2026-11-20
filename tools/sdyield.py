@@ -65,7 +65,7 @@ def arm_code(base):
     E(cmp_imm, 1, AFTER)
     E(b_cond, "y_loop", "lo")
     if rhbuild.OPT.get("sdbulk"):                             # (RH66) in a PCM upload's bulk interval no yield: as the stock (tools/dspgate.py)
-        imm32(0, rhstate.ST2 + rhstate.OFF2["dspgate"][0])
+        imm32(0, rhstate.ST2 + rhstate.OFF2["bulkflag" if rhbuild.OPT.get("bulkflag") else "dspgate"][0])   # (RH101: tools/bulkflag.py)
         E(ldrb_imm, 0, 0, 0)
         E(cmp_imm, 0, 0)
         E(b_cond, "y_loop", "ne")

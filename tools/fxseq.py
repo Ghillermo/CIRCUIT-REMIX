@@ -17,7 +17,7 @@ The stock of the Rhythm (read in its image, run on the RAM dump):
     velocity, 8 + s / 4 the probability, 16 + s / 4 the micro steps, 24 + s / 4 the flip (byte s & 3); WPTR + COMMIT writes the pattern.
 
 Ours:
-  * an FX track: its bit in the byte R + 0x61 of the record (scene 1's + 33, never written by the stock: travels with the project); Sample
+  * an FX track: its bit in the byte R + 0x61 of the record (scene 1's + 33: travels with the project, but the stock rewrites it when scene 1 is saved or cleared: from RH104, OPT fxbyte, at R + 0x42); Sample
     mode's selector, pad 21 (dark until now) = FX on / off (blue 0xDD / dim 0xE0; on also picks the sample engine); another engine pad
     takes it off;
   * its notes never reach the DSP (silent): a note-on turns on the Grid FX slot of its sample (0-15; 16 = one of the slots with a type at
@@ -66,6 +66,7 @@ SETTER, SET_OBJ, GETTER = 0x08031A38, 0x20010E10, 0x08046410
 GSET, GSET_OBJ = 0x08038A08, 0x20011998
 WPTR, COMMIT, PARAM_GET = CI.WPTR, CI.COMMIT, CI.PARAM_GET
 REC_OWNER, REC_FX = 0x2003C0CC, 0x61
+REC_FX2 = 0x42                                              # (RH104, fxbyte) scene 1's track 1 entry + 2: no stock code writes it
 HAL = 0x20006F3C
 CTRL = CI.CTRL
 CONT_MODE = 0x20048B9C + 0x264
@@ -165,7 +166,23 @@ def arm_code(base, L, prev, off_head):
     E(ldr_imm, 0, 1, 0)
     E(cmp_imm, 0, 0)
     E(b_cond, "fc_x", "eq")
-    E(adds_imm8, 0, REC_FX)
+    if rhbuild.OPT.get("fxbyte"):
+        # (RH104) the stock writes R + 0x61 (scene 1's + 33, from its own per-scene store) whenever scene 1 is saved or cleared: the FX
+        # tracks were lost.  Ours now at R + 0x42 (scene 1's track 1 entry + 2: the stock writes + 0 / + 1 of each entry only); a project of
+        # RH92-RH103 brought over once (+ 0x42 empty and + 0x61 not: moved, + 0x61 back to 0)
+        E(ldrb_w, 1, 0, REC_FX2)
+        E(cmp_imm, 1, 0)
+        E(b_cond, "fc_m", "ne")
+        E(ldrb_w, 1, 0, REC_FX)
+        E(cmp_imm, 1, 0)
+        E(b_cond, "fc_m", "eq")
+        E(strb_w, 1, 0, REC_FX2)
+        E(movs_imm, 1, 0)
+        E(strb_w, 1, 0, REC_FX)
+        a.label("fc_m")
+        E(adds_imm8, 0, REC_FX2)
+    else:
+        E(adds_imm8, 0, REC_FX)
     a.label("fc_x")
     E(raw, h(0x4770))
 

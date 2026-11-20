@@ -1770,13 +1770,24 @@ def arm_code(base, L, prev, note=False, v2=False, stereo=False, multi=False, ui=
         imm32(1, PAL + PAL_OFF)
         a.label("gl_r1")
         E(ldrh_imm, 0, 1, 0)
+        SRD = _rb.OPT.get("srdark")                                       # (RH103) only where the stock left the pad dark: pads 17-24 are its
+        if SRD:                                                           #  record region's bar once K2 / K3 moved it (0xAA .. 0xA9 .. 0xAB)
+            E(ldrh_imm, 2, 5, 2 * PAD_DECLICK)
+            E(cmp_imm, 2, 0)
+            E(b_cond, "gl_r1x", "ne")
         E(strh_imm, 0, 5, 2 * PAD_DECLICK)
+        if SRD:
+            a.label("gl_r1x")
         imm32(1, PAL + PAL_TOFF)
         E(lsls_imm, 0, 4, 30)
         E(b_cond, "gl_r2", "pl")
         imm32(1, PAL + PAL_TON)
         a.label("gl_r2")
         E(ldrh_imm, 0, 1, 0)
+        if SRD:
+            E(ldrh_imm, 2, 5, 2 * PAD_STEREO)
+            E(cmp_imm, 2, 0)
+            E(b_cond, "gl_nr", "ne")
         E(strh_imm, 0, 5, 2 * PAD_STEREO)
         a.label("gl_nr")
     imm32(0, CI.CTRL)                                                     # Sample mode on the screen: pad 19 = the selected track's crossfade

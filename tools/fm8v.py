@@ -336,14 +336,61 @@ def r0_word(P, k):
     return min(0x7FFFFF, x)
 
 
-def words(P, base, note=60):
+# ---------------------------------------------------------------------------------------------------------------------------- RH100's custom algorithm
+# (RH100, tools/fmmap.py; CIRCUIT-HACKS' SC56.3 custom algorithm in the same spare bytes, so a patch with one keeps it on both firmwares): index
+# NALG (56) with GLB + 14 = 0xC0 | N; + 21 of operator k = the operators that modulate it (bit s), GLB + 13 = the feedback's source | its
+# destination << 4 (15 = none).  The carriers are the operators that modulate nobody.  N = 0 is no custom algorithm (algorithm 0, as any
+# other index past the list); N > 8 = 8.
+SPARE, G_CFB, G_CN, CUS = 21, 13, 14, 0xC0
+CUSTOM = NALG                                   # the custom algorithm's index (56)
+
+
+def is_custom(P):
+    """the parameters hold a custom algorithm (index 56 and its mark, N > 0)"""
+    return P[GLB + G_ALG] == CUSTOM and P[GLB + G_CN] >> 4 == CUS >> 4 and P[GLB + G_CN] & 15 != 0
+
+
+def custom_entry(P):
+    """the custom algorithm's 16-byte entry (fm8page's table format: N, carriers, feedback source / destination (0xFF none), the carriers'
+    count, 3 zero, then a byte per operator k = its sources), as fm8page's c_f8ent builds it"""
+    n = min(8, P[GLB + G_CN] & 15)
+    full = (1 << n) - 1
+    src = [P[OPB * k + SPARE] & full if k < n else 0 for k in range(8)]
+    anymod = 0
+    for s in src:
+        anymod |= s
+    car = full & ~anymod
+    fb = P[GLB + G_CFB]
+    fs, fd = fb & 15, fb >> 4
+    return bytes([n, car, 0xFF if fs == 15 else fs, 0xFF if fd == 15 else fd, max(1, bin(car).count("1")), 0, 0, 0] + src)
+
+
+def entry_of(P, custom=False):
+    """the algorithm entry the ARM plays (fm8page's): the custom one (custom=True, RH100) or the list's (an index past it: algorithm 0)"""
+    if custom and is_custom(P):
+        e = custom_entry(P)
+        return dict(n=e[0], car=e[1], fs=e[2], fd=e[3], mask=int.from_bytes(e[8:16], "little"), entry=e)
+    a = P[GLB + G_ALG]
+    return alg_of(algs(), (a if a < NALG else 0) if custom else a % NALG)
+
+
+def words(P, base, note=60, custom=False, muted=0):
     """216 parameter bytes -> {offset: word} of a slot's block in tools/fm8c0.py (base = the block's X address: G_TOPA / G_NOPA are
-    absolute).  The level / rate scaling at `note` (the middle C: not by note in the reduced port), the brightness 1, the LFO left out."""
+    absolute).  The level / rate scaling at `note` (the middle C: not by note in the reduced port), the brightness 1, the LFO left out.
+    custom (RH100): the custom algorithm (index 56) and, as the ARM, any other index past the list = algorithm 0; with noise (G_NZ > 0)
+    the engine also runs the noise's operator (G_NZOP) when it is past N (G_N / G_TOPA / heard up to it): it is not a carrier and modulates
+    nobody, but the noise's level is its AMP (G_NOPA), so the first link of the map (N = fmmap.used_n, lower than the list's N in
+    algorithms 8 / 9 / 11) keeps the noise heard; muted: the operators whose level the map's Shift + operator holds at 0 (bits)."""
     import fm8c0 as C
-    al = alg_of(algs(), P[GLB + G_ALG] % NALG)
+    if custom:
+        al = entry_of(P, True)
+    else:
+        al = alg_of(algs(), P[GLB + G_ALG] % NALG)
     n, car, mask, fs, fd = al["n"], al["car"], al["mask"], al["fs"], al["fd"]
     ncar = max(1, bin(car).count("1"))
-    fbc = min(0x7FFFFF, P[GLB + G_FB] ** 2 * 256)
+    nz = P[GLB + G_NZ]
+    run = max(n, (P[GLB + G_NZOP] & 7) + 1) if custom and nz else n    # (RH100) the operators core 0 runs: the noise's too (it reads its
+    fbc = min(0x7FFFFF, P[GLB + G_FB] ** 2 * 256)                     #   AMP), past N a silent one (no carrier, no target)
     rs_note = max(0, note - 24)
     w = {}
     for k in range(8):
@@ -354,7 +401,7 @@ def words(P, base, note=60):
             w[o + C.F_S1 + i] = SLB[min(127, r)]
         dist = note - (P[b + O_BP] + 21)
         ls = (P[b + O_RD] * dist * LS_K >> 4) if dist > 0 else (P[b + O_LD] * -dist * LS_K >> 4) if dist < 0 else 0     # (note 60)
-        heard = P[b + O_OL] and k < n
+        heard = P[b + O_OL] and k < run and not (muted >> k & 1)
         w[o + C.F_BASE] = min(SILENT, ((EMAX + (99 - P[b + O_OL]) * STEP + ls) << 8) + C.AMP0_ATT) if heard else SILENT
         w[o + C.F_VS] = (P[b + O_KVS] * 127 * VEL_K >> 5) << 8
         w[o + C.F_R0] = r0_word(P, k)
@@ -372,8 +419,7 @@ def words(P, base, note=60):
         w[pb + C.F_T1 + i] = (P[PEG + 4 + i] * STEP) << 8
         w[pb + C.F_S1 + i] = SLB[min(127, P[PEG + i])]
     w.update({pb + C.F_E: PEG_C << 8, pb + C.F_ST: 5, pb + C.F_FL: 0, pb + C.F_RM: 0})
-    nz = P[GLB + G_NZ]
-    w.update({C.G_FLG: 2 if P[GLB + G_SYNC] else 0, C.G_N: n, C.G_TOPA: base + C.OP0 + C.OPS * (n - 1),
+    w.update({C.G_FLG: 2 if P[GLB + G_SYNC] else 0, C.G_N: run, C.G_TOPA: base + C.OP0 + C.OPS * (run - 1),
               C.G_NZ: nz * nz * NZ_K, C.G_NOPA: base + C.OP0 + C.OPS * (P[GLB + G_NZOP] & 7) + C.F_AMP,
               C.G_NA: 0, C.G_NS: 1, C.G_PG: 0, C.G_PC: PEG_C << 8, C.G_PK: PK_W, C.G_A1: C.A1, C.G_A2: C.A2})
     return {o: v & 0xFFFFFF for o, v in w.items()}

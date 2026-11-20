@@ -36,6 +36,7 @@ from thumb import (Asm, adds_imm8, adds_reg, ands_reg, b, b_cond, bl, cmp_imm, c
 import countin as CI  # noqa: E402
 import rhstate  # noqa: E402
 import rodisk  # noqa: E402
+import rhbuild  # noqa: E402
 
 CTRL, CTRL_VT = CI.CTRL, CI.CTRL_VT
 O_VIEW, O_HELD, BIT_DUP = 0x7C, 0xA0, 24
@@ -122,10 +123,17 @@ def arm_code(base, L, prev):
     E(ldr_imm, 0, 0, 0)
     imm32(1, CTRL_VT)
     E(cmp_reg, 0, 1)
-    E(movs_imm, 0, 0)
-    E(b_cond, "ok_x", "ne")
-    E(movs_imm, 0, 1)
-    a.label("ok_x")
+    if rhbuild.OPT.get("vtfix"):                                          # (RH103) the movs set Z between the cmp and its branch: always 1
+        E(b_cond, "ok_x", "ne")
+        E(movs_imm, 0, 1)
+        E(raw, BX_LR)
+        a.label("ok_x")
+        E(movs_imm, 0, 0)
+    else:
+        E(movs_imm, 0, 0)
+        E(b_cond, "ok_x", "ne")
+        E(movs_imm, 0, 1)
+        a.label("ok_x")
     E(raw, BX_LR)
 
     # ---- c_scon() -> r0 = the Projects view when it is the active view, else 0; clobbers r1, r2

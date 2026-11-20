@@ -74,7 +74,10 @@ def ldrsb_reg(rt, rn, rm): return h(0x5600 | rm << 6 | rn << 3 | rt)
 
 
 def arm_code(base, L, prev, ui=False):
+    import rhbuild
     G2 = gmui2()
+    KHSW = bool(rhbuild.OPT.get("khsw"))                                  # (RH102) a stub for knobhold's Setup pad 23 LED
+    GMOFF = bool(rhbuild.OPT.get("gmoff"))                                # (RH103) the pending note-offs out of any view
     O_KB = rhstate.OFF["kbright"][0]
     SPK_MASK, SPK_VAL, SPK_CODE = 0, 1, 10                                # (stockplus' K_MASK, K_VAL, K_CODE)
     a = Asm(base)
@@ -449,14 +452,51 @@ def arm_code(base, L, prev, ui=False):
     E(raw, popw([0, 1, 2, 4, 5, 6, 7], lr=True))
     E(b_w, prev["knob"])
 
+    def offs(x):                                                          # (RH90) the note-offs due (x: the labels' prefix)
+        E(bl, "c_gmram")
+        E(cmp_imm, 0, 0)
+        E(b_cond, x + "o", "eq")
+        E(mov_reg, 4, 0)
+        E(ldrb_imm, 3, 4, R_PEND)
+        E(cmp_imm, 3, 0)
+        E(b_cond, x + "o", "eq")
+        imm32(1, CI.HAL_TICK)
+        E(ldr_imm, 1, 1, 0)
+        E(raw, h(0x8A62))                                                 # ldrh r2, [r4, #R_PT]
+        E(subs_reg, 1, 1, 2)
+        E(raw, h(0xB289))                                                 # uxth r1, r1
+        E(cmp_imm, 1, OFF_MS)
+        E(b_cond, x + "o", "lo")
+        E(movs_imm, 0, 0)
+        E(strb_imm, 0, 4, R_PEND)
+        E(movs_imm, 0, 0)
+        a.label(x + "f")
+        E(push_list, [0, 3])
+        E(raw, h(0x40C3))                                                 # lsrs r3, r0
+        E(lsls_imm, 3, 3, 31)
+        E(b_cond, x + "fn", "pl")
+        E(movs_imm, 1, 60)
+        E(bl, NOTE_OFF)
+        a.label(x + "fn")
+        E(pop_list, [0, 3])
+        E(adds_imm8, 0, 1)
+        E(cmp_imm, 0, 8)
+        E(b_cond, x + "f", "lo")
+        a.label(x + "o")
+
     # ---- c_gmled (the LED task's calls: ctrl, frame): the chain, then in the Setup view (not Advanced) pad 22 and, on, the knobs
     a.label("c_gmled")
     E(push_list, [3, 4, 5, 6], lr=True)
     E(mov_reg, 5, 1)
     E(bl, prev["ledtask"])
+    if G2 and GMOFF:                                                      # (RH103) before the Setup gate: a note-off pending when Setup was
+        offs("gm_")                                                       #  left within 200 ms went out only on the next visit to Setup
     E(bl, L["c_pgsetup"])
     E(cmp_imm, 0, 0)
     E(b_cond, "gl_x", "eq")
+    if KHSW:                                                              # (RH102) knobhold's switch LED: the stub it turns into a b.w
+        E(mov_reg, 0, 5)
+        E(bl, "c_gmkh")
     E(bl, L["c_rrt"])
     E(cmp_imm, 0, 0)
     E(b_cond, "gl_x", "eq")
@@ -468,37 +508,8 @@ def arm_code(base, L, prev, ui=False):
     E(movs_imm, 1, COL_ON)
     a.label("gl_p")
     E(strh_imm, 1, 5, 2 * PAD)
-    if G2:                                                                # (RH90) the note-offs due
-        E(bl, "c_gmram")
-        E(cmp_imm, 0, 0)
-        E(b_cond, "gl_o", "eq")
-        E(mov_reg, 4, 0)
-        E(ldrb_imm, 3, 4, R_PEND)
-        E(cmp_imm, 3, 0)
-        E(b_cond, "gl_o", "eq")
-        imm32(1, CI.HAL_TICK)
-        E(ldr_imm, 1, 1, 0)
-        E(raw, h(0x8A62))                                                 # ldrh r2, [r4, #R_PT]
-        E(subs_reg, 1, 1, 2)
-        E(raw, h(0xB289))                                                 # uxth r1, r1
-        E(cmp_imm, 1, OFF_MS)
-        E(b_cond, "gl_o", "lo")
-        E(movs_imm, 0, 0)
-        E(strb_imm, 0, 4, R_PEND)
-        E(movs_imm, 0, 0)
-        a.label("gl_f")
-        E(push_list, [0, 3])
-        E(raw, h(0x40C3))                                                 # lsrs r3, r0
-        E(lsls_imm, 3, 3, 31)
-        E(b_cond, "gl_fn", "pl")
-        E(movs_imm, 1, 60)
-        E(bl, NOTE_OFF)
-        a.label("gl_fn")
-        E(pop_list, [0, 3])
-        E(adds_imm8, 0, 1)
-        E(cmp_imm, 0, 8)
-        E(b_cond, "gl_f", "lo")
-        a.label("gl_o")
+    if G2 and not GMOFF:
+        offs("gl_")
     E(cmp_imm, 6, 0)
     E(b_cond, "gl_x", "eq")
     if G2:                                                                # (RH90) one colour, the brightness = the note (kbright)
@@ -542,6 +553,10 @@ def arm_code(base, L, prev, ui=False):
     E(b_cond, "gl_k", "lo")
     a.label("gl_x")
     E(pop_list, [3, 4, 5, 6], pc=True)
+    if KHSW:
+        # ---- c_gmkh(r0 = the frame): nothing until knobhold patches it (`b.w c_khsw`); 4 bytes, no literal pool inside
+        a.label("c_gmkh")
+        E(raw, h(0xBF00) + h(0x4770))                                     # nop; bx lr
     return a.assemble()
 
 
